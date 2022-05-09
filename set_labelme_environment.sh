@@ -6,6 +6,8 @@ curl -L https://github.com/wkentaro/dotfiles/raw/main/local/bin/install_anaconda
 source .anaconda3/bin/activate
 pip install -e .
 
+pip install lxml
+
 labelme_path=(`pwd`)
 echo "" >> ~/.bashrc
 echo "# labelme" >> ~/.bashrc

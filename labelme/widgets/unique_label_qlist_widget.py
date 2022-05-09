@@ -13,6 +13,7 @@ class UniqueLabelQListWidget(EscapableQListWidget):
             self.clearSelection()
 
     def findItemsByLabel(self, label):
+        print(self.item)
         items = []
         for row in range(self.count()):
             item = self.item(row)
