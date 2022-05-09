@@ -753,6 +753,9 @@ class MainWindow(QtWidgets.QMainWindow):
             undo,
             brightnessContrast,
             None,
+            hideAll,
+            showAll,
+            None,
             zoom,
             fitWidth,
         )
