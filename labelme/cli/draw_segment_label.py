@@ -173,7 +173,6 @@ def main():
     print('Convert mask image')
     print('{0}The total number of the files : {1}'.format(' '*2, len(json_list)))
     print('{0}The number of the process core : {1}'.format(' '*2, num_core))
-    #print('{0}The number of the process group : {1}'.format(' '*2, process_num))
     print('===========================================')
 
     for json_file in json_list:
