@@ -9,6 +9,6 @@ pip install -e .
 labelme_path=(`pwd`)
 echo "" >> ~/.bashrc
 echo "# labelme" >> ~/.bashrc
-echo "alias labelme='cd $labelme_path && labelme'" >> ~/.bashrc
-echo "alias labelme-cli='cd $labelme_path && cd labelme/cli'" >> ~/.bashrc
+echo "alias labelme='cd $labelme_path && source .anaconda3/bin/activate && labelme'" >> ~/.bashrc
+echo "alias labelme-cli='cd $labelme_path && source .anaconda3/bin/activate && cd labelme/cli'" >> ~/.bashrc
 source ~/.bashrc
