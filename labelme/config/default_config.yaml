@@ -14,6 +14,14 @@ file_search: null
 sort_labels: true
 validate_label: null
 
+labels_class:
+  segmentation:
+    ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
+    'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'void']
+  object-2d:
+    ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
+    'walk', 'stop', 'light-out', 'traffic-sign']
+
 default_shape_color: [0, 255, 0]
 shape_color: auto  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
