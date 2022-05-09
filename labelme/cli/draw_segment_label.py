@@ -47,9 +47,9 @@ class Convertor:
         if self.merge_save:
             dir_ = self.OUTPUT_DIR
 
-        origin_image_dir = dir_ + '/original_image'
-        masked_image_dir = dir_ + '/masked_image'
-        overlayed_image_dir = dir_ + '/overlayed_image'
+        origin_image_dir = os.path.join(dir_, 'original_image')
+        masked_image_dir = os.path.join(dir_, 'masked_image')
+        overlayed_image_dir = os.path.join(dir_, 'overlayed_image')
 
         if self.merge_save:
             if not os.path.exists(origin_image_dir):
@@ -98,7 +98,7 @@ class Convertor:
         return image, json_data
 
     def multi_convert_json_to_mask(self, json_file):
-        folder_name = self.INPUT_DIR.split('/')[-1]
+        _, folder_name = os.path.split(self.INPUT_DIR)
         try:
             file_name = os.path.splitext(os.path.basename(json_file))[0]
             image_name = file_name + '.jpg'
@@ -154,8 +154,8 @@ def main():
     output_dir = args.output_dir
     num_core = args.num_core
     labeler_name = args.labeler_name
-    class_data_yaml = os.path.dirname(os.path.realpath(__file__)) + '/class.yaml'
-    folder_name = input_dir.split('/')[-1]
+    class_data_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'class.yaml')
+    _, folder_name = os.path.split(input_dir)
 
     try:
         print('Opening data file : {0}'.format(class_data_yaml))

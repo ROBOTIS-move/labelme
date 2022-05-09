@@ -37,7 +37,7 @@ class Convertor:
         return _dir
 
     def convert_bounding_box(self, json_file):
-        folder_name = self.input_dir.split('/')[-1]
+        _, folder_name = os.path.split(self.input_dir)
         check_wrong_class = False
         with open(json_file, encoding='ISO-8859-1') as f:
             data = json.load(f)
@@ -46,8 +46,7 @@ class Convertor:
         out_image_file = os.path.join(self.output_dir, base + '.png')
 
         new_path = data['imagePath']
-        new_path = new_path.split('\\')
-        new_path = new_path[-1]
+        _, new_path = os.path.split(new_path)
         image_file = os.path.join(os.path.dirname(json_file), new_path)
         image = np.asarray(PIL.Image.open(image_file))
         result_image = labelme.utils.draw_instances(
@@ -105,7 +104,7 @@ def main():
     args = parser.parse_args()
 
     class_data_yaml = os.path.dirname(os.path.realpath(__file__)) + '/class.yaml'
-    folder_name = args.input_dir.split('/')[-1]
+    _, folder_name = os.path.split(args.input_dir)
     try:
         print('Opening data file : {0}'.format(class_data_yaml))
         f = open(class_data_yaml, 'r')
