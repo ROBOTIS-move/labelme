@@ -1784,8 +1784,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if fileName:
                 self.loadFile(fileName)
 
-        format_name = filename.split('.')[-1]
-        json_file = filename[:-len(format_name)] + 'json'
+        format_name = fileName.split('.')[-1]
+        json_file = fileName[:-len(format_name)] + 'json'
         target_class = self.get_target_class(json_file)
         self.choose_labels_class(target_class)
 
