@@ -9,3 +9,6 @@
 
 .DS_Store
 .idea/
+
+.vscode
+.anaconda3

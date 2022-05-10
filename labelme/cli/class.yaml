@@ -1,0 +1,28 @@
+segmentation:
+  pattern-block: [0, 102, 0]
+  non-pattern-block: [204, 255, 204]
+  curb : [102, 102, 255]
+  braille-block : [204, 204, 0]
+  cement : [51, 204, 204]
+  asphalt : [204, 51, 51]
+  cross-walk : [204, 204, 204]
+  speed-bump : [153, 102, 0]
+  sand : [102, 0, 153]
+  bicycle-road : [204, 51, 204]
+  deck : [255, 165, 0]
+  grass : [252, 107, 3]
+  void : [0, 0, 0]
+object-2d:
+  ['person',
+   'bicycle',
+   'motorcycle',
+   'kickboard',
+   'robot',
+   'mailbox',
+   'car',
+   'bus',
+   'truck',
+   'stop',
+   'walk',
+   'light-out',
+   'traffic-sign']

@@ -16,6 +16,10 @@ from .shape import polygons_to_mask
 from .shape import shape_to_mask
 from .shape import shapes_to_label
 
+from .draw import draw_instances
+from .draw import draw_label
+from .draw import shapes_to_label
+
 from .qt import newIcon
 from .qt import newButton
 from .qt import newAction
