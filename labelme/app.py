@@ -745,6 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile,
             None,
             createMode,
+            createRectangleMode,
             editMode,
             duplicate,
             copy,
@@ -1306,6 +1307,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 imageWidth=self.image.width(),
                 otherData=self.otherData,
                 flags=flags,
+                classType=self._classType,
             )
             self.labelFile = lf
             items = self.fileListWidget.findItems(
