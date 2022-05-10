@@ -37,6 +37,15 @@ def get_default_config():
             shutil.copy(config_file, user_config_file)
         except Exception:
             logger.warn("Failed to save config: {}".format(user_config_file))
+    else:
+        create_time = osp.getmtime(user_config_file)
+        target_time = time.mktime(
+            datetime.datetime.strptime('2022-05-10 09:00:00', '%Y-%m-%d %H:%M:%S').timetuple())
+        if create_time < target_time:
+            try:
+                shutil.copy(config_file, user_config_file)
+            except Exception:
+                logger.warn('Failed to save config: {}'.format(user_config_file))
 
     return config
 
