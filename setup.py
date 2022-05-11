@@ -27,7 +27,7 @@ def get_install_requires():
         "matplotlib<3.3",  # for PyInstaller
         "natsort>=7.1.0",
         "numpy",
-        "Pillow>=2.8",
+        "Pillow>=6.2",
         "PyYAML",
         "qtpy!=1.11.2",
         "termcolor",
