@@ -126,9 +126,12 @@ class Convertor:
                 copy.deepcopy(self.class_rgb),
                 self.segmentation_class)
 
-            utils.lblsave(
+            utils.lblsave_old(
                 os.path.join(self.masked_image_dir, file_name),
-                label)
+                label,
+                names,
+                copy.deepcopy(self.class_rgb),
+                self.segmentation_class)
 
             if self.merge_save:
                 PIL.Image.fromarray(image).save(os.path.join(
