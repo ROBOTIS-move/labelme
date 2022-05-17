@@ -1572,8 +1572,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
-            self.loadLabels(self.labelFile.shapes)
             self._classType = self.labelFile.classType
+            self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
         else:
@@ -2029,7 +2029,10 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.importDirImages(targetDirPath)
 
-        self.choose_labels_class(self._target_class)
+        try:
+            self.choose_labels_class(self._target_class)
+        except BaseException:  # noqa: B902
+            pass
 
     @property
     def imageList(self):
