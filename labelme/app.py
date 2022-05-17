@@ -318,6 +318,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         toggle_keep_prev_mode.setChecked(self._config["keep_prev"])
 
+        add_point_mode = action(
+            self.tr("Add Points to Edge"),
+            self.toggleAddPointMode,
+            shortcuts["toggle_add_points_mode"],
+            None,
+            self.tr('Toggle "add point to edge" mode'),
+            checkable=True,
+        )
+        add_point_mode.setChecked(self._config["keep_prev"])
+
         createMode = action(
             self.tr("Create Polygons"),
             lambda: self.toggleDrawMode(False, createMode="polygon"),
@@ -587,6 +597,7 @@ class MainWindow(QtWidgets.QMainWindow):
             close=close,
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
+            add_point_mode=add_point_mode,
             delete=delete,
             edit=edit,
             duplicate=duplicate,
@@ -627,6 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 removePoint,
                 None,
                 toggle_keep_prev_mode,
+                add_point_mode,
             ),
             # menu shown at right click
             menu=(
@@ -1968,6 +1980,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleKeepPrevMode(self):
         self._config["keep_prev"] = not self._config["keep_prev"]
+
+    def toggleAddPointMode(self):
+        self._config["add_point"] = not self._config["add_point"]
+        self.canvas.addPointMode = self._config["add_point"]
 
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()

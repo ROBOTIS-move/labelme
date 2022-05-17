@@ -5,6 +5,7 @@ keep_prev: false
 keep_prev_scale: false
 keep_prev_brightness: false
 keep_prev_contrast: false
+add_point: false
 logger_level: info
 
 flags: null
@@ -137,4 +138,5 @@ shortcuts:
   add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
   toggle_keep_prev_mode: Ctrl+P
+  toggle_add_points_mode: Ctrl+B
   remove_selected_point: [Meta+H, Backspace]

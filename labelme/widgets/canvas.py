@@ -36,6 +36,8 @@ class Canvas(QtWidgets.QWidget):
     # polygon, rectangle, line, or point
     _createMode = "polygon"
 
+    _addPointMode = False
+
     _fill_drawing = False
 
     def __init__(self, *args, **kwargs):
@@ -111,6 +113,14 @@ class Canvas(QtWidgets.QWidget):
         ]:
             raise ValueError("Unsupported createMode: %s" % value)
         self._createMode = value
+
+    @property
+    def addPointMode(self):
+        return self._addPointMode
+
+    @addPointMode.setter
+    def addPointMode(self, value):
+        self._addPointMode = value
 
     def storeShapes(self):
         shapesBackup = []
@@ -383,7 +393,8 @@ class Canvas(QtWidgets.QWidget):
                         self.update()
             elif self.editing():
                 if self.selectedEdge():
-                    self.addPointToEdge()
+                    if self.addPointMode:
+                        self.addPointToEdge()
                 elif (
                     self.selectedVertex()
                     and int(ev.modifiers()) == QtCore.Qt.ShiftModifier
