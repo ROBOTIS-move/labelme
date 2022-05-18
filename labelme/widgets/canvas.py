@@ -213,7 +213,7 @@ class Canvas(QtWidgets.QWidget):
         if self.drawing():
             self.line.shape_type = self.createMode
 
-            self.overrideCursor(CURSOR_DRAW)
+            self.overrideCursor(CURSOR_DEFAULT)
             if not self.current:
                 return
 
@@ -230,7 +230,7 @@ class Canvas(QtWidgets.QWidget):
                 # Attract line to starting point and
                 # colorise to alert the user.
                 pos = self.current[0]
-                self.overrideCursor(CURSOR_POINT)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.current.highlightVertex(0, Shape.NEAR_VERTEX)
             if self.createMode in ["polygon", "linestrip"]:
                 self.line[0] = self.current[-1]
@@ -254,7 +254,7 @@ class Canvas(QtWidgets.QWidget):
         # Polygon copy moving.
         if QtCore.Qt.RightButton & ev.buttons():
             if self.selectedShapesCopy and self.prevPoint:
-                self.overrideCursor(CURSOR_MOVE)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.boundedMoveShapes(self.selectedShapesCopy, pos)
                 self.repaint()
             elif self.selectedShapes:
@@ -271,7 +271,7 @@ class Canvas(QtWidgets.QWidget):
                 self.repaint()
                 self.movingShape = True
             elif self.selectedShapes and self.prevPoint:
-                self.overrideCursor(CURSOR_MOVE)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.boundedMoveShapes(self.selectedShapes, pos)
                 self.repaint()
                 self.movingShape = True
@@ -295,7 +295,7 @@ class Canvas(QtWidgets.QWidget):
                 self.prevhEdge = self.hEdge
                 self.hEdge = None
                 shape.highlightVertex(index, shape.MOVE_VERTEX)
-                self.overrideCursor(CURSOR_POINT)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.setToolTip(self.tr("Click & drag to move point"))
                 self.setStatusTip(self.toolTip())
                 self.update()
@@ -307,7 +307,7 @@ class Canvas(QtWidgets.QWidget):
                 self.hVertex = None
                 self.prevhShape = self.hShape = shape
                 self.prevhEdge = self.hEdge = index_edge
-                self.overrideCursor(CURSOR_POINT)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.setToolTip(self.tr("Click to create point"))
                 self.setStatusTip(self.toolTip())
                 self.update()
@@ -324,7 +324,7 @@ class Canvas(QtWidgets.QWidget):
                     self.tr("Click & drag to move shape '%s'") % shape.label
                 )
                 self.setStatusTip(self.toolTip())
-                self.overrideCursor(CURSOR_GRAB)
+                self.overrideCursor(CURSOR_DEFAULT)
                 self.update()
                 break
         else:  # Nothing found, clear highlights, reset state.
