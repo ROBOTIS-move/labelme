@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.1.0 (2022-05-27)
+------------------
+
 4.0.0 (2022-05-04)
 ------------------
 * Modified labelme for labeling by Robotis Algorithm Team
