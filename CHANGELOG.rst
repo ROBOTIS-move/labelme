@@ -4,6 +4,11 @@ Changelog for package labelme
 
 4.1.0 (2022-05-27)
 ------------------
+* Changed matplotlib default version
+* Changed defult label colors for visualization
+* Added mode selection function for add point to edge
+* Fixed cursor shape to normal cursor
+* Contributors: Eungi Cho
 
 4.0.0 (2022-05-04)
 ------------------
