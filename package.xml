@@ -8,6 +8,6 @@
   </description>
   <maintainer email="pyo@robotis.com">Pyo</maintainer>
   <maintainer email="thlim@robotis.com">Darby Lim</maintainer>
-  <license>Proprietary</license>
+  <license>GPLv3</license>
   <author email="ceg@robotis.com">Eungi Cho</author>
 </package>
