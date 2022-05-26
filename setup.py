@@ -24,10 +24,10 @@ def get_version():
 def get_install_requires():
     install_requires = [
         "imgviz>=0.11",
-        "matplotlib<3.3",  # for PyInstaller
+        "matplotlib>=3.3",  # for PyInstaller
         "natsort>=7.1.0",
         "numpy",
-        "Pillow>=2.8",
+        "Pillow>=6.2",
         "PyYAML",
         "qtpy!=1.11.2",
         "termcolor",

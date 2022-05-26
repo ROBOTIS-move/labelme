@@ -76,6 +76,7 @@ class LabelFile(object):
             "flags",  # image level flags
             "imageHeight",
             "imageWidth",
+            'classType',
         ]
         shape_keys = [
             "label",
@@ -131,6 +132,10 @@ class LabelFile(object):
                 )
                 for s in data["shapes"]
             ]
+            if 'classType' in data:
+                classType = data['classType']
+            else:
+                classType = None
         except Exception as e:
             raise LabelFileError(e)
 
@@ -146,6 +151,7 @@ class LabelFile(object):
         self.imageData = imageData
         self.filename = filename
         self.otherData = otherData
+        self.classType = classType
 
     @staticmethod
     def _check_image_height_and_width(imageData, imageHeight, imageWidth):
@@ -171,6 +177,7 @@ class LabelFile(object):
         imagePath,
         imageHeight,
         imageWidth,
+        classType,
         imageData=None,
         otherData=None,
         flags=None,
@@ -192,6 +199,7 @@ class LabelFile(object):
             imageData=imageData,
             imageHeight=imageHeight,
             imageWidth=imageWidth,
+            classType=classType,
         )
         for key, value in otherData.items():
             assert key not in data

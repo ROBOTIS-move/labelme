@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>labelme</name>
+  <version>4.1.0</version>
+  <description>
+    Labeling tools.
+  </description>
+  <maintainer email="pyo@robotis.com">Pyo</maintainer>
+  <maintainer email="thlim@robotis.com">Darby Lim</maintainer>
+  <license>GPLv3</license>
+  <author email="ceg@robotis.com">Eungi Cho</author>
+</package>

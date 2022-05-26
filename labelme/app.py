@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import functools
+import json
 import math
 import os
 import os.path as osp
@@ -317,6 +318,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         toggle_keep_prev_mode.setChecked(self._config["keep_prev"])
 
+        add_point_mode = action(
+            self.tr("Add Points to Edge"),
+            self.toggleAddPointMode,
+            shortcuts["toggle_add_points_mode"],
+            None,
+            self.tr('Toggle "add point to edge" mode'),
+            checkable=True,
+        )
+        add_point_mode.setChecked(self._config["keep_prev"])
+
         createMode = action(
             self.tr("Create Polygons"),
             lambda: self.toggleDrawMode(False, createMode="polygon"),
@@ -433,14 +444,14 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         hideAll = action(
-            self.tr("&Hide\nPolygons"),
+            self.tr("&Hide\nAll"),
             functools.partial(self.togglePolygons, False),
             icon="eye",
             tip=self.tr("Hide all polygons"),
             enabled=False,
         )
         showAll = action(
-            self.tr("&Show\nPolygons"),
+            self.tr("&Show\nAll"),
             functools.partial(self.togglePolygons, True),
             icon="eye",
             tip=self.tr("Show all polygons"),
@@ -586,6 +597,7 @@ class MainWindow(QtWidgets.QMainWindow):
             close=close,
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
+            add_point_mode=add_point_mode,
             delete=delete,
             edit=edit,
             duplicate=duplicate,
@@ -626,6 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 removePoint,
                 None,
                 toggle_keep_prev_mode,
+                add_point_mode,
             ),
             # menu shown at right click
             menu=(
@@ -649,12 +662,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 close,
                 createMode,
                 createRectangleMode,
-                createCircleMode,
-                createLineMode,
-                createPointMode,
-                createLineStripMode,
                 editMode,
                 brightnessContrast,
+            ),
+            onLoadSegmentationActive=(
+                close,
+                createMode,
+                editMode,
+            ),
+            onLoadObject2dActive=(
+                close,
+                createRectangleMode,
+                editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
         )
@@ -738,6 +757,7 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile,
             None,
             createMode,
+            createRectangleMode,
             editMode,
             duplicate,
             copy,
@@ -745,6 +765,9 @@ class MainWindow(QtWidgets.QMainWindow):
             delete,
             undo,
             brightnessContrast,
+            None,
+            hideAll,
+            showAll,
             None,
             zoom,
             fitWidth,
@@ -875,12 +898,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        self.actions.createMode.setEnabled(True)
-        self.actions.createRectangleMode.setEnabled(True)
-        self.actions.createCircleMode.setEnabled(True)
-        self.actions.createLineMode.setEnabled(True)
-        self.actions.createPointMode.setEnabled(True)
-        self.actions.createLineStripMode.setEnabled(True)
+        if self._classType == "object-2d" or self._classType is None:
+            self.actions.createRectangleMode.setEnabled(True)
+        else:
+            self.actions.createRectangleMode.setEnabled(False)
+        if self._classType == "segmentation" or self._classType is None:
+            self.actions.createMode.setEnabled(True)
+        else:
+            self.actions.createMode.setEnabled(False)
+        self.actions.createCircleMode.setEnabled(False)
+        self.actions.createLineMode.setEnabled(False)
+        self.actions.createPointMode.setEnabled(False)
+        self.actions.createLineStripMode.setEnabled(False)
         title = __appname__
         if self.filename is not None:
             title = "{} - {}".format(title, self.filename)
@@ -895,8 +924,16 @@ class MainWindow(QtWidgets.QMainWindow):
         """Enable/Disable widgets which depend on an opened image."""
         for z in self.actions.zoomActions:
             z.setEnabled(value)
-        for action in self.actions.onLoadActive:
-            action.setEnabled(value)
+
+        if self._classType is None:
+            for action in self.actions.onLoadActive:
+                action.setEnabled(value)
+        elif self._classType == "segmentation":
+            for action in self.actions.onLoadSegmentationActive:
+                action.setEnabled(value)
+        elif self._classType == "object-2d":
+            for action in self.actions.onLoadObject2dActive:
+                action.setEnabled(value)
 
     def queueEvent(self, function):
         QtCore.QTimer.singleShot(0, function)
@@ -952,27 +989,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            self.actions.createMode.setEnabled(True)
-            self.actions.createRectangleMode.setEnabled(True)
-            self.actions.createCircleMode.setEnabled(True)
-            self.actions.createLineMode.setEnabled(True)
-            self.actions.createPointMode.setEnabled(True)
-            self.actions.createLineStripMode.setEnabled(True)
+            if self._classType is None or self._classType == 'segmentation':
+                self.actions.createMode.setEnabled(True)
+            else:
+                self.actions.createMode.setEnabled(False)
+            if self._classType is None or self._classType == 'object-2d':
+                self.actions.createRectangleMode.setEnabled(True)
+            else:
+                self.actions.createRectangleMode.setEnabled(False)
+            self.actions.createCircleMode.setEnabled(False)
+            self.actions.createLineMode.setEnabled(False)
+            self.actions.createPointMode.setEnabled(False)
+            self.actions.createLineStripMode.setEnabled(False)
         else:
             if createMode == "polygon":
                 self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
+                if self._classType is None or self._classType == 'object-2d':
+                    self.actions.createRectangleMode.setEnabled(True)
+                else:
+                    self.actions.createRectangleMode.setEnabled(False)
+                self.actions.createCircleMode.setEnabled(False)
+                self.actions.createLineMode.setEnabled(False)
+                self.actions.createPointMode.setEnabled(False)
+                self.actions.createLineStripMode.setEnabled(False)
             elif createMode == "rectangle":
-                self.actions.createMode.setEnabled(True)
+                if self._classType is None or self._classType == 'segmentation':
+                    self.actions.createMode.setEnabled(True)
+                else:
+                    self.actions.createMode.setEnabled(False)
                 self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
+                self.actions.createCircleMode.setEnabled(False)
+                self.actions.createLineMode.setEnabled(False)
+                self.actions.createPointMode.setEnabled(False)
+                self.actions.createLineStripMode.setEnabled(False)
             elif createMode == "line":
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
@@ -1258,7 +1307,7 @@ class MainWindow(QtWidgets.QMainWindow):
             flags[key] = flag
         try:
             imagePath = osp.relpath(self.imagePath, osp.dirname(filename))
-            imageData = self.imageData if self._config["store_data"] else None
+            imageData = None  # self.imageData if self._config["store_data"] else None
             if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
                 os.makedirs(osp.dirname(filename))
             lf.save(
@@ -1270,6 +1319,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 imageWidth=self.image.width(),
                 otherData=self.otherData,
                 flags=flags,
+                classType=self._classType,
             )
             self.labelFile = lf
             items = self.fileListWidget.findItems(
@@ -1534,9 +1584,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
         flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
+            self._classType = self.labelFile.classType
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 flags.update(self.labelFile.flags)
+        else:
+            self._classType = None
         self.loadFlags(flags)
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
@@ -1745,6 +1798,11 @@ class MainWindow(QtWidgets.QMainWindow):
             if fileName:
                 self.loadFile(fileName)
 
+        format_name = fileName.split('.')[-1]
+        json_file = fileName[:-len(format_name)] + 'json'
+        target_class = self.get_target_class(json_file)
+        self.choose_labels_class(target_class)
+
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
         if default_output_dir is None and self.filename:
@@ -1923,6 +1981,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleKeepPrevMode(self):
         self._config["keep_prev"] = not self._config["keep_prev"]
 
+    def toggleAddPointMode(self):
+        self._config["add_point"] = not self._config["add_point"]
+        self.canvas.addPointMode = self._config["add_point"]
+
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()
         self.canvas.update()
@@ -1983,6 +2045,11 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.importDirImages(targetDirPath)
 
+        try:
+            self.choose_labels_class(self._target_class)
+        except BaseException:  # noqa: B902
+            pass
+
     @property
     def imageList(self):
         lst = []
@@ -2033,6 +2100,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lastOpenDir = dirpath
         self.filename = None
         self.fileListWidget.clear()
+        self._target_class = None
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
                 continue
@@ -2049,6 +2117,12 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 item.setCheckState(Qt.Unchecked)
             self.fileListWidget.addItem(item)
+
+            format_name = filename.split('.')[-1]
+            json_file = filename[:-len(format_name)] + 'json'
+            target_class = self.get_target_class(json_file)
+            if target_class is not None:
+                self._target_class = target_class
         self.openNextImg(load=load)
 
     def scanAllImages(self, folderPath):
@@ -2065,3 +2139,26 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images = natsort.os_sorted(images)
         return images
+
+    def choose_labels_class(self, target_class=None):
+        if target_class is None:
+            for label_class in self._config['labels_class']:
+                for label_name in self._config['labels_class'][label_class]:
+                    self.labelDialog.addLabelHistory(label_name)
+        else:
+            for label_name in self._config['labels_class'][target_class]:
+                self.labelDialog.addLabelHistory(label_name)
+
+    def get_target_class(self, file_path):
+        target_class = None
+        if os.path.isfile(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+            except Exception as e:
+                raise LabelFileError(e)
+
+            if 'classType' in data:
+                target_class = data['classType']
+
+        return target_class

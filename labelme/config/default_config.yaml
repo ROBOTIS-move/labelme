@@ -5,6 +5,7 @@ keep_prev: false
 keep_prev_scale: false
 keep_prev_brightness: false
 keep_prev_contrast: false
+add_point: false
 logger_level: info
 
 flags: null
@@ -14,10 +15,44 @@ file_search: null
 sort_labels: true
 validate_label: null
 
+labels_class:
+  segmentation:
+    ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
+    'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'void']
+  object-2d:
+    ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
+    'walk', 'stop', 'light-out', 'traffic-sign']
+
 default_shape_color: [0, 255, 0]
-shape_color: auto  # null, 'auto', 'manual'
+shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
-label_colors: null
+label_colors:
+  pattern-block: [0, 102, 0]  # segmentation
+  non-pattern-block: [204, 255, 204]
+  curb : [102, 102, 255]
+  braille-block : [204, 204, 0]
+  cement : [51, 204, 204]
+  asphalt : [204, 51, 51]
+  cross-walk : [204, 204, 204]
+  speed-bump : [153, 102, 0]
+  sand : [102, 0, 153]
+  bicycle-road : [204, 51, 204]
+  deck : [255, 165, 0]
+  grass : [252, 107, 3]
+  void : [0, 0, 0]
+  person: [0, 0, 0]  # object-2d
+  bicycle: [128, 0, 0]
+  motorcycle : [0, 128, 0]
+  kickboard : [128, 128, 0]
+  robot : [0, 0, 128]
+  mailbox : [128, 0, 128]
+  car : [0, 128, 128]
+  bus : [128, 128, 128]
+  truck : [64, 0, 0]
+  stop : [192, 0, 0]
+  walk : [64, 128, 0]
+  light-out : [192, 128, 0]
+  traffic-sign : [64, 0, 128]
 
 shape:
   # drawing
@@ -103,4 +138,5 @@ shortcuts:
   add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
   toggle_keep_prev_mode: Ctrl+P
+  toggle_add_points_mode: Ctrl+B
   remove_selected_point: [Meta+H, Backspace]
