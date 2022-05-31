@@ -145,18 +145,8 @@ class Convertor:
         except:
             print('[{0}] folder : {1} error'.format(folder_name, file_name))
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_dir', help='input annotated directory')
-    parser.add_argument('--num_core', default=10, help='The number of process folder')
-    parser.add_argument('--output_dir', default=None, help='The output directory path')
-    parser.add_argument('--labeler_name', default='')
-    args = parser.parse_args()
 
-    input_dir = args.input_dir
-    output_dir = args.output_dir
-    num_core = args.num_core
-    labeler_name = args.labeler_name
+def convert_segments(input_dir, output_dir=None, num_core=10, labeler_name=''):
     class_data_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'class.yaml')
     _, folder_name = os.path.split(input_dir)
 
@@ -182,6 +172,18 @@ def main():
         convertor.multi_convert_json_to_mask(json_file)
 
     print('Completed convert [{0}] folder'.format(folder_name))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_dir', help='input annotated directory')
+    parser.add_argument('--num_core', default=10, help='The number of process folder')
+    parser.add_argument('--output_dir', default=None, help='The output directory path')
+    parser.add_argument('--labeler_name', default='')
+    args = parser.parse_args()
+
+    convert_segments(args.input_dir, args.output_dir, args.num_core, args.labeler_name)
+
 
 if __name__ == '__main__':
     main()
