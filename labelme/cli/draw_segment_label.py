@@ -39,7 +39,7 @@ class Convertor:
         print('===========================================')
 
         process_num, process_remainder = divmod(len(json_list), num_core)
-        pool = multiprocessing.Pool(processes=len(json_list))
+        pool = multiprocessing.Pool(processes=num_core)
         if len(json_list) <= num_core:
             pool.map(self.multi_convert_json_to_mask, json_list)
         else:
