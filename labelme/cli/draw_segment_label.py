@@ -44,12 +44,9 @@ class Convertor:
             pool.map(self.multi_convert_json_to_mask, json_list)
         else:
             for i in range(process_num):
-                if not i == process_num:
-                    pool.map(
-                        self.multi_convert_json_to_mask,
-                        json_list[i * num_core : (i+1) * num_core])
-                else:
-                    pool.map(self.multi_convert_json_to_mask, json_list[-process_remainder:])
+                pool.map(
+                    self.multi_convert_json_to_mask,
+                    json_list[i * num_core : (i+1) * num_core])
 
             pool.close()
             pool.join()
