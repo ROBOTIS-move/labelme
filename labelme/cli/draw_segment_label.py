@@ -20,17 +20,40 @@ from labelme import utils
 
 
 class Convertor:
-    def __init__(self, CONFIG, input_dir, output_dir):
+    def __init__(self, CONFIG, input_dir):
         self.segmentation_class, self.class_rgb = self.get_class(CONFIG)
-        self.INPUT_DIR = input_dir
-        if output_dir:
-            self.merge_save = True
-            self.OUTPUT_DIR = output_dir
-        else:
-            self.merge_save = False
-
+        _, self.folder_name = os.path.split(input_dir)
         self.origin_image_dir, self.masked_image_dir, self.overlayed_image_dir = \
-            self.created_output_dir(self.INPUT_DIR)
+            self.created_output_dir(input_dir)
+
+        json_list = glob.glob(os.path.join(input_dir, '*.json'))
+        num_core = multiprocessing.cpu_count()
+        num_core = num_core - (len(json_list) % num_core)
+
+        print('===========================================')
+        print('Convert mask image')
+        print('{0}The folder name : {1}'.format(' '*2, self.folder_name))
+        print('{0}The total number of the files : {1}'.format(' '*2, len(json_list)))
+        print('{0}The number of the process core : {1}'.format(' '*2, num_core))
+        print('===========================================')
+
+        process_num, process_remainder = divmod(len(json_list), num_core)
+        pool = multiprocessing.Pool(processes=len(json_list))
+        if len(json_list) <= num_core:
+            pool.map(self.multi_convert_json_to_mask, json_list)
+        else:
+            for i in range(process_num):
+                if not i == process_num:
+                    pool.map(
+                        self.multi_convert_json_to_mask,
+                        json_list[i * num_core : (i+1) * num_core])
+                else:
+                    pool.map(self.multi_convert_json_to_mask, json_list[-process_remainder:])
+
+            pool.close()
+            pool.join()
+
+        print('Completed convert [{0}] folder'.format(self.folder_name))
 
     def get_class(self, CONFIG):
         segmentation_class = []
@@ -44,16 +67,9 @@ class Convertor:
         return segmentation_class, mask_color_rgb
 
     def created_output_dir(self, dir_):
-        if self.merge_save:
-            dir_ = self.OUTPUT_DIR
-
         origin_image_dir = os.path.join(dir_, 'original_image')
         masked_image_dir = os.path.join(dir_, 'masked_image')
         overlayed_image_dir = os.path.join(dir_, 'overlayed_image')
-
-        if self.merge_save:
-            if not os.path.exists(origin_image_dir):
-                os.mkdir(origin_image_dir)
 
         if not os.path.exists(masked_image_dir):
             os.mkdir(masked_image_dir)
@@ -98,7 +114,6 @@ class Convertor:
         return image, json_data
 
     def multi_convert_json_to_mask(self, json_file):
-        _, folder_name = os.path.split(self.INPUT_DIR)
         try:
             file_name = os.path.splitext(os.path.basename(json_file))[0]
             image_name = file_name + '.jpg'
@@ -133,22 +148,16 @@ class Convertor:
                 copy.deepcopy(self.class_rgb),
                 self.segmentation_class)
 
-            if self.merge_save:
-                PIL.Image.fromarray(image).save(os.path.join(
-                    self.origin_image_dir,
-                    image_name))
-
             PIL.Image.fromarray(overlayed_image).save(os.path.join(
                 self.overlayed_image_dir,
                 image_name))
 
         except:
-            print('[{0}] folder : {1} error'.format(folder_name, file_name))
+            print('[{0}] folder : {1} error'.format(self.folder_name, file_name))
 
 
-def convert_segments(input_dir, output_dir=None, num_core=10, labeler_name=''):
+def convert_segments(input_dir):
     class_data_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'class.yaml')
-    _, folder_name = os.path.split(input_dir)
 
     try:
         print('Opening data file : {0}'.format(class_data_yaml))
@@ -158,32 +167,12 @@ def convert_segments(input_dir, output_dir=None, num_core=10, labeler_name=''):
         print('Error opening data yaml file!')
         sys.exit()
 
-    json_list = glob.glob(os.path.join(input_dir, '*.json'))
-
-    convertor = Convertor(CONFIG, input_dir, output_dir)
-
-    print('===========================================')
-    print('Convert mask image')
-    print('{0}The total number of the files : {1}'.format(' '*2, len(json_list)))
-    print('{0}The number of the process core : {1}'.format(' '*2, num_core))
-    print('===========================================')
-
-    for json_file in json_list:
-        convertor.multi_convert_json_to_mask(json_file)
-
-    print('Completed convert [{0}] folder'.format(folder_name))
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_dir', help='input annotated directory')
-    parser.add_argument('--num_core', default=10, help='The number of process folder')
-    parser.add_argument('--output_dir', default=None, help='The output directory path')
-    parser.add_argument('--labeler_name', default='')
-    args = parser.parse_args()
-
-    convert_segments(args.input_dir, args.output_dir, args.num_core, args.labeler_name)
+    Convertor(CONFIG, input_dir)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_dir', help='input annotated directory')
+    args = parser.parse_args()
+
+    convert_segments(args.input_dir)
