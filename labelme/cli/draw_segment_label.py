@@ -20,6 +20,8 @@ from labelme import utils
 
 class Convertor:
     def __init__(self, CONFIG, input_dir):
+        os.environ["QT_LOGGING_RULES"] = "qt5ct.debug=false"
+
         self.segmentation_class, self.class_rgb = self.get_class(CONFIG)
         _, self.folder_name = os.path.split(input_dir)
         self.origin_image_dir, self.masked_image_dir, self.overlayed_image_dir = \
