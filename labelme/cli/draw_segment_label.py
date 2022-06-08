@@ -7,7 +7,6 @@ import base64
 import copy
 import glob
 import json
-import math
 import multiprocessing
 import os
 import sys
