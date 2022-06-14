@@ -29,7 +29,14 @@ class Convertor:
 
         json_list = glob.glob(os.path.join(input_dir, '*.json'))
         num_core = multiprocessing.cpu_count()
-        num_core = num_core - (len(json_list) % num_core)
+        if num_core >= 10:
+            num_core = 10
+        elif num_core >= 5:
+            num_core = 5
+        elif num_core >= 2:
+            num_core = 2
+        else:
+            num_core = 1
 
         print('===========================================')
         print('Convert mask image')
