@@ -33,7 +33,7 @@ label_colors:
   braille-block : [204, 204, 0]
   cement : [51, 204, 204]
   asphalt : [204, 51, 51]
-  cross-walk : [204, 204, 204]
+  cross-walk : [64, 255, 0]
   speed-bump : [153, 102, 0]
   sand : [102, 0, 153]
   bicycle-road : [204, 51, 204]
