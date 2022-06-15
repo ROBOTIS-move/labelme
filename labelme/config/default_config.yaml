@@ -23,7 +23,7 @@ labels_class:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
     'walk', 'stop', 'light-out', 'traffic-sign']
 
-default_shape_color: [0, 255, 0]
+default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
 label_colors:
