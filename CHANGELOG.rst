@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.2.0 (2022-06-24)
+------------------
+
 4.1.0 (2022-05-27)
 ------------------
 * Changed matplotlib default version
