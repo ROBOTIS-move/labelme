@@ -23,17 +23,17 @@ labels_class:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
     'walk', 'stop', 'light-out', 'traffic-sign']
 
-default_shape_color: [0, 255, 0]
+default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
 label_colors:
   pattern-block: [0, 102, 0]  # segmentation
   non-pattern-block: [204, 255, 204]
   curb : [102, 102, 255]
-  braille-block : [204, 204, 0]
+  braille-block : [255, 255, 0]
   cement : [51, 204, 204]
   asphalt : [204, 51, 51]
-  cross-walk : [204, 204, 204]
+  cross-walk : [64, 255, 0]
   speed-bump : [153, 102, 0]
   sand : [102, 0, 153]
   bicycle-road : [204, 51, 204]
