@@ -4,6 +4,9 @@ Changelog for package labelme
 
 4.2.0 (2022-06-24)
 ------------------
+* Added multiprocessing of segmentation converter
+* Changed class color of cross-walk and braille-block
+* Contributors: Eungi Cho
 
 4.1.0 (2022-05-27)
 ------------------
