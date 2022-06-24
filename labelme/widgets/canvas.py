@@ -917,5 +917,5 @@ class Canvas(QtWidgets.QWidget):
         self.restoreCursor()
         self.pixmap = None
         self.shapesBackups = []
-        self.redoshapesBackups = []
+        self.redoShapesBackupsReset()
         self.update()
