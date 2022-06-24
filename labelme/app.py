@@ -1746,6 +1746,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
+        if self.imagePath:
+            if self._config["auto_save"] or self.actions.saveAuto.isChecked():
+                label_file = osp.splitext(self.imagePath)[0] + ".json"
+                if self.output_dir:
+                    label_file_without_path = osp.basename(label_file)
+                    label_file = osp.join(self.output_dir, label_file_without_path)
+                self.saveLabels(label_file)
+
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
