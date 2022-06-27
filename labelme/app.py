@@ -405,7 +405,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Copy Polygons"),
             self.copySelectedShape,
             shortcuts["copy_polygon"],
-            "copy_clipboard",
+            "copy",
             self.tr("Copy selected polygons to clipboard"),
             enabled=False,
         )
@@ -413,7 +413,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Paste Polygons"),
             self.pasteSelectedShape,
             shortcuts["paste_polygon"],
-            "paste",
+            "copy",
             self.tr("Paste copied polygons"),
             enabled=False,
         )
@@ -434,6 +434,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        redo = action(
+            self.tr("Redo"),
+            self.redoShapeEdit,
+            shortcuts["redo"],
+            "redo",
+            self.tr("Redo last add and edit of shape"),
+            enabled=False,
+        )
         undo = action(
             self.tr("Undo"),
             self.undoShapeEdit,
@@ -604,6 +612,7 @@ class MainWindow(QtWidgets.QMainWindow):
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
+            redo=redo,
             undo=undo,
             removePoint=removePoint,
             createMode=createMode,
@@ -632,6 +641,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 duplicate,
                 delete,
                 None,
+                redo,
                 undo,
                 undoLastPoint,
                 None,
@@ -654,6 +664,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 copy,
                 paste,
                 delete,
+                redo,
                 undo,
                 undoLastPoint,
                 removePoint,
@@ -763,6 +774,7 @@ class MainWindow(QtWidgets.QMainWindow):
             copy,
             paste,
             delete,
+            redo,
             undo,
             brightnessContrast,
             None,
@@ -879,6 +891,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setDirty(self):
         # Even if we autosave the file, we keep the ability to undo
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
         if self._config["auto_save"] or self.actions.saveAuto.isChecked():
@@ -965,11 +978,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Callbacks
 
+    def redoShapeEdit(self):
+        self.canvas.redoStoreShape()
+        self.labelList.clear()
+        self.loadShapes(self.canvas.shapes)
+        self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
+
     def undoShapeEdit(self):
         self.canvas.restoreShape()
         self.labelList.clear()
         self.loadShapes(self.canvas.shapes)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
 
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
@@ -983,6 +1004,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not drawing)
         self.actions.undoLastPoint.setEnabled(drawing)
         self.actions.undo.setEnabled(not drawing)
+        self.canvas.redoShapesBackupsReset()
+        self.actions.redo.setEnabled(not drawing)
         self.actions.delete.setEnabled(not drawing)
 
     def toggleDrawMode(self, edit=True, createMode="polygon"):
@@ -1408,6 +1431,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
+            self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
             self.setDirty()
         else:
             self.canvas.undoLastLine()
