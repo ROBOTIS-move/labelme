@@ -228,6 +228,7 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
+        self.repaint()
 
         # Polygon drawing.
         if self.drawing():
@@ -674,6 +675,24 @@ class Canvas(QtWidgets.QWidget):
             drawing_shape.addPoint(self.line[1])
             drawing_shape.fill = True
             drawing_shape.paint(p)
+
+        create_rectangle_mode = \
+            self.drawing() and \
+            self.createMode == "rectangle" and \
+            not self.prevMovePoint.isNull() and \
+            not self.outOfPixmap(self.prevMovePoint)
+        if create_rectangle_mode:
+            p.setPen(QtGui.QColor(0, 0, 0))
+            p.drawLine(
+                int(self.prevMovePoint.x()),
+                0,
+                int(self.prevMovePoint.x()),
+                int(self.pixmap.height()))
+            p.drawLine(
+                0,
+                int(self.prevMovePoint.y()),
+                int(self.pixmap.width()),
+                int(self.prevMovePoint.y()))
 
         p.end()
 
