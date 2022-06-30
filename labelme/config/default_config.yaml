@@ -21,7 +21,7 @@ labels_class:
     'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'void']
   object-2d:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
-    'walk', 'stop', 'light-out', 'traffic-sign']
+    'walk', 'stop', 'light-out', 'traffic-sign', 'unknown']
 
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
@@ -40,7 +40,7 @@ label_colors:
   deck : [255, 165, 0]
   grass : [252, 107, 3]
   void : [0, 0, 0]
-  person: [0, 0, 0]  # object-2d
+  person: [252, 107, 3]  # object-2d
   bicycle: [128, 0, 0]
   motorcycle : [0, 128, 0]
   kickboard : [128, 128, 0]
@@ -53,6 +53,7 @@ label_colors:
   walk : [64, 128, 0]
   light-out : [192, 128, 0]
   traffic-sign : [64, 0, 128]
+  unknown : [204, 255, 204]
 
 shape:
   # drawing
