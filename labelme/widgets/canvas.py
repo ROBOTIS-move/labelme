@@ -682,7 +682,7 @@ class Canvas(QtWidgets.QWidget):
             not self.prevMovePoint.isNull() and \
             not self.outOfPixmap(self.prevMovePoint)
         if create_rectangle_mode:
-            p.setPen(QtGui.QColor(0, 0, 0))
+            p.setPen(QtGui.QColor(0, 0, 255))
             p.drawLine(
                 int(self.prevMovePoint.x()),
                 0,
