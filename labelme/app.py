@@ -328,6 +328,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         add_point_mode.setChecked(self._config["add_point"])
 
+        self.display_label_option = action(
+            self.tr("Display label name"),
+            self.togglePaintLabelsOption,
+            shortcuts["display_label_name"],
+            None,
+            self.tr('Toggle "display label name" mode'),
+            checkable=True,
+        )
+        self.display_label_option.setChecked(self._config["display_label_option"])
+
         createMode = action(
             self.tr("Create Polygons"),
             lambda: self.toggleDrawMode(False, createMode="polygon"),
@@ -727,6 +737,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
+                self.display_label_option,
                 None,
                 fill_drawing,
                 None,
@@ -1201,6 +1212,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.edit.setEnabled(n_selected == 1)
 
     def addLabel(self, shape):
+        shape.paint_label = self.display_label_option.isChecked()
         if shape.group_id is None:
             text = shape.label
         else:
@@ -2019,6 +2031,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleAddPointMode(self):
         self._config["add_point"] = not self._config["add_point"]
         self.canvas.addPointMode = self._config["add_point"]
+
+    def togglePaintLabelsOption(self):
+        for shape in self.canvas.shapes:
+            shape.paint_label = self.display_label_option.isChecked()
 
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()
