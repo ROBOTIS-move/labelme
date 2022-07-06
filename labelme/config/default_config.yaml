@@ -6,6 +6,7 @@ keep_prev_scale: false
 keep_prev_brightness: false
 keep_prev_contrast: false
 add_point: false
+single_class: false
 display_label_option: true
 logger_level: info
 
@@ -142,5 +143,6 @@ shortcuts:
   edit_label: Ctrl+E
   toggle_keep_prev_mode: Ctrl+P
   toggle_add_points_mode: Ctrl+B
+  single_class_mode: Ctrl+Shift+B
   display_label_name: Ctrl+L
   remove_selected_point: [Meta+H, Backspace]
