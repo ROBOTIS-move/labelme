@@ -2211,5 +2211,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if 'classType' in data:
                 target_class = data['classType']
+                if target_class == 'segmentation':
+                    target_class = 'outdoor_segmentation'
+                elif target_class == 'object-2d':
+                    target_class = 'outdoor_detection'
 
         return target_class
