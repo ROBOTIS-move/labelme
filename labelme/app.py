@@ -922,11 +922,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        if self._classType == "outdoor_detection" or self._classType is None:
+        if 'detection' in self._classType or self._classType is None:
             self.actions.createRectangleMode.setEnabled(True)
         else:
             self.actions.createRectangleMode.setEnabled(False)
-        if self._classType == "outdoor_segmentation" or self._classType is None:
+        if 'segmentation' in self._classType or self._classType is None:
             self.actions.createMode.setEnabled(True)
         else:
             self.actions.createMode.setEnabled(False)
@@ -952,10 +952,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._classType is None:
             for action in self.actions.onLoadActive:
                 action.setEnabled(value)
-        elif self._classType == "outdoor_segmentation":
+        elif 'segmentation' in self._classType:
             for action in self.actions.onLoadSegmentationActive:
                 action.setEnabled(value)
-        elif self._classType == "outdoor_detection":
+        elif 'detection' in self._classType:
             for action in self.actions.onLoadObject2dActive:
                 action.setEnabled(value)
 
@@ -1023,11 +1023,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if self._classType is None or self._classType == 'outdoor_segmentation':
+            if self._classType is None or 'segmentation' in self._classType:
                 self.actions.createMode.setEnabled(True)
             else:
                 self.actions.createMode.setEnabled(False)
-            if self._classType is None or self._classType == 'outdoor_detection':
+            if self._classType is None or 'detection' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
             else:
                 self.actions.createRectangleMode.setEnabled(False)
@@ -1038,7 +1038,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             if createMode == "polygon":
                 self.actions.createMode.setEnabled(False)
-                if self._classType is None or self._classType == 'outdoor_detection':
+                if self._classType is None or 'detection' in self._classType:
                     self.actions.createRectangleMode.setEnabled(True)
                 else:
                     self.actions.createRectangleMode.setEnabled(False)
@@ -1047,7 +1047,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createPointMode.setEnabled(False)
                 self.actions.createLineStripMode.setEnabled(False)
             elif createMode == "rectangle":
-                if self._classType is None or self._classType == 'outdoor_segmentation':
+                if self._classType is None or 'segmentation' in self._classType:
                     self.actions.createMode.setEnabled(True)
                 else:
                     self.actions.createMode.setEnabled(False)

@@ -23,6 +23,10 @@ labels_class:
   outdoor_detection:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
     'walk', 'stop', 'light-out', 'traffic-sign', 'unknown']
+  indoor_segmentation:
+    ['1_panel', '2_rect-btn', '3_circle-btn', '4_sticker', '5_admin-key', '6_rect-circle-btn',
+    '7_Indicator', '8_handi-symbol', '9_screw', '10_special-btn1', '11_special-btn2',
+    '12_special-btn3', '13_special-btn4', '14_void']
 
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
@@ -55,6 +59,20 @@ label_colors:
   light-out : [192, 128, 0]
   traffic-sign : [64, 0, 128]
   unknown : [204, 255, 204]
+  1_panel: [204, 43, 41]  # indoor_segmentation
+  2_rect-btn: [145, 104, 190]
+  3_circle-btn: [135, 86, 75]
+  4_sticker: [219, 120, 195]
+  5_admin-key: [127, 127, 127]
+  6_rect-circle-btn: [72, 190, 207]
+  7_Indicator: [72, 190, 207]
+  8_handi-symbol: [187, 189, 18]
+  9_screw: [53, 119, 181]
+  10_special-btn1: [145, 104, 190]
+  11_special-btn2: [135, 86, 75]
+  12_special-btn3: [219, 120, 195]
+  13_special-btn4: [127, 127, 127]
+  14_void: [72, 190, 207]
 
 shape:
   # drawing
