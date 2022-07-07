@@ -97,6 +97,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._copied_shapes = None
 
+        self._last_label = None
+
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
             parent=self,
@@ -327,6 +329,16 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
         )
         add_point_mode.setChecked(self._config["add_point"])
+
+        single_class_mode = action(
+            self.tr("Single class mode"),
+            self.toggleSingleClassMode,
+            shortcuts["single_class_mode"],
+            None,
+            self.tr('Toggle "single class" mode'),
+            checkable=True,
+        )
+        single_class_mode.setChecked(self._config["add_point"])
 
         self.display_label_option = action(
             self.tr("Display label name"),
@@ -616,6 +628,7 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
             add_point_mode=add_point_mode,
+            single_class_mode=single_class_mode,
             delete=delete,
             edit=edit,
             duplicate=duplicate,
@@ -659,6 +672,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 toggle_keep_prev_mode,
                 add_point_mode,
+                single_class_mode,
             ),
             # menu shown at right click
             menu=(
@@ -1423,7 +1437,10 @@ class MainWindow(QtWidgets.QMainWindow):
         group_id = None
         if self._config["display_label_popup"] or not text:
             previous_text = self.labelDialog.edit.text()
-            text, flags, group_id = self.labelDialog.popUp(text)
+            if self._config["single_class"] and self._last_label:
+                text = self._last_label
+            else:
+                text, flags, group_id = self.labelDialog.popUp(text)
             if not text:
                 self.labelDialog.edit.setText(previous_text)
 
@@ -1445,6 +1462,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.undo.setEnabled(True)
             self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
             self.setDirty()
+            self._last_label = text
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
@@ -2031,6 +2049,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleAddPointMode(self):
         self._config["add_point"] = not self._config["add_point"]
         self.canvas.addPointMode = self._config["add_point"]
+
+    def toggleSingleClassMode(self):
+        self._config["single_class"] = not self._config["single_class"]
 
     def togglePaintLabelsOption(self):
         for shape in self.canvas.shapes:
