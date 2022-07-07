@@ -134,6 +134,10 @@ class LabelFile(object):
             ]
             if 'classType' in data:
                 classType = data['classType']
+                if classType == 'segmentation':
+                    classType = 'outdoor_segmentation'
+                elif classType == 'object-2d':
+                    classType = 'outdoor_detection'
             else:
                 classType = None
         except Exception as e:
