@@ -24,7 +24,7 @@ labels_class:
   outdoor_detection:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
     'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
-    'walk', 'stop', 'light-out', 'countdown-walk', 'countdown-light-out']
+    'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
     ['1_panel', '2_rect-btn', '3_circle-btn', '4_sticker', '5_admin-key', '6_rect-circle-btn',
     '7_Indicator', '8_handi-symbol', '9_screw', '10_special-btn1', '11_special-btn2',
