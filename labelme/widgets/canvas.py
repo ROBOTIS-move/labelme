@@ -589,7 +589,7 @@ class Canvas(QtWidgets.QWidget):
         dp = pos - self.prevPoint
         if dp:
             for shape in shapes:
-                shape.moveBy(dp)
+                shape.moveBy(dp, self.pixmap)
             self.prevPoint = pos
             return True
         return False

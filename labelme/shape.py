@@ -282,8 +282,17 @@ class Shape(object):
     def boundingRect(self):
         return self.makePath().boundingRect()
 
-    def moveBy(self, offset):
-        self.points = [p + offset for p in self.points]
+    def moveBy(self, offset, pixemap):
+        points = []
+        for p in self.points:
+            point = p + offset
+            correct_x = point.x() >= 0 and point.x() <= pixemap.width()
+            correct_y = point.y() >= 0 and point.y() <= pixemap.height()
+            if correct_x and correct_y:
+                points.append(point)
+            else:
+                return
+        self.points = points
 
     def moveVertexBy(self, i, offset):
         self.points[i] = self.points[i] + offset
