@@ -18,11 +18,15 @@ outdoor_detection:
    'motorcycle',
    'kickboard',
    'robot',
+   'animal',
    'mailbox',
+   'traffic-sign',
+   'unknown',
    'car',
    'bus',
    'truck',
    'stop',
    'walk',
    'light-out',
-   'traffic-sign']
+   'countdown-walk',
+   'countdown-light-out']

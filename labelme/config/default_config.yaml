@@ -22,8 +22,9 @@ labels_class:
     ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
     'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'void']
   outdoor_detection:
-    ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard', 'robot', 'mailbox',
-    'walk', 'stop', 'light-out', 'traffic-sign', 'unknown']
+    ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
+    'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
+    'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
     ['1_panel', '2_rect-btn', '3_circle-btn', '4_sticker', '5_admin-key', '6_rect-circle-btn',
     '7_Indicator', '8_handi-symbol', '9_screw', '10_special-btn1', '11_special-btn2',
@@ -51,13 +52,16 @@ label_colors:
   motorcycle : [0, 128, 0]
   kickboard : [128, 128, 0]
   robot : [0, 0, 128]
+  animal : [102, 0, 153]
   mailbox : [128, 0, 128]
   car : [0, 128, 128]
   bus : [128, 128, 128]
   truck : [64, 0, 0]
   stop : [192, 0, 0]
   walk : [64, 128, 0]
-  light-out : [192, 128, 0]
+  light-out : [51, 204, 204]
+  countdown-walk : [255, 165, 0]
+  countdown-light-out : [153, 102, 0]
   traffic-sign : [64, 0, 128]
   unknown : [204, 255, 204]
   1_panel: [204, 43, 41]  # indoor_segmentation
