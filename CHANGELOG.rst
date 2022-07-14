@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.3.0 (2022-07-15)
+------------------
+
 4.2.0 (2022-06-24)
 ------------------
 * Added multiprocessing of segmentation converter
