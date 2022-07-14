@@ -4,6 +4,15 @@ Changelog for package labelme
 
 4.3.0 (2022-07-15)
 ------------------
+* Added redo function
+* Added exception handling of auto save mode
+* Added bounding box draw guide lines
+* Added display label option of create rectangle mode
+* Added category for elevator button segmentation
+* Added single class labeling mode
+* Added new outdoor detection classes such as animal, unknown, countdown-walk and countdown-light-out
+* Modified moving label function in edit mode
+* Contributors: Eungi Cho
 
 4.2.0 (2022-06-24)
 ------------------
