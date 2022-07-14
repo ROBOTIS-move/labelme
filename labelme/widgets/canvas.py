@@ -55,6 +55,7 @@ class Canvas(QtWidgets.QWidget):
         self.mode = self.EDIT
         self.shapes = []
         self.shapesBackups = []
+        self.redoShapesBackups = []
         self.current = None
         self.selectedShapes = []  # save the selected shapes here
         self.selectedShapesCopy = []
@@ -145,7 +146,7 @@ class Canvas(QtWidgets.QWidget):
         # and app.py::loadShapes and our own Canvas::loadShapes function.
         if not self.isShapeRestorable:
             return
-        self.shapesBackups.pop()  # latest
+        self.redoShapesBackups.append(self.shapesBackups.pop())  # latest
 
         # The application will eventually call Canvas.loadShapes which will
         # push this right back onto the stack.
@@ -155,6 +156,25 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             shape.selected = False
         self.update()
+
+    @property
+    def isShapeRedostorable(self):
+        if len(self.redoShapesBackups) < 1:
+            return False
+        return True
+
+    def redoStoreShape(self):
+        if not self.isShapeRedostorable:
+            return
+        shapesBackup = self.redoShapesBackups.pop()
+        self.shapes = shapesBackup
+        self.selectedShapes = []
+        for shape in self.shapes:
+            shape.selected = False
+        self.update()
+    
+    def redoShapesBackupsReset(self):
+        self.redoShapesBackups = []
 
     def enterEvent(self, ev):
         self.overrideCursor(self._cursor)
@@ -208,6 +228,7 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
+        self.repaint()
 
         # Polygon drawing.
         if self.drawing():
@@ -266,6 +287,7 @@ class Canvas(QtWidgets.QWidget):
 
         # Polygon/Vertex moving.
         if QtCore.Qt.LeftButton & ev.buttons():
+            self.redoShapesBackupsReset()
             if self.selectedVertex():
                 self.boundedMoveVertex(pos)
                 self.repaint()
@@ -567,7 +589,7 @@ class Canvas(QtWidgets.QWidget):
         dp = pos - self.prevPoint
         if dp:
             for shape in shapes:
-                shape.moveBy(dp)
+                shape.moveBy(dp, self.pixmap)
             self.prevPoint = pos
             return True
         return False
@@ -653,6 +675,24 @@ class Canvas(QtWidgets.QWidget):
             drawing_shape.addPoint(self.line[1])
             drawing_shape.fill = True
             drawing_shape.paint(p)
+
+        create_rectangle_mode = \
+            self.drawing() and \
+            self.createMode == "rectangle" and \
+            not self.prevMovePoint.isNull() and \
+            not self.outOfPixmap(self.prevMovePoint)
+        if create_rectangle_mode:
+            p.setPen(QtGui.QColor(0, 0, 255))
+            p.drawLine(
+                int(self.prevMovePoint.x()),
+                0,
+                int(self.prevMovePoint.x()),
+                int(self.pixmap.height()))
+            p.drawLine(
+                0,
+                int(self.prevMovePoint.y()),
+                int(self.pixmap.width()),
+                int(self.prevMovePoint.y()))
 
         p.end()
 
@@ -896,4 +936,5 @@ class Canvas(QtWidgets.QWidget):
         self.restoreCursor()
         self.pixmap = None
         self.shapesBackups = []
+        self.redoShapesBackupsReset()
         self.update()

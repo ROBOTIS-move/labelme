@@ -97,6 +97,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._copied_shapes = None
 
+        self._last_label = None
+
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
             parent=self,
@@ -283,9 +285,9 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         saveAuto = action(
-            text=self.tr("Save &Automatically"),
-            slot=lambda x: self.actions.saveAuto.setChecked(x),
-            icon="save",
+            self.tr("Save &Automatically"),
+            self.toggleAutoSaveMode,
+            icon=None,
             tip=self.tr("Save automatically"),
             checkable=True,
             enabled=True,
@@ -326,7 +328,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr('Toggle "add point to edge" mode'),
             checkable=True,
         )
-        add_point_mode.setChecked(self._config["keep_prev"])
+        add_point_mode.setChecked(self._config["add_point"])
+
+        single_class_mode = action(
+            self.tr("Single class mode"),
+            self.toggleSingleClassMode,
+            shortcuts["single_class_mode"],
+            None,
+            self.tr('Toggle "single class" mode'),
+            checkable=True,
+        )
+        single_class_mode.setChecked(self._config["add_point"])
+
+        self.display_label_option = action(
+            self.tr("Display label name"),
+            self.togglePaintLabelsOption,
+            shortcuts["display_label_name"],
+            None,
+            self.tr('Toggle "display label name" mode'),
+            checkable=True,
+        )
+        self.display_label_option.setChecked(self._config["display_label_option"])
 
         createMode = action(
             self.tr("Create Polygons"),
@@ -405,7 +427,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Copy Polygons"),
             self.copySelectedShape,
             shortcuts["copy_polygon"],
-            "copy_clipboard",
+            "copy",
             self.tr("Copy selected polygons to clipboard"),
             enabled=False,
         )
@@ -413,7 +435,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Paste Polygons"),
             self.pasteSelectedShape,
             shortcuts["paste_polygon"],
-            "paste",
+            "copy",
             self.tr("Paste copied polygons"),
             enabled=False,
         )
@@ -434,6 +456,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        redo = action(
+            self.tr("Redo"),
+            self.redoShapeEdit,
+            shortcuts["redo"],
+            "redo",
+            self.tr("Redo last add and edit of shape"),
+            enabled=False,
+        )
         undo = action(
             self.tr("Undo"),
             self.undoShapeEdit,
@@ -598,12 +628,14 @@ class MainWindow(QtWidgets.QMainWindow):
             deleteFile=deleteFile,
             toggleKeepPrevMode=toggle_keep_prev_mode,
             add_point_mode=add_point_mode,
+            single_class_mode=single_class_mode,
             delete=delete,
             edit=edit,
             duplicate=duplicate,
             copy=copy,
             paste=paste,
             undoLastPoint=undoLastPoint,
+            redo=redo,
             undo=undo,
             removePoint=removePoint,
             createMode=createMode,
@@ -632,6 +664,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 duplicate,
                 delete,
                 None,
+                redo,
                 undo,
                 undoLastPoint,
                 None,
@@ -639,6 +672,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 toggle_keep_prev_mode,
                 add_point_mode,
+                single_class_mode,
             ),
             # menu shown at right click
             menu=(
@@ -654,6 +688,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 copy,
                 paste,
                 delete,
+                redo,
                 undo,
                 undoLastPoint,
                 removePoint,
@@ -716,6 +751,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
+                self.display_label_option,
                 None,
                 fill_drawing,
                 None,
@@ -763,6 +799,7 @@ class MainWindow(QtWidgets.QMainWindow):
             copy,
             paste,
             delete,
+            redo,
             undo,
             brightnessContrast,
             None,
@@ -879,6 +916,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setDirty(self):
         # Even if we autosave the file, we keep the ability to undo
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
         if self._config["auto_save"] or self.actions.saveAuto.isChecked():
@@ -898,11 +936,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        if self._classType == "object-2d" or self._classType is None:
+        if 'detection' in self._classType or self._classType is None:
             self.actions.createRectangleMode.setEnabled(True)
         else:
             self.actions.createRectangleMode.setEnabled(False)
-        if self._classType == "segmentation" or self._classType is None:
+        if 'segmentation' in self._classType or self._classType is None:
             self.actions.createMode.setEnabled(True)
         else:
             self.actions.createMode.setEnabled(False)
@@ -928,10 +966,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._classType is None:
             for action in self.actions.onLoadActive:
                 action.setEnabled(value)
-        elif self._classType == "segmentation":
+        elif 'segmentation' in self._classType:
             for action in self.actions.onLoadSegmentationActive:
                 action.setEnabled(value)
-        elif self._classType == "object-2d":
+        elif 'detection' in self._classType:
             for action in self.actions.onLoadObject2dActive:
                 action.setEnabled(value)
 
@@ -965,11 +1003,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # Callbacks
 
+    def redoShapeEdit(self):
+        self.canvas.redoStoreShape()
+        self.labelList.clear()
+        self.loadShapes(self.canvas.shapes)
+        self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
+
     def undoShapeEdit(self):
         self.canvas.restoreShape()
         self.labelList.clear()
         self.loadShapes(self.canvas.shapes)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
 
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
@@ -983,17 +1029,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.editMode.setEnabled(not drawing)
         self.actions.undoLastPoint.setEnabled(drawing)
         self.actions.undo.setEnabled(not drawing)
+        self.canvas.redoShapesBackupsReset()
+        self.actions.redo.setEnabled(not drawing)
         self.actions.delete.setEnabled(not drawing)
 
     def toggleDrawMode(self, edit=True, createMode="polygon"):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if self._classType is None or self._classType == 'segmentation':
+            if self._classType is None or 'segmentation' in self._classType:
                 self.actions.createMode.setEnabled(True)
             else:
                 self.actions.createMode.setEnabled(False)
-            if self._classType is None or self._classType == 'object-2d':
+            if self._classType is None or 'detection' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
             else:
                 self.actions.createRectangleMode.setEnabled(False)
@@ -1004,7 +1052,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             if createMode == "polygon":
                 self.actions.createMode.setEnabled(False)
-                if self._classType is None or self._classType == 'object-2d':
+                if self._classType is None or 'detection' in self._classType:
                     self.actions.createRectangleMode.setEnabled(True)
                 else:
                     self.actions.createRectangleMode.setEnabled(False)
@@ -1013,7 +1061,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createPointMode.setEnabled(False)
                 self.actions.createLineStripMode.setEnabled(False)
             elif createMode == "rectangle":
-                if self._classType is None or self._classType == 'segmentation':
+                if self._classType is None or 'segmentation' in self._classType:
                     self.actions.createMode.setEnabled(True)
                 else:
                     self.actions.createMode.setEnabled(False)
@@ -1178,6 +1226,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.edit.setEnabled(n_selected == 1)
 
     def addLabel(self, shape):
+        shape.paint_label = self.display_label_option.isChecked()
         if shape.group_id is None:
             text = shape.label
         else:
@@ -1388,7 +1437,10 @@ class MainWindow(QtWidgets.QMainWindow):
         group_id = None
         if self._config["display_label_popup"] or not text:
             previous_text = self.labelDialog.edit.text()
-            text, flags, group_id = self.labelDialog.popUp(text)
+            if self._config["single_class"] and self._last_label:
+                text = self._last_label
+            else:
+                text, flags, group_id = self.labelDialog.popUp(text)
             if not text:
                 self.labelDialog.edit.setText(previous_text)
 
@@ -1408,7 +1460,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
+            self.actions.redo.setEnabled(self.canvas.isShapeRedostorable)
             self.setDirty()
+            self._last_label = text
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
@@ -1746,6 +1800,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
+        if self.imagePath:
+            if self._config["auto_save"] or self.actions.saveAuto.isChecked():
+                label_file = osp.splitext(self.imagePath)[0] + ".json"
+                if self.output_dir:
+                    label_file_without_path = osp.basename(label_file)
+                    label_file = osp.join(self.output_dir, label_file_without_path)
+                self.saveLabels(label_file)
+
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
@@ -1981,9 +2043,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleKeepPrevMode(self):
         self._config["keep_prev"] = not self._config["keep_prev"]
 
+    def toggleAutoSaveMode(self):
+        self._config["auto_save"] = not self._config["auto_save"]
+
     def toggleAddPointMode(self):
         self._config["add_point"] = not self._config["add_point"]
         self.canvas.addPointMode = self._config["add_point"]
+
+    def toggleSingleClassMode(self):
+        self._config["single_class"] = not self._config["single_class"]
+
+    def togglePaintLabelsOption(self):
+        for shape in self.canvas.shapes:
+            shape.paint_label = self.display_label_option.isChecked()
 
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()
@@ -2160,5 +2232,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if 'classType' in data:
                 target_class = data['classType']
+                if target_class == 'segmentation':
+                    target_class = 'outdoor_segmentation'
+                elif target_class == 'object-2d':
+                    target_class = 'outdoor_detection'
 
         return target_class

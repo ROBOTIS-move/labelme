@@ -28,7 +28,7 @@ class Convertor:
         self.input_dir = input_dir
         self.output_dir = self.create_folder(input_dir + '/obj')
 
-        self.class_names = CONFIG['object-2d']
+        self.class_names = CONFIG['outdoor_detection']
 
     def create_folder(self, _dir):
         if not os.path.exists(_dir):

@@ -63,7 +63,7 @@ class Convertor:
     def get_class(self, CONFIG):
         segmentation_class = []
         mask_color_rgb = []
-        for class_name, color in CONFIG['segmentation'].items():
+        for class_name, color in CONFIG['outdoor_segmentation'].items():
             segmentation_class.append(class_name)
             mask_color_rgb.append(color)
 

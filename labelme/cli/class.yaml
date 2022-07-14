@@ -1,4 +1,4 @@
-segmentation:
+outdoor_segmentation:
   pattern-block: [0, 102, 0]
   non-pattern-block: [204, 255, 204]
   curb : [102, 102, 255]
@@ -12,17 +12,21 @@ segmentation:
   deck : [255, 165, 0]
   grass : [252, 107, 3]
   void : [0, 0, 0]
-object-2d:
+outdoor_detection:
   ['person',
    'bicycle',
    'motorcycle',
    'kickboard',
    'robot',
+   'animal',
    'mailbox',
+   'traffic-sign',
+   'unknown',
    'car',
    'bus',
    'truck',
    'stop',
    'walk',
    'light-out',
-   'traffic-sign']
+   'countdown-walk',
+   'countdown-light-out']

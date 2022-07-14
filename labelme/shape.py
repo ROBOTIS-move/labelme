@@ -1,5 +1,6 @@
 import copy
 import math
+import sys
 
 from qtpy import QtCore
 from qtpy import QtGui
@@ -43,6 +44,7 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
+    label_font_size = 10
 
     def __init__(
         self,
@@ -51,6 +53,7 @@ class Shape(object):
         shape_type=None,
         flags=None,
         group_id=None,
+        paint_label=False,
     ):
         self.label = label
         self.group_id = group_id
@@ -60,6 +63,7 @@ class Shape(object):
         self.shape_type = shape_type
         self.flags = flags
         self.other_data = {}
+        self.paint_label = paint_label
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
@@ -151,6 +155,25 @@ class Shape(object):
                     line_path.addRect(rectangle)
                 for i in range(len(self.points)):
                     self.drawVertex(vrtx_path, i)
+
+                # Draw text at the top-left
+                if self.paint_label:
+                    min_x = sys.maxsize
+                    min_y = sys.maxsize
+                    min_y_label = int(1.25 * self.label_font_size)
+                    for point in self.points:
+                        min_x = min(min_x, point.x())
+                        min_y = min(min_y, point.y())
+                    if min_x != sys.maxsize and min_y != sys.maxsize:
+                        font = QtGui.QFont()
+                        font.setPointSize(self.label_font_size)
+                        font.setBold(True)
+                        painter.setFont(font)
+                        if self.label is None:
+                            self.label = ""
+                        if min_y < min_y_label:
+                            min_y += min_y_label
+                        painter.drawText(int(min_x), int(min_y), self.label)
             elif self.shape_type == "circle":
                 assert len(self.points) in [1, 2]
                 if len(self.points) == 2:
@@ -259,8 +282,17 @@ class Shape(object):
     def boundingRect(self):
         return self.makePath().boundingRect()
 
-    def moveBy(self, offset):
-        self.points = [p + offset for p in self.points]
+    def moveBy(self, offset, pixemap):
+        points = []
+        for p in self.points:
+            point = p + offset
+            correct_x = point.x() >= 0 and point.x() <= pixemap.width()
+            correct_y = point.y() >= 0 and point.y() <= pixemap.height()
+            if correct_x and correct_y:
+                points.append(point)
+            else:
+                return
+        self.points = points
 
     def moveVertexBy(self, i, offset):
         self.points[i] = self.points[i] + offset
