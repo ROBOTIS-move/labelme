@@ -1421,6 +1421,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def labelOrderChanged(self):
         self.setDirty()
         self.canvas.loadShapes([item.shape() for item in self.labelList])
+        for shape in self.canvas.shapes:
+            shape.selected = False
 
     # Callback functions:
 
