@@ -17,7 +17,7 @@ CURSOR_DRAW = QtCore.Qt.CrossCursor
 CURSOR_MOVE = QtCore.Qt.ClosedHandCursor
 CURSOR_GRAB = QtCore.Qt.OpenHandCursor
 
-MOVE_SPEED = 5.0
+MOVE_SPEED = 2.0
 
 
 class Canvas(QtWidgets.QWidget):
