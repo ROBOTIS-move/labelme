@@ -172,7 +172,7 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             shape.selected = False
         self.update()
-    
+
     def redoShapesBackupsReset(self):
         self.redoShapesBackups = []
 
@@ -228,7 +228,8 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
-        self.repaint()
+        if self.createMode == "rectangle":
+            self.repaint()
 
         # Polygon drawing.
         if self.drawing():
