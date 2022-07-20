@@ -131,7 +131,8 @@ class Convertor:
                 image.shape,
                 polygon_points,
                 detected_labels,
-                self.segmentation_class)
+                self.segmentation_class,
+                file_name=file_name)
 
             label_names = [None] * (max(detected_labels.values()) + 1)
 
@@ -158,7 +159,7 @@ class Convertor:
                 image_name))
 
         except:
-            print('[{0}] folder : {1} error'.format(self.folder_name, file_name))
+            pass
 
 
 def convert_segments(input_dir):
