@@ -476,6 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
         hideAll = action(
             self.tr("&Hide\nAll"),
             functools.partial(self.togglePolygons, False),
+            shortcuts["hide_all"],
             icon="eye",
             tip=self.tr("Hide all polygons"),
             enabled=False,
@@ -483,6 +484,7 @@ class MainWindow(QtWidgets.QMainWindow):
         showAll = action(
             self.tr("&Show\nAll"),
             functools.partial(self.togglePolygons, True),
+            shortcuts["show_all"],
             icon="eye",
             tip=self.tr("Show all polygons"),
             enabled=False,
