@@ -26,9 +26,8 @@ labels_class:
     'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
     'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
-    ['1_panel', '2_rect-btn', '3_circle-btn', '4_sticker', '5_admin-key', '6_rect-circle-btn',
-    '7_Indicator', '8_handi-symbol', '9_screw', '10_special-btn1', '11_special-btn2',
-    '12_special-btn3', '13_special-btn4', '14_void']
+    ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
+    'sticker', 'admin-key', 'indicator', 'handi-symbol', 'screw', 'others']
 
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
@@ -64,20 +63,20 @@ label_colors:
   countdown-light-out : [153, 102, 0]
   traffic-sign : [64, 0, 128]
   unknown : [204, 255, 204]
-  1_panel: [204, 43, 41]  # indoor_segmentation
-  2_rect-btn: [145, 104, 190]
-  3_circle-btn: [135, 86, 75]
-  4_sticker: [219, 120, 195]
-  5_admin-key: [127, 127, 127]
-  6_rect-circle-btn: [72, 190, 207]
-  7_Indicator: [72, 190, 207]
-  8_handi-symbol: [187, 189, 18]
-  9_screw: [53, 119, 181]
-  10_special-btn1: [145, 104, 190]
-  11_special-btn2: [135, 86, 75]
-  12_special-btn3: [219, 120, 195]
-  13_special-btn4: [127, 127, 127]
-  14_void: [72, 190, 207]
+  in_panel : [128, 128, 128] # indoor_segmentation
+  out_panel : [192, 192, 192]
+  rect-btn : [255, 0, 0]
+  circle-btn : [0, 255, 0]
+  ellipse-btn : [0, 0, 255]
+  rect-circle-btn : [255, 255, 0]
+  rect-rect-btn : [0, 255, 255]
+  special-btn : [255, 0, 255]
+  sticker : [128, 0, 0]
+  admin-key : [128, 128, 0]
+  Indicator : [0, 128, 0]
+  handi-symbol : [128, 0, 128]
+  screw : [0, 128, 128]
+  others : [0, 0, 128]
 
 shape:
   # drawing
