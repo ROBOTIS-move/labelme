@@ -67,16 +67,16 @@ label_colors:
   out_panel : [192, 192, 192]
   rect-btn : [255, 0, 0]
   circle-btn : [0, 255, 0]
-  ellipse-btn : [0, 0, 255]
+  ellipse-btn : [200, 100, 50]
   rect-circle-btn : [255, 255, 0]
   rect-rect-btn : [0, 255, 255]
   special-btn : [255, 0, 255]
   sticker : [128, 0, 0]
   admin-key : [128, 128, 0]
-  Indicator : [0, 128, 0]
+  indicator : [0, 128, 0]
   handi-symbol : [128, 0, 128]
   screw : [0, 128, 128]
-  others : [0, 0, 128]
+  others : [100, 200, 150]
 
 shape:
   # drawing
