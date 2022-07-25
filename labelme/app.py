@@ -1156,6 +1156,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text=shape.label,
             flags=shape.flags,
             group_id=shape.group_id,
+            widget_size=self.size()
         )
         if text is None:
             return
@@ -1444,7 +1445,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config["single_class"] and self._last_label:
                 text = self._last_label
             else:
-                text, flags, group_id = self.labelDialog.popUp(text)
+                text, flags, group_id = self.labelDialog.popUp(text, widget_size=self.size())
             if not text:
                 self.labelDialog.edit.setText(previous_text)
 

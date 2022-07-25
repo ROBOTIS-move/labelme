@@ -116,7 +116,7 @@ show_label_text_field: true
 label_completion: startswith
 fit_to_content:
   column: true
-  row: false
+  row: true
 
 # canvas
 epsilon: 10.0

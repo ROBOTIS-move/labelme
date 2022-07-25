@@ -752,7 +752,9 @@ class Canvas(QtWidgets.QWidget):
         if (x, y) == (x1, y1):
             # Handle cases where previous point is on one of the edges.
             if x3 == x4:
-                return QtCore.QPoint(x3, min(max(0, y2), max(y3, y4)))
+                return QtCore.QPoint(
+                    min(max(0, x2), size.width() - 1),
+                    min(max(0, y2), max(y3, y4)))
             else:  # y3 == y4
                 return QtCore.QPoint(min(max(0, x2), max(x3, x4)), y3)
         return QtCore.QPoint(x, y)

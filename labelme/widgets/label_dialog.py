@@ -200,7 +200,8 @@ class LabelDialog(QtWidgets.QDialog):
             return int(group_id)
         return None
 
-    def popUp(self, text=None, move=True, flags=None, group_id=None):
+    def popUp(self, text=None, move=True, flags=None,
+              group_id=None, widget_size=QtCore.QSize(0, 0)):
         if self._fit_to_content["row"]:
             self.labelList.setMinimumHeight(
                 self.labelList.sizeHintForRow(0) * self.labelList.count() + 2
@@ -231,7 +232,16 @@ class LabelDialog(QtWidgets.QDialog):
             self.edit.completer().setCurrentRow(row)
         self.edit.setFocus(QtCore.Qt.PopupFocusReason)
         if move:
-            self.move(QtGui.QCursor.pos())
+            popup_pos = QtGui.QCursor.pos()
+            if self.labelList.size().width() + popup_pos.x() > widget_size.width():
+                row = widget_size.width() - self.labelList.size().width()
+            else:
+                row = popup_pos.x()
+            if self.labelList.size().height() + popup_pos.y() > widget_size.height():
+                column = widget_size.height() - self.labelList.size().height() - 180
+            else:
+                column = popup_pos.y()
+            self.move(QtCore.QPoint(row, column))
         if self.exec_():
             return self.edit.text(), self.getFlags(), self.getGroupId()
         else:
