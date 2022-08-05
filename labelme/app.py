@@ -969,6 +969,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for z in self.actions.zoomActions:
             z.setEnabled(value)
 
+        self.actions.brightnessContrast.setEnabled(value)
+
         if self._classType is None:
             for action in self.actions.onLoadActive:
                 action.setEnabled(value)
