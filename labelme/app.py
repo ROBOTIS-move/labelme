@@ -938,14 +938,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        if 'detection' in self._classType or self._classType is None:
+        if self._classType is None:
             self.actions.createRectangleMode.setEnabled(True)
-        else:
-            self.actions.createRectangleMode.setEnabled(False)
-        if 'segmentation' in self._classType or self._classType is None:
             self.actions.createMode.setEnabled(True)
         else:
-            self.actions.createMode.setEnabled(False)
+            if 'detection' in self._classType or self._classType is None:
+                self.actions.createRectangleMode.setEnabled(True)
+            else:
+                self.actions.createRectangleMode.setEnabled(False)
+            if 'segmentation' in self._classType or self._classType is None:
+                self.actions.createMode.setEnabled(True)
+            else:
+                self.actions.createMode.setEnabled(False)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -1811,7 +1815,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if self.output_dir:
                     label_file_without_path = osp.basename(label_file)
                     label_file = osp.join(self.output_dir, label_file_without_path)
-                self.saveLabels(label_file)
+                if self._classType is not None:
+                    self.saveLabels(label_file)
 
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
