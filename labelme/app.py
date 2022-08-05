@@ -1870,10 +1870,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if fileName:
                 self.loadFile(fileName)
 
-        format_name = fileName.split('.')[-1]
-        json_file = fileName[:-len(format_name)] + 'json'
-        target_class = self.get_target_class(json_file)
-        self.choose_labels_class(target_class)
+                format_name = fileName.split('.')[-1]
+                json_file = fileName[:-len(format_name)] + 'json'
+                target_class = self.get_target_class(json_file)
+                self.choose_labels_class(target_class)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir
