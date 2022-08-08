@@ -567,7 +567,7 @@ class MainWindow(QtWidgets.QMainWindow):
         brightnessContrast = action(
             "&Brightness Contrast",
             self.brightnessContrast,
-            None,
+            shortcuts["set_brightness_contrast"],
             "color",
             "Adjust brightness and contrast",
             enabled=False,
@@ -938,14 +938,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        if 'detection' in self._classType or self._classType is None:
+        if self._classType is None:
             self.actions.createRectangleMode.setEnabled(True)
-        else:
-            self.actions.createRectangleMode.setEnabled(False)
-        if 'segmentation' in self._classType or self._classType is None:
             self.actions.createMode.setEnabled(True)
         else:
-            self.actions.createMode.setEnabled(False)
+            if 'detection' in self._classType or self._classType is None:
+                self.actions.createRectangleMode.setEnabled(True)
+            else:
+                self.actions.createRectangleMode.setEnabled(False)
+            if 'segmentation' in self._classType or self._classType is None:
+                self.actions.createMode.setEnabled(True)
+            else:
+                self.actions.createMode.setEnabled(False)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -964,6 +968,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """Enable/Disable widgets which depend on an opened image."""
         for z in self.actions.zoomActions:
             z.setEnabled(value)
+
+        self.actions.brightnessContrast.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -1811,7 +1817,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if self.output_dir:
                     label_file_without_path = osp.basename(label_file)
                     label_file = osp.join(self.output_dir, label_file_without_path)
-                self.saveLabels(label_file)
+                if self._classType is not None:
+                    self.saveLabels(label_file)
 
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
@@ -1865,10 +1872,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if fileName:
                 self.loadFile(fileName)
 
-        format_name = fileName.split('.')[-1]
-        json_file = fileName[:-len(format_name)] + 'json'
-        target_class = self.get_target_class(json_file)
-        self.choose_labels_class(target_class)
+                format_name = fileName.split('.')[-1]
+                json_file = fileName[:-len(format_name)] + 'json'
+                target_class = self.get_target_class(json_file)
+                self.choose_labels_class(target_class)
 
     def changeOutputDirDialog(self, _value=False):
         default_output_dir = self.output_dir

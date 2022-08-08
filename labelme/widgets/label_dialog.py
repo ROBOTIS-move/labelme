@@ -233,15 +233,24 @@ class LabelDialog(QtWidgets.QDialog):
         self.edit.setFocus(QtCore.Qt.PopupFocusReason)
         if move:
             popup_pos = QtGui.QCursor.pos()
-            if self.labelList.size().width() + popup_pos.x() > widget_size.width():
+            if popup_pos.x() > widget_size.width():
+                x_margin = widget_size.width()
+            else:
+                x_margin = 0
+            if popup_pos.y() > widget_size.height():
+                y_margin = widget_size.height()
+            else:
+                y_margin = 0
+
+            if self.labelList.size().width() + popup_pos.x() - x_margin > widget_size.width():
                 row = widget_size.width() - self.labelList.size().width()
             else:
-                row = popup_pos.x()
-            if self.labelList.size().height() + popup_pos.y() > widget_size.height():
+                row = popup_pos.x() - x_margin
+            if self.labelList.size().height() + popup_pos.y() - y_margin > widget_size.height():
                 column = widget_size.height() - self.labelList.size().height() - 180
             else:
-                column = popup_pos.y()
-            self.move(QtCore.QPoint(row, column))
+                column = popup_pos.y() - y_margin
+            self.move(QtCore.QPoint(row + x_margin, column + y_margin))
         if self.exec_():
             return self.edit.text(), self.getFlags(), self.getGroupId()
         else:

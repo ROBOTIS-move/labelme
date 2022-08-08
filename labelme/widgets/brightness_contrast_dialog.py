@@ -19,6 +19,12 @@ class BrightnessContrastDialog(QtWidgets.QDialog):
         formLayout = QtWidgets.QFormLayout()
         formLayout.addRow(self.tr("Brightness"), self.slider_brightness)
         formLayout.addRow(self.tr("Contrast"), self.slider_contrast)
+
+        buttonLayout = QtWidgets.QHBoxLayout()
+        button_reset = self._create_button('&reset')
+        buttonLayout.addWidget(button_reset)
+        formLayout.addRow("", buttonLayout)
+
         self.setLayout(formLayout)
 
         assert isinstance(img, PIL.Image.Image)
@@ -43,3 +49,14 @@ class BrightnessContrastDialog(QtWidgets.QDialog):
         slider.setValue(50)
         slider.valueChanged.connect(self.onNewValue)
         return slider
+
+    def _create_button(self, name='Button'):
+        button = QtWidgets.QPushButton(name, self)
+        button.setCheckable(False)
+        button.toggle()
+        button.clicked.connect(self._click_button)
+        return button
+
+    def _click_button(self):
+        self.slider_brightness.setValue(50)
+        self.slider_contrast.setValue(50)
