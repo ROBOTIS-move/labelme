@@ -17,7 +17,7 @@ CURSOR_DRAW = QtCore.Qt.CrossCursor
 CURSOR_MOVE = QtCore.Qt.ClosedHandCursor
 CURSOR_GRAB = QtCore.Qt.OpenHandCursor
 
-MOVE_SPEED = 5.0
+MOVE_SPEED = 2.0
 
 
 class Canvas(QtWidgets.QWidget):
@@ -172,7 +172,7 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             shape.selected = False
         self.update()
-    
+
     def redoShapesBackupsReset(self):
         self.redoShapesBackups = []
 
@@ -228,7 +228,8 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
-        self.repaint()
+        if self.createMode == "rectangle":
+            self.repaint()
 
         # Polygon drawing.
         if self.drawing():
@@ -751,7 +752,9 @@ class Canvas(QtWidgets.QWidget):
         if (x, y) == (x1, y1):
             # Handle cases where previous point is on one of the edges.
             if x3 == x4:
-                return QtCore.QPoint(x3, min(max(0, y2), max(y3, y4)))
+                return QtCore.QPoint(
+                    min(max(0, x2), size.width() - 1),
+                    min(max(0, y2), max(y3, y4)))
             else:  # y3 == y4
                 return QtCore.QPoint(min(max(0, x2), max(x3, x4)), y3)
         return QtCore.QPoint(x, y)

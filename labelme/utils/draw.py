@@ -43,7 +43,7 @@ def shape_to_mask(img_shape, points, shape_type=None,
     return mask
 
 
-def getClsId(label, names, seg_class):
+def getClsId(label, names, seg_class, file_name=''):
     if label in seg_class:
         if len(names) == 0:
             cls_id = 1
@@ -57,13 +57,13 @@ def getClsId(label, names, seg_class):
                 cls_id = names.index(label) + 1
 
     else:
-        print("This is segmentation. No object: {}".format(label))
+        print('\033[31m' "[{}] There is no class name: {}".format(file_name, label) + '\033[0m')
         cls_id = 0
         names = None
     return cls_id, names
 
 
-def shapes_to_label(img_shape, shapes, label_name_to_value, seg_class, type='class'):
+def shapes_to_label(img_shape, shapes, label_name_to_value, seg_class, type='class', file_name=''):
     assert type in ['class', 'instance']
     cls = np.zeros(img_shape[:2], dtype=np.int32)
     if type == 'instance':
@@ -84,7 +84,7 @@ def shapes_to_label(img_shape, shapes, label_name_to_value, seg_class, type='cla
                 instance_names.append(label)
             ins_id = instance_names.index(label)
 
-        cls_id, names = getClsId(label, names, seg_class)
+        cls_id, names = getClsId(label, names, seg_class, file_name)
 
         if names == None:
             return None, None

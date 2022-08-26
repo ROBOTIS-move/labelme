@@ -22,7 +22,7 @@ class Convertor:
     def __init__(self, CONFIG, input_dir):
         os.environ["QT_LOGGING_RULES"] = "qt5ct.debug=false"
 
-        self.segmentation_class, self.class_rgb = self.get_class(CONFIG)
+        self.config = CONFIG
         _, self.folder_name = os.path.split(input_dir)
         self.origin_image_dir, self.masked_image_dir, self.overlayed_image_dir = \
             self.created_output_dir(input_dir)
@@ -60,10 +60,10 @@ class Convertor:
 
         print('Completed convert [{0}] folder'.format(self.folder_name))
 
-    def get_class(self, CONFIG):
+    def get_class(self, class_type):
         segmentation_class = []
         mask_color_rgb = []
-        for class_name, color in CONFIG['outdoor_segmentation'].items():
+        for class_name, color in self.config[class_type].items():
             segmentation_class.append(class_name)
             mask_color_rgb.append(color)
 
@@ -124,6 +124,7 @@ class Convertor:
             image_name = file_name + '.jpg'
 
             image, json_data = self.load_json_file(json_file)
+            self.segmentation_class, self.class_rgb = self.get_class(json_data['classType'])
             polygon_points = self.get_polygon_point(json_data)
             detected_labels = self.get_label(json_data)
 
@@ -131,7 +132,8 @@ class Convertor:
                 image.shape,
                 polygon_points,
                 detected_labels,
-                self.segmentation_class)
+                self.segmentation_class,
+                file_name=file_name)
 
             label_names = [None] * (max(detected_labels.values()) + 1)
 
@@ -158,7 +160,7 @@ class Convertor:
                 image_name))
 
         except:
-            print('[{0}] folder : {1} error'.format(self.folder_name, file_name))
+            pass
 
 
 def convert_segments(input_dir):

@@ -2,6 +2,19 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.4.0 (2022-08-26)
+------------------
+* Changed color visualization rules
+* Added shortcuts for hide and show all
+* Changed the category name of indoor segmentation
+* Added color to segmentation converting error message
+* Modified draw_segment_label codes for indoor segmentation
+* Modified a label dialog popup position
+* Fixed a intersection point bug
+* Activated brightness and contrast options
+* Changed the category name of indoor segmentation
+* Contributors: Eungi Cho, Dongyun Kim
+
 4.3.0 (2022-07-15)
 ------------------
 * Added redo function
