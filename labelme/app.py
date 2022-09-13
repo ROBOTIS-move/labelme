@@ -687,7 +687,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 toggle_keep_prev_mode,
                 add_point_mode,
                 single_class_mode,
-                keep_brightness_contrast,
             ),
             # menu shown at right click
             menu=(
@@ -782,6 +781,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 fitWidth,
                 None,
                 brightnessContrast,
+                keep_brightness_contrast,
             ),
         )
 
