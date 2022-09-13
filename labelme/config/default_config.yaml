@@ -168,6 +168,7 @@ shortcuts:
   toggle_keep_prev_mode: Ctrl+P
   toggle_add_points_mode: Ctrl+B
   single_class_mode: Ctrl+Shift+B
+  keep_brightness_contrast: Ctrl+K
   display_label_name: Ctrl+L
   remove_selected_point: [Meta+H, Backspace]
   set_brightness_contrast: Ctrl+M
