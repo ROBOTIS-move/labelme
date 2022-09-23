@@ -42,7 +42,7 @@ def get_default_config():
     else:
         create_time = osp.getmtime(user_config_file)
         target_time = time.mktime(
-            datetime.datetime.strptime('2022-09-19 09:00:00', '%Y-%m-%d %H:%M:%S').timetuple())
+            datetime.datetime.strptime('2022-09-23 09:00:00', '%Y-%m-%d %H:%M:%S').timetuple())
         if create_time < target_time:
             try:
                 shutil.copy(config_file, user_config_file)
