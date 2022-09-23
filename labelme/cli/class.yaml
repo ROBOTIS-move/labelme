@@ -11,6 +11,7 @@ outdoor_segmentation:
   bicycle-road : [204, 51, 204]
   deck : [255, 165, 0]
   grass : [252, 107, 3]
+  pebble : [0, 128, 128]
   void : [0, 0, 0]
 indoor_segmentation:
   in_panel : [128, 128, 128]
