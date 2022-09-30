@@ -4,6 +4,10 @@ Changelog for package labelme
 
 4.5.0 (2022-09-30)
 ------------------
+* Added exception handling for key input mistakes during labeling
+* Added previous brightness and contrast keeping mode
+* Added a new outdoor segmentation class for midas data labeling
+* Contributors: Eungi Cho
 
 4.4.0 (2022-08-26)
 ------------------
