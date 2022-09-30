@@ -338,7 +338,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr('Toggle "single class" mode'),
             checkable=True,
         )
-        single_class_mode.setChecked(self._config["add_point"])
+        single_class_mode.setChecked(self._config["single_class"])
+
+        keep_brightness_contrast = action(
+            self.tr("Keep brightness and contrast"),
+            self.toggleKeepBrightnessContrast,
+            shortcuts["keep_brightness_contrast"],
+            None,
+            self.tr('Toggle "keep brightness and contrast"'),
+            checkable=True,
+        )
+        keep_brightness_contrast.setChecked(
+            self._config["keep_prev_brightness"] and self._config["keep_prev_contrast"])
 
         self.display_label_option = action(
             self.tr("Display label name"),
@@ -631,6 +642,7 @@ class MainWindow(QtWidgets.QMainWindow):
             toggleKeepPrevMode=toggle_keep_prev_mode,
             add_point_mode=add_point_mode,
             single_class_mode=single_class_mode,
+            keep_brightness_contrast=keep_brightness_contrast,
             delete=delete,
             edit=edit,
             duplicate=duplicate,
@@ -769,6 +781,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 fitWidth,
                 None,
                 brightnessContrast,
+                keep_brightness_contrast,
             ),
         )
 
@@ -1787,6 +1800,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def openPrevImg(self, _value=False):
+        if self.canvas.drawing() and self.canvas.current:
+            return
+
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
@@ -1811,6 +1827,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
+        if self.canvas.drawing() and self.canvas.current:
+            return
+
         if self.imagePath:
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
@@ -2064,6 +2083,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleSingleClassMode(self):
         self._config["single_class"] = not self._config["single_class"]
+
+    def toggleKeepBrightnessContrast(self):
+        self._config["keep_prev_brightness"] = not self._config["keep_prev_brightness"]
+        self._config["keep_prev_contrast"] = not self._config["keep_prev_contrast"]
 
     def togglePaintLabelsOption(self):
         for shape in self.canvas.shapes:

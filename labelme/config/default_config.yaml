@@ -20,7 +20,7 @@ validate_label: null
 labels_class:
   outdoor_segmentation:
     ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-    'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'void']
+    'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void']
   outdoor_detection:
     ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
     'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
@@ -45,6 +45,7 @@ label_colors:
   bicycle-road : [204, 51, 204]
   deck : [255, 165, 0]
   grass : [252, 107, 3]
+  pebble : [0, 128, 128]
   void : [0, 0, 0]
   person: [252, 107, 3]  # outdoor_detection
   bicycle: [128, 0, 0]
@@ -168,6 +169,7 @@ shortcuts:
   toggle_keep_prev_mode: Ctrl+P
   toggle_add_points_mode: Ctrl+B
   single_class_mode: Ctrl+Shift+B
+  keep_brightness_contrast: Ctrl+K
   display_label_name: Ctrl+L
   remove_selected_point: [Meta+H, Backspace]
   set_brightness_contrast: Ctrl+M
