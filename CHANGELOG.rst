@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.5.0 (2022-09-30)
+------------------
+
 4.4.0 (2022-08-26)
 ------------------
 * Changed color visualization rules
