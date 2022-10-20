@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.6.0 (2022-10-21)
+------------------
+
 4.5.0 (2022-09-30)
 ------------------
 * Added exception handling for key input mistakes during labeling
