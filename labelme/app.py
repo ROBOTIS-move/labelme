@@ -508,6 +508,15 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show tutorial page"),
         )
 
+        administrator = action(
+            self.tr("&Convert\nLabels"),
+            self.tutorial,
+            shortcuts["check_labels"],
+            icon="eye",
+            tip=self.tr("Convert and Check labels"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -725,6 +734,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
+            onAdministrator=(administrator,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -734,6 +744,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
+            administrator=self.menu(self.tr("&Administrator")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -758,6 +769,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
+        utils.addActions(self.menus.administrator, (administrator,))
         utils.addActions(
             self.menus.view,
             (
@@ -981,6 +993,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """Enable/Disable widgets which depend on an opened image."""
         for z in self.actions.zoomActions:
             z.setEnabled(value)
+
+        for action in self.actions.onAdministrator:
+            action.setEnabled(value)
 
         self.actions.brightnessContrast.setEnabled(value)
 
@@ -2243,7 +2258,8 @@ class MainWindow(QtWidgets.QMainWindow):
             for file in files:
                 if file.lower().endswith(tuple(extensions)):
                     relativePath = osp.join(root, file)
-                    images.append(relativePath)
+                    if not ('masked_image' in relativePath or 'overlayed_image' in relativePath):
+                        images.append(relativePath)
         images = natsort.os_sorted(images)
         return images
 
