@@ -27,6 +27,7 @@ from labelme.shape import Shape
 from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
 from labelme.widgets import FileDialogPreview
+from labelme.widgets import ImagePopup
 from labelme.widgets import LabelDialog
 from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
@@ -509,11 +510,11 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         administrator = action(
-            self.tr("&Convert\nLabels"),
-            self.tutorial,
+            self.tr("&Check\nLabels"),
+            self.check_labels,
             shortcuts["check_labels"],
             icon="eye",
-            tip=self.tr("Convert and Check labels"),
+            tip=self.tr("Check labels"),
             enabled=False,
         )
 
@@ -1056,6 +1057,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
         webbrowser.open(url)
+
+    def check_labels(self):
+        self.ImagePopup.popup_state = True
+        self.ImagePopup.popUp(self.filename)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -2261,6 +2266,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     if not ('masked_image' in relativePath or 'overlayed_image' in relativePath):
                         images.append(relativePath)
         images = natsort.os_sorted(images)
+
+        self.ImagePopup = ImagePopup(
+            parent=self,
+            folder_path=folderPath
+        )
+
         return images
 
     def choose_labels_class(self, target_class=None):
