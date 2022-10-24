@@ -1844,6 +1844,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if filename:
                 self.loadFile(filename)
 
+        self.ImagePopup.popUp(self.filename)
+
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
@@ -1884,6 +1886,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.filename and load:
             self.loadFile(self.filename)
+
+        self.ImagePopup.popUp(self.filename)
 
         self._config["keep_prev"] = keep_prev
 

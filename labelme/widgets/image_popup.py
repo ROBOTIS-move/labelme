@@ -17,7 +17,7 @@ from labelme import utils
 QT5 = QT_VERSION[0] == "5"
 
 
-class ImagePopup(QtWidgets.QDialog):
+class ImagePopup(QtWidgets.QLabel):
     def __init__(self, parent=None, folder_path=None):
         super(ImagePopup, self).__init__(parent)
 
@@ -28,8 +28,11 @@ class ImagePopup(QtWidgets.QDialog):
 
         self.masked_widget = QtWidgets.QLabel()
         self.masked_widget.setWindowTitle("masked image")
+        self.masked_widget.setScaledContents(True)
+
         self.overlayed_widget = QtWidgets.QLabel()
         self.overlayed_widget.setWindowTitle("overlayed image")
+        self.overlayed_widget.setScaledContents(True)
 
     def popUp(self, current_image=None):
         if self.popup_state:
