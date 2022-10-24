@@ -173,3 +173,5 @@ shortcuts:
   display_label_name: Ctrl+L
   remove_selected_point: [Meta+H, Backspace]
   set_brightness_contrast: Ctrl+M
+
+  check_labels: Ctrl+/

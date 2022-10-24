@@ -27,6 +27,7 @@ from labelme.shape import Shape
 from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
 from labelme.widgets import FileDialogPreview
+from labelme.widgets import ImagePopup
 from labelme.widgets import LabelDialog
 from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
@@ -508,6 +509,15 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show tutorial page"),
         )
 
+        administrator = action(
+            self.tr("&Check\nLabels"),
+            self.check_labels,
+            shortcuts["check_labels"],
+            icon="eye",
+            tip=self.tr("Check labels"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -725,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
+            onAdministrator=(administrator,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -734,6 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
+            administrator=self.menu(self.tr("&Administrator")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -758,6 +770,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
+        utils.addActions(self.menus.administrator, (administrator,))
         utils.addActions(
             self.menus.view,
             (
@@ -982,6 +995,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for z in self.actions.zoomActions:
             z.setEnabled(value)
 
+        for action in self.actions.onAdministrator:
+            action.setEnabled(value)
+
         self.actions.brightnessContrast.setEnabled(value)
 
         if self._classType is None:
@@ -1041,6 +1057,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
         webbrowser.open(url)
+
+    def check_labels(self):
+        self.ImagePopup.masked_widget_state = True
+        self.ImagePopup.overlayed_widget_state = True
+        self.ImagePopup.popUp(self.filename, True)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -1824,6 +1845,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if filename:
                 self.loadFile(filename)
 
+        self.ImagePopup.popUp(self.filename)
+
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
@@ -1864,6 +1887,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.filename and load:
             self.loadFile(self.filename)
+
+        self.ImagePopup.popUp(self.filename)
 
         self._config["keep_prev"] = keep_prev
 
@@ -2243,8 +2268,15 @@ class MainWindow(QtWidgets.QMainWindow):
             for file in files:
                 if file.lower().endswith(tuple(extensions)):
                     relativePath = osp.join(root, file)
-                    images.append(relativePath)
+                    if not ('masked_image' in relativePath or 'overlayed_image' in relativePath):
+                        images.append(relativePath)
         images = natsort.os_sorted(images)
+
+        self.ImagePopup = ImagePopup(
+            parent=self,
+            folder_path=folderPath
+        )
+
         return images
 
     def choose_labels_class(self, target_class=None):
