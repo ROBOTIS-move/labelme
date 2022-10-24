@@ -24,37 +24,44 @@ class ImagePopup(QtWidgets.QLabel):
         self.masked_path = os.path.join(folder_path, 'masked_image')
         self.overlayed_path = os.path.join(folder_path, 'overlayed_image')
 
-        self.popup_state = False
-
         self.masked_widget = QtWidgets.QLabel()
         self.masked_widget.setWindowTitle("masked image")
         self.masked_widget.setScaledContents(True)
+        self.masked_widget_state = False
 
         self.overlayed_widget = QtWidgets.QLabel()
         self.overlayed_widget.setWindowTitle("overlayed image")
         self.overlayed_widget.setScaledContents(True)
+        self.overlayed_widget_state = False
 
-    def popUp(self, current_image=None):
-        if self.popup_state:
-            data_name = os.path.split(current_image)[1][:-3]
+    def popUp(self, current_image=None, trigger=False):
+        data_name = os.path.split(current_image)[1][:-3]
 
-            masked_image = os.path.join(self.masked_path, data_name + 'png')
-            if os.path.isfile(masked_image):
-                mask, (mask_width, mask_height) = self.load_image(masked_image)
-                mask = QtGui.QImage.fromData(mask)
-                self.masked_widget.setMinimumHeight(mask_height)
-                self.masked_widget.setMinimumWidth(mask_width)
-                self.masked_widget.setPixmap(QtGui.QPixmap.fromImage(mask))
-                self.masked_widget.show()
+        if self.masked_widget_state:
+            if (not trigger) and (not self.masked_widget.isVisible()):
+                self.masked_widget_state = False
+            else:
+                masked_image = os.path.join(self.masked_path, data_name + 'png')
+                if os.path.isfile(masked_image):
+                    mask, (mask_width, mask_height) = self.load_image(masked_image)
+                    mask = QtGui.QImage.fromData(mask)
+                    self.masked_widget.setMinimumHeight(mask_height)
+                    self.masked_widget.setMinimumWidth(mask_width)
+                    self.masked_widget.setPixmap(QtGui.QPixmap.fromImage(mask))
+                    self.masked_widget.show()
 
-            overlayed_image = os.path.join(self.overlayed_path, data_name + 'jpg')
-            if os.path.isfile(overlayed_image):
-                overlay, (overlay_width, overlay_height) = self.load_image(overlayed_image)
-                overlay = QtGui.QImage.fromData(overlay)
-                self.overlayed_widget.setMinimumHeight(overlay_height)
-                self.overlayed_widget.setMinimumWidth(overlay_width)
-                self.overlayed_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
-                self.overlayed_widget.show()
+        if self.overlayed_widget_state:
+            if (not trigger) and (not self.overlayed_widget.isVisible()):
+                self.overlayed_widget_state = False
+            else:
+                overlayed_image = os.path.join(self.overlayed_path, data_name + 'jpg')
+                if os.path.isfile(overlayed_image):
+                    overlay, (overlay_width, overlay_height) = self.load_image(overlayed_image)
+                    overlay = QtGui.QImage.fromData(overlay)
+                    self.overlayed_widget.setMinimumHeight(overlay_height)
+                    self.overlayed_widget.setMinimumWidth(overlay_width)
+                    self.overlayed_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
+                    self.overlayed_widget.show()
 
     def load_image(self, file_path):
         try:

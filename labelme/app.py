@@ -1059,8 +1059,9 @@ class MainWindow(QtWidgets.QMainWindow):
         webbrowser.open(url)
 
     def check_labels(self):
-        self.ImagePopup.popup_state = True
-        self.ImagePopup.popUp(self.filename)
+        self.ImagePopup.masked_widget_state = True
+        self.ImagePopup.overlayed_widget_state = True
+        self.ImagePopup.popUp(self.filename, True)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
