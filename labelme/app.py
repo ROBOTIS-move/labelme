@@ -12,6 +12,7 @@ import imgviz
 import natsort
 from qtpy import QtCore
 from qtpy.QtCore import Qt
+from qtpy import QtTest
 from qtpy import QtGui
 from qtpy import QtWidgets
 
@@ -20,6 +21,7 @@ from labelme import PY2
 
 from . import utils
 from labelme.config import get_config
+from labelme.cli import draw_segment_label
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
 from labelme.logger import logger
@@ -518,6 +520,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        convert_segmentation = action(
+            self.tr("Convert\nSegmentation"),
+            self.convert_segments,
+            icon="eye",
+            tip=self.tr("Convert segmentation"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -735,7 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator,),
+            onAdministrator=(administrator, convert_segmentation),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -770,7 +780,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
-        utils.addActions(self.menus.administrator, (administrator,))
+        utils.addActions(self.menus.administrator, (administrator, convert_segmentation))
         utils.addActions(
             self.menus.view,
             (
@@ -1062,6 +1072,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ImagePopup.masked_widget_state = True
         self.ImagePopup.overlayed_widget_state = True
         self.ImagePopup.popUp(self.filename, True)
+
+    def convert_segments(self):
+        wait_popup = QtWidgets.QLabel()
+        wait_popup.setWindowTitle("Convert segmentation labels")
+        wait_popup.setMinimumHeight(100)
+        wait_popup.setMinimumWidth(400)
+        wait_popup.setText("Please wait for a moment...")
+        wait_popup.setAlignment(Qt.AlignCenter)
+        wait_popup.show()
+        QtTest.QTest.qWait(100)
+
+        folder_path = os.path.split(self.filename)[0]
+        draw_segment_label.convert_segments(folder_path)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
