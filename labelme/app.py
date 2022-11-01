@@ -1087,8 +1087,11 @@ class MainWindow(QtWidgets.QMainWindow):
         webbrowser.open(url)
 
     def check_labels(self):
-        self.ImagePopup.masked_widget_state = True
-        self.ImagePopup.overlayed_widget_state = True
+        if self._classType is None or 'segmentation' in self._classType:
+            self.ImagePopup.masked_widget_state = True
+            self.ImagePopup.overlayed_widget_state = True
+        elif self._classType is None or 'detection' in self._classType:
+            self.ImagePopup.object_widget_state = True
         self.ImagePopup.popUp(self.filename, True)
 
     def convert_segments(self):
