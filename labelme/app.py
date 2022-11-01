@@ -422,6 +422,16 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        delete_popup = action(
+            self.tr("Enable popup to confirm polygon deletion"),
+            self.toggle_delete_popup,
+            None,
+            None,
+            self.tr('Toggle "delete_popup"'),
+            checkable=True,
+        )
+        delete_popup.setChecked(self._config["delete_popup"])
+
         delete = action(
             self.tr("Delete Polygons"),
             self.deleteSelectedShape,
@@ -713,6 +723,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 removePoint,
                 None,
+                delete_popup,
                 toggle_keep_prev_mode,
                 add_point_mode,
                 single_class_mode,
@@ -2150,6 +2161,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleSingleClassMode(self):
         self._config["single_class"] = not self._config["single_class"]
 
+    def toggle_delete_popup(self):
+        self._config["delete_popup"] = not self._config["delete_popup"]
+
     def toggleKeepBrightnessContrast(self):
         self._config["keep_prev_brightness"] = not self._config["keep_prev_brightness"]
         self._config["keep_prev_contrast"] = not self._config["keep_prev_contrast"]
@@ -2170,14 +2184,21 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
 
     def deleteSelectedShape(self):
-        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
-        msg = self.tr(
-            "You are about to permanently delete {} polygons, "
-            "proceed anyway?"
-        ).format(len(self.canvas.selectedShapes))
-        if yes == QtWidgets.QMessageBox.warning(
-            self, self.tr("Attention"), msg, yes | no, yes
-        ):
+        if self._config["delete_popup"]:
+            yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+            msg = self.tr(
+                "You are about to permanently delete {} polygons, "
+                "proceed anyway?"
+            ).format(len(self.canvas.selectedShapes))
+            if yes == QtWidgets.QMessageBox.warning(
+                self, self.tr("Attention"), msg, yes | no, yes
+            ):
+                self.remLabels(self.canvas.deleteSelected())
+                self.setDirty()
+                if self.noShapes():
+                    for action in self.actions.onShapesPresent:
+                        action.setEnabled(False)
+        else:
             self.remLabels(self.canvas.deleteSelected())
             self.setDirty()
             if self.noShapes():
