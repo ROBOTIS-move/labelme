@@ -20,6 +20,7 @@ from labelme import PY2
 
 from . import utils
 from labelme.config import get_config
+from labelme.cli import draw_object_label
 from labelme.cli import draw_segment_label
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
@@ -528,6 +529,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        convert_objects = action(
+            self.tr("Convert\nObjects"),
+            self.convert_bounding_boxes,
+            icon="eye",
+            tip=self.tr("Convert bounding boxes"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -745,7 +754,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator, convert_segmentation),
+            onAdministrator=(administrator, convert_segmentation, convert_objects),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -780,7 +789,14 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
-        utils.addActions(self.menus.administrator, (administrator, convert_segmentation))
+        utils.addActions(
+            self.menus.administrator,
+            (
+                administrator,
+                convert_segmentation,
+                convert_objects
+            )
+        )
         utils.addActions(
             self.menus.view,
             (
@@ -1077,6 +1093,11 @@ class MainWindow(QtWidgets.QMainWindow):
         folder_path = os.path.split(self.filename)[0]
         wait_popup = ConvertLabelPopup()
         draw_segment_label.convert_segments(folder_path, wait_popup)
+
+    def convert_bounding_boxes(self):
+        folder_path = os.path.split(self.filename)[0]
+        wait_popup = ConvertLabelPopup()
+        draw_object_label.convert_objects(folder_path, wait_popup)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
