@@ -835,6 +835,32 @@ class Canvas(QtWidgets.QWidget):
             self.repaint()
             self.movingShape = True
 
+    def movePointByKeyboard(self, offset):
+        if self.selectedShapes:
+            for i in range(len(self.selectedShapes)):
+                if len(self.selectedShapes[i]) == 2:  # rectangle
+                    index = self.shapes.index(self.selectedShapes[i])
+                    left_top_point = QtCore.QPointF(
+                        min(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
+                        min(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
+                    )
+                    right_bottom_point = QtCore.QPointF(
+                        max(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
+                        max(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
+                    )
+                    offset_point = right_bottom_point + offset
+                    moving_point = QtCore.QPointF(
+                        min(max(0, offset_point.x()), self.pixmap.width()),
+                        min(max(0, offset_point.y()), self.pixmap.height())
+                    )
+
+                    self.selectedShapes[i][0] = left_top_point
+                    self.selectedShapes[i][1] = moving_point
+                    self.shapes[index] = self.selectedShapes[i]
+
+            self.repaint()
+            self.movingShape = True
+
     def keyPressEvent(self, ev):
         modifiers = ev.modifiers()
         key = ev.key()
@@ -856,6 +882,14 @@ class Canvas(QtWidgets.QWidget):
                 self.moveByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0.0))
             elif key == QtCore.Qt.Key_Right:
                 self.moveByKeyboard(QtCore.QPoint(MOVE_SPEED, 0.0))
+            elif key == 49:
+                self.movePointByKeyboard(QtCore.QPoint(0.0, -MOVE_SPEED))
+            elif key == 50:
+                self.movePointByKeyboard(QtCore.QPoint(0.0, MOVE_SPEED))
+            elif key == 51:
+                self.movePointByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0.0))
+            elif key == 52:
+                self.movePointByKeyboard(QtCore.QPoint(MOVE_SPEED, 0.0))
 
     def keyReleaseEvent(self, ev):
         modifiers = ev.modifiers()

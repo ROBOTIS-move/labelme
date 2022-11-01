@@ -422,6 +422,16 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        delete_popup = action(
+            self.tr("Enable popup to confirm polygon deletion"),
+            self.toggle_delete_popup,
+            shortcuts["delete_popup"],
+            None,
+            self.tr('Toggle "delete_popup"'),
+            checkable=True,
+        )
+        delete_popup.setChecked(self._config["delete_popup"])
+
         delete = action(
             self.tr("Delete Polygons"),
             self.deleteSelectedShape,
@@ -639,6 +649,15 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        edit_label_name = action(
+            self.tr("&Edit Label Name"),
+            self.editLabel,
+            shortcuts["edit_label_name"],
+            "edit",
+            self.tr("Modify the label name of the selected polygon"),
+            enabled=False,
+        )
+
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
             self.canvas.setFillDrawing,
@@ -683,6 +702,7 @@ class MainWindow(QtWidgets.QMainWindow):
             removePoint=removePoint,
             createMode=createMode,
             editMode=editMode,
+            edit_label_name=edit_label_name,
             createRectangleMode=createRectangleMode,
             createCircleMode=createCircleMode,
             createLineMode=createLineMode,
@@ -704,6 +724,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
                 edit,
+                edit_label_name,
                 duplicate,
                 delete,
                 None,
@@ -713,6 +734,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 removePoint,
                 None,
+                delete_popup,
                 toggle_keep_prev_mode,
                 add_point_mode,
                 single_class_mode,
@@ -795,6 +817,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.administrator,
             (
                 administrator,
+                None,
                 convert_segmentation,
                 convert_objects
             )
@@ -1027,6 +1050,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setEnabled(value)
 
         self.actions.brightnessContrast.setEnabled(value)
+        self.actions.edit_label_name.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -2150,6 +2174,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleSingleClassMode(self):
         self._config["single_class"] = not self._config["single_class"]
 
+    def toggle_delete_popup(self):
+        self._config["delete_popup"] = not self._config["delete_popup"]
+
     def toggleKeepBrightnessContrast(self):
         self._config["keep_prev_brightness"] = not self._config["keep_prev_brightness"]
         self._config["keep_prev_contrast"] = not self._config["keep_prev_contrast"]
@@ -2170,14 +2197,21 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
 
     def deleteSelectedShape(self):
-        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
-        msg = self.tr(
-            "You are about to permanently delete {} polygons, "
-            "proceed anyway?"
-        ).format(len(self.canvas.selectedShapes))
-        if yes == QtWidgets.QMessageBox.warning(
-            self, self.tr("Attention"), msg, yes | no, yes
-        ):
+        if self._config["delete_popup"]:
+            yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+            msg = self.tr(
+                "You are about to permanently delete {} polygons, "
+                "proceed anyway?"
+            ).format(len(self.canvas.selectedShapes))
+            if yes == QtWidgets.QMessageBox.warning(
+                self, self.tr("Attention"), msg, yes | no, yes
+            ):
+                self.remLabels(self.canvas.deleteSelected())
+                self.setDirty()
+                if self.noShapes():
+                    for action in self.actions.onShapesPresent:
+                        action.setEnabled(False)
+        else:
             self.remLabels(self.canvas.deleteSelected())
             self.setDirty()
             if self.noShapes():
