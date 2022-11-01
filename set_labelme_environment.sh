@@ -13,15 +13,15 @@ TMPDIR=$(mktemp -d)
 cd $TMPDIR
 
 if [ "$(uname)" = "Linux" ]; then
-  wget -q 'https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh' -O miniconda2.sh
+  wget -q 'https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh' -O miniconda3.sh
 elif [ "$(uname)" = "Darwin" ]; then
-  wget -q 'https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh' -O miniconda2.sh
+  wget -q 'https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh' -O miniconda3.sh
 else
   echo "[$(basename $0)] Unsupported platform: $(uname)"
   exit 0
 fi
 
-bash ./miniconda2.sh -p $INSTALL_DIR/.anaconda3 -b
+bash ./miniconda3.sh -p $INSTALL_DIR/.anaconda3 -b
 cd -
 rm -rf $TMPDIR
 
