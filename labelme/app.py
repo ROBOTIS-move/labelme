@@ -747,14 +747,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 close,
                 createMode,
                 editMode,
+                convert_segmentation,
             ),
             onLoadObject2dActive=(
                 close,
                 createRectangleMode,
                 editMode,
+                convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator, convert_segmentation, convert_objects),
+            onAdministrator=(administrator,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
