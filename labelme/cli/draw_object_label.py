@@ -24,11 +24,48 @@ import labelme
 
 
 class Convertor:
-    def __init__(self, CONFIG, input_dir):
+    def __init__(self, CONFIG, input_dir, popup=None):
+        self.CONFIG = CONFIG
         self.input_dir = input_dir
+        _, self.folder_name = os.path.split(input_dir)
         self.output_dir = self.create_folder(input_dir + '/obj')
 
-        self.class_names = CONFIG['outdoor_detection']
+        json_list = glob.glob(os.path.join(input_dir, '*.json'))
+        num_core = multiprocessing.cpu_count()
+        if num_core >= 10:
+            num_core = 10
+        elif num_core >= 5:
+            num_core = 5
+        elif num_core >= 2:
+            num_core = 2
+        else:
+            num_core = 1
+
+        if not popup == None:
+            popup.show()
+
+        print('===========================================')
+        print('Convert bounding box')
+        print('{0}The total number of the files : {1}'.format(' '*2, len(json_list)))
+        print('{0}The number of the process core : {1}'.format(' '*2, num_core))
+        print('===========================================')
+
+        process_num, process_remainder = divmod(len(json_list), num_core)
+        pool = multiprocessing.Pool(processes=num_core)
+        if len(json_list) <= num_core:
+            pool.map(self.convert_bounding_box, json_list)
+        else:
+            for i in range(process_num):
+                pool.map(
+                    self.convert_bounding_box,
+                    json_list[i * num_core : (i+1) * num_core])
+                if not popup == None:
+                    popup.set_prograss(i / process_num * 100)
+
+            pool.close()
+            pool.join()
+
+        print('Completed convert [{0}] folder'.format(self.folder_name))
 
     def create_folder(self, _dir):
         if not os.path.exists(_dir):
@@ -37,7 +74,6 @@ class Convertor:
         return _dir
 
     def convert_bounding_box(self, json_file):
-        _, folder_name = os.path.split(self.input_dir)
         check_wrong_class = False
         with open(json_file, encoding='ISO-8859-1') as f:
             data = json.load(f)
@@ -45,6 +81,7 @@ class Convertor:
 
         out_image_file = os.path.join(self.output_dir, base + '.png')
 
+        class_names = self.CONFIG[data['classType']]
         new_path = data['imagePath']
         _, new_path = os.path.split(new_path)
         image_file = os.path.join(os.path.dirname(json_file), new_path)
@@ -77,34 +114,28 @@ class Convertor:
 
             class_name = shape['label']
 
-            if not class_name in self.class_names:
+            if not class_name in class_names:
                 print('Generating dataset from : {0}'.format(json_file))
                 print('wrong class name : {0}'.format(class_name))
                 check_wrong_class = True
 
             if shape['shape_type'] == 'rectangle':
                 if not check_wrong_class:
-                    class_id = self.class_names.index(class_name)
+                    class_id = class_names.index(class_name)
 
                     (xmin, ymin), (xmax, ymax) = shape['points']
                     bboxes_2d.append([xmin, ymin, xmax, ymax])
                     labels_2d.append(class_id)
 
-                    captions = [self.class_names[l] for l in labels_2d]
+                    captions = [class_names[l] for l in labels_2d]
                     result_image = labelme.utils.draw_instances(
                         result_image, bboxes_2d, labels_2d, captions=captions
                     )
                     PIL.Image.fromarray(result_image).save(out_image_file)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('input_dir', help='input annotated directory')
-    parser.add_argument('--num_core', default=10, help='The number of process folder')
-    args = parser.parse_args()
-
+def convert_objects(input_dir, popup=None):
     class_data_yaml = os.path.dirname(os.path.realpath(__file__)) + '/class.yaml'
-    _, folder_name = os.path.split(args.input_dir)
     try:
         print('Opening data file : {0}'.format(class_data_yaml))
         f = open(class_data_yaml, 'r')
@@ -113,20 +144,11 @@ def main():
         print('Error opening data yaml file!')
         sys.exit()
 
-    json_list = glob.glob(os.path.join(args.input_dir, '*.json'))
-
-    convertor = Convertor(CONFIG, args.input_dir)
-
-    print('===========================================')
-    print('Convert bounding box')
-    print('{0}The total number of the files : {1}'.format(' '*2, len(json_list)))
-    print('{0}The number of the process core : {1}'.format(' '*2, args.num_core))
-    print('===========================================')
-
-    for json_file in json_list:
-        convertor.convert_bounding_box(json_file)
-
-    print('Completed convert [{0}] folder'.format(folder_name))
+    Convertor(CONFIG, input_dir, popup)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_dir', help='input annotated directory')
+    args = parser.parse_args()
+
+    convert_objects(args.input_dir)

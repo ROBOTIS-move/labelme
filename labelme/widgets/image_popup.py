@@ -23,6 +23,7 @@ class ImagePopup(QtWidgets.QLabel):
 
         self.masked_path = os.path.join(folder_path, 'masked_image')
         self.overlayed_path = os.path.join(folder_path, 'overlayed_image')
+        self.object_path = os.path.join(folder_path, 'obj')
 
         self.masked_widget = QtWidgets.QLabel()
         self.masked_widget.setWindowTitle("masked image")
@@ -33,6 +34,11 @@ class ImagePopup(QtWidgets.QLabel):
         self.overlayed_widget.setWindowTitle("overlayed image")
         self.overlayed_widget.setScaledContents(True)
         self.overlayed_widget_state = False
+
+        self.object_widget = QtWidgets.QLabel()
+        self.object_widget.setWindowTitle("object image")
+        self.object_widget.setScaledContents(True)
+        self.object_widget_state = False
 
     def popUp(self, current_image=None, trigger=False):
         data_name = os.path.split(current_image)[1][:-3]
@@ -62,6 +68,19 @@ class ImagePopup(QtWidgets.QLabel):
                     self.overlayed_widget.setMinimumWidth(overlay_width)
                     self.overlayed_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
                     self.overlayed_widget.show()
+
+        if self.object_widget_state:
+            if (not trigger) and (not self.object_widget.isVisible()):
+                self.object_widget_state = False
+            else:
+                object_image = os.path.join(self.object_path, data_name + 'png')
+                if os.path.isfile(object_image):
+                    overlay, (overlay_width, overlay_height) = self.load_image(object_image)
+                    overlay = QtGui.QImage.fromData(overlay)
+                    self.object_widget.setMinimumHeight(overlay_height)
+                    self.object_widget.setMinimumWidth(overlay_width)
+                    self.object_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
+                    self.object_widget.show()
 
     def load_image(self, file_path):
         try:

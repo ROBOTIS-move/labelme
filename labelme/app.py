@@ -12,7 +12,6 @@ import imgviz
 import natsort
 from qtpy import QtCore
 from qtpy.QtCore import Qt
-from qtpy import QtTest
 from qtpy import QtGui
 from qtpy import QtWidgets
 
@@ -21,6 +20,7 @@ from labelme import PY2
 
 from . import utils
 from labelme.config import get_config
+from labelme.cli import draw_object_label
 from labelme.cli import draw_segment_label
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
@@ -28,6 +28,7 @@ from labelme.logger import logger
 from labelme.shape import Shape
 from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
+from labelme.widgets import ConvertLabelPopup
 from labelme.widgets import FileDialogPreview
 from labelme.widgets import ImagePopup
 from labelme.widgets import LabelDialog
@@ -528,6 +529,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        convert_objects = action(
+            self.tr("Convert\nObjects"),
+            self.convert_bounding_boxes,
+            icon="eye",
+            tip=self.tr("Convert bounding boxes"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -738,14 +747,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 close,
                 createMode,
                 editMode,
+                convert_segmentation,
             ),
             onLoadObject2dActive=(
                 close,
                 createRectangleMode,
                 editMode,
+                convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator, convert_segmentation),
+            onAdministrator=(administrator,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -780,7 +791,14 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
         )
         utils.addActions(self.menus.help, (help,))
-        utils.addActions(self.menus.administrator, (administrator, convert_segmentation))
+        utils.addActions(
+            self.menus.administrator,
+            (
+                administrator,
+                convert_segmentation,
+                convert_objects
+            )
+        )
         utils.addActions(
             self.menus.view,
             (
@@ -1069,22 +1087,22 @@ class MainWindow(QtWidgets.QMainWindow):
         webbrowser.open(url)
 
     def check_labels(self):
-        self.ImagePopup.masked_widget_state = True
-        self.ImagePopup.overlayed_widget_state = True
+        if self._classType is None or 'segmentation' in self._classType:
+            self.ImagePopup.masked_widget_state = True
+            self.ImagePopup.overlayed_widget_state = True
+        elif self._classType is None or 'detection' in self._classType:
+            self.ImagePopup.object_widget_state = True
         self.ImagePopup.popUp(self.filename, True)
 
     def convert_segments(self):
-        wait_popup = QtWidgets.QLabel()
-        wait_popup.setWindowTitle("Convert segmentation labels")
-        wait_popup.setMinimumHeight(100)
-        wait_popup.setMinimumWidth(400)
-        wait_popup.setText("Please wait for a moment...")
-        wait_popup.setAlignment(Qt.AlignCenter)
-        wait_popup.show()
-        QtTest.QTest.qWait(100)
-
         folder_path = os.path.split(self.filename)[0]
-        draw_segment_label.convert_segments(folder_path)
+        wait_popup = ConvertLabelPopup()
+        draw_segment_label.convert_segments(folder_path, wait_popup)
+
+    def convert_bounding_boxes(self):
+        folder_path = os.path.split(self.filename)[0]
+        wait_popup = ConvertLabelPopup()
+        draw_object_label.convert_objects(folder_path, wait_popup)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
