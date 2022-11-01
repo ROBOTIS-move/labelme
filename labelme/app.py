@@ -425,7 +425,7 @@ class MainWindow(QtWidgets.QMainWindow):
         delete_popup = action(
             self.tr("Enable popup to confirm polygon deletion"),
             self.toggle_delete_popup,
-            None,
+            shortcuts["delete_popup"],
             None,
             self.tr('Toggle "delete_popup"'),
             checkable=True,
@@ -724,6 +724,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
                 edit,
+                edit_label_name,
                 duplicate,
                 delete,
                 None,
@@ -816,6 +817,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.menus.administrator,
             (
                 administrator,
+                None,
                 convert_segmentation,
                 convert_objects
             )

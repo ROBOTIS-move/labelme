@@ -177,3 +177,4 @@ shortcuts:
   set_brightness_contrast: Ctrl+M
 
   check_labels: Ctrl+/
+  delete_popup: Ctrl+Shift+Q
