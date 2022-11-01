@@ -649,6 +649,15 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        edit_label_name = action(
+            self.tr("&Edit Label Name"),
+            self.editLabel,
+            shortcuts["edit_label_name"],
+            "edit",
+            self.tr("Modify the label name of the selected polygon"),
+            enabled=False,
+        )
+
         fill_drawing = action(
             self.tr("Fill Drawing Polygon"),
             self.canvas.setFillDrawing,
@@ -693,6 +702,7 @@ class MainWindow(QtWidgets.QMainWindow):
             removePoint=removePoint,
             createMode=createMode,
             editMode=editMode,
+            edit_label_name=edit_label_name,
             createRectangleMode=createRectangleMode,
             createCircleMode=createCircleMode,
             createLineMode=createLineMode,
@@ -1038,6 +1048,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setEnabled(value)
 
         self.actions.brightnessContrast.setEnabled(value)
+        self.actions.edit_label_name.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:

@@ -139,8 +139,8 @@ shortcuts:
   save_to: null
   delete_file: Ctrl+Delete
 
-  open_next: [D, Ctrl+Shift+D]
-  open_prev: [A, Ctrl+Shift+A]
+  open_next: [D, Ctrl+Shift+D, down, right]
+  open_prev: [A, Ctrl+Shift+A, up, left]
 
   hide_all: Ctrl+H
   show_all: Ctrl+G
@@ -167,6 +167,7 @@ shortcuts:
   undo_last_point: Ctrl+Z
   add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
+  edit_label_name: E
   toggle_keep_prev_mode: Ctrl+P
   toggle_add_points_mode: Ctrl+B
   single_class_mode: Ctrl+Shift+B
