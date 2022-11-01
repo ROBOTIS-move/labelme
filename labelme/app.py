@@ -12,7 +12,6 @@ import imgviz
 import natsort
 from qtpy import QtCore
 from qtpy.QtCore import Qt
-from qtpy import QtTest
 from qtpy import QtGui
 from qtpy import QtWidgets
 
@@ -28,6 +27,7 @@ from labelme.logger import logger
 from labelme.shape import Shape
 from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
+from labelme.widgets import ConvertLabelPopup
 from labelme.widgets import FileDialogPreview
 from labelme.widgets import ImagePopup
 from labelme.widgets import LabelDialog
@@ -1074,17 +1074,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ImagePopup.popUp(self.filename, True)
 
     def convert_segments(self):
-        wait_popup = QtWidgets.QLabel()
-        wait_popup.setWindowTitle("Convert segmentation labels")
-        wait_popup.setMinimumHeight(100)
-        wait_popup.setMinimumWidth(400)
-        wait_popup.setText("Please wait for a moment...")
-        wait_popup.setAlignment(Qt.AlignCenter)
-        wait_popup.show()
-        QtTest.QTest.qWait(100)
-
         folder_path = os.path.split(self.filename)[0]
-        draw_segment_label.convert_segments(folder_path)
+        wait_popup = ConvertLabelPopup()
+        draw_segment_label.convert_segments(folder_path, wait_popup)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.

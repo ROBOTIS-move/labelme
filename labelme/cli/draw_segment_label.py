@@ -19,7 +19,7 @@ from labelme import utils
 
 
 class Convertor:
-    def __init__(self, CONFIG, input_dir):
+    def __init__(self, CONFIG, input_dir, popup=None):
         os.environ["QT_LOGGING_RULES"] = "qt5ct.debug=false"
 
         self.config = CONFIG
@@ -38,6 +38,9 @@ class Convertor:
         else:
             num_core = 1
 
+        if not popup == None:
+            popup.show()
+
         print('===========================================')
         print('Convert mask image')
         print('{0}The folder name : {1}'.format(' '*2, self.folder_name))
@@ -54,11 +57,16 @@ class Convertor:
                 pool.map(
                     self.multi_convert_json_to_mask,
                     json_list[i * num_core : (i+1) * num_core])
+                if not popup == None:
+                    popup.set_prograss(i / process_num * 100)
 
             pool.close()
             pool.join()
 
         print('Completed convert [{0}] folder'.format(self.folder_name))
+
+        if not popup == None:
+            popup.close()
 
     def get_class(self, class_type):
         segmentation_class = []
@@ -163,7 +171,7 @@ class Convertor:
             pass
 
 
-def convert_segments(input_dir):
+def convert_segments(input_dir, popup=None):
     class_data_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'class.yaml')
 
     try:
@@ -174,7 +182,7 @@ def convert_segments(input_dir):
         print('Error opening data yaml file!')
         sys.exit()
 
-    Convertor(CONFIG, input_dir)
+    Convertor(CONFIG, input_dir, popup)
 
 
 if __name__ == '__main__':
