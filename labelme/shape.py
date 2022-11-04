@@ -50,20 +50,24 @@ class Shape(object):
         self,
         label=None,
         line_color=None,
+        probability=None,
         shape_type=None,
         flags=None,
         group_id=None,
         paint_label=False,
+        paint_probability=False,
     ):
         self.label = label
         self.group_id = group_id
         self.points = []
         self.fill = False
         self.selected = False
+        self.probability = probability
         self.shape_type = shape_type
         self.flags = flags
         self.other_data = {}
         self.paint_label = paint_label
+        self.paint_probability = paint_probability
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
@@ -174,6 +178,25 @@ class Shape(object):
                         if min_y < min_y_label:
                             min_y += min_y_label
                         painter.drawText(int(min_x), int(min_y), self.label)
+
+                # Draw text at the right-bottom
+                if self.paint_probability and self.probability is not None:
+                    min_x = 0
+                    min_y = 0
+                    min_y_label = int(1.25 * self.label_font_size)
+                    for point in self.points:
+                        min_x = max(min_x, point.x())
+                        min_y = max(min_y, point.y())
+                    if min_x != sys.maxsize and min_y != sys.maxsize:
+                        font = QtGui.QFont()
+                        font.setPointSize(self.label_font_size)
+                        font.setBold(True)
+                        painter.setFont(font)
+                        min_x_label = int(7.5 * len(str(self.probability)))
+                        if min_y < min_y_label:
+                            min_y += min_y_label
+                        min_x -= min_x_label
+                        painter.drawText(int(min_x), int(min_y), str(self.probability))
             elif self.shape_type == "circle":
                 assert len(self.points) in [1, 2]
                 if len(self.points) == 2:

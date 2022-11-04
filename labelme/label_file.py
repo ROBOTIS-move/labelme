@@ -82,6 +82,7 @@ class LabelFile(object):
             "label",
             "points",
             "group_id",
+            "probability",
             "shape_type",
             "flags",
         ]
@@ -123,6 +124,7 @@ class LabelFile(object):
                 dict(
                     label=s["label"],
                     points=s["points"],
+                    probability=s["probability"] if "probability" in s else None,
                     shape_type=s.get("shape_type", "polygon"),
                     flags=s.get("flags", {}),
                     group_id=s.get("group_id"),

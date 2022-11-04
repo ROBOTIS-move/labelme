@@ -9,6 +9,7 @@ add_point: false
 single_class: false
 delete_popup: true
 display_label_option: true
+display_probability_option: true
 logger_level: info
 
 flags: null
