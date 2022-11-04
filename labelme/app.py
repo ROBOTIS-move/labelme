@@ -102,6 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._copied_shapes = None
 
         self._last_label = None
+        self._prev_brightness_contrast = (None, None)
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
@@ -632,6 +633,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "Adjust brightness and contrast",
             enabled=False,
         )
+        prevBrightnessContrast = action(
+            "&Previous Brightness Contrast",
+            self.prevBrightnessContrast,
+            shortcuts["set_prev_brightness_contrast"],
+            "color",
+            "Adjust brightness and contrast",
+            enabled=False,
+        )
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -726,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow=fitWindow,
             fitWidth=fitWidth,
             brightnessContrast=brightnessContrast,
+            prevBrightnessContrast=prevBrightnessContrast,
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
@@ -774,6 +784,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 createRectangleMode,
                 editMode,
                 brightnessContrast,
+                prevBrightnessContrast,
             ),
             onLoadSegmentationActive=(
                 close,
@@ -857,6 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 brightnessContrast,
                 keep_brightness_contrast,
+                prevBrightnessContrast,
             ),
         )
 
@@ -1061,6 +1073,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setEnabled(value)
 
         self.actions.brightnessContrast.setEnabled(value)
+        self.actions.prevBrightnessContrast.setEnabled(value)
         self.actions.edit_label_name.setEnabled(value)
 
         if self._classType is None:
@@ -1673,6 +1686,7 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness, contrast = self.brightnessContrast_values.get(
             self.filename, (None, None)
         )
+        self._prev_brightness_contrast = (brightness, contrast)
         if brightness is not None:
             dialog.slider_brightness.setValue(brightness)
         if contrast is not None:
@@ -1682,6 +1696,28 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness = dialog.slider_brightness.value()
         contrast = dialog.slider_contrast.value()
         self.brightnessContrast_values[self.filename] = (brightness, contrast)
+
+    def prevBrightnessContrast(self):
+        dialog = BrightnessContrastDialog(
+            utils.img_data_to_pil(self.imageData),
+            self.onNewBrightnessContrast,
+            parent=self,
+        )
+        brightness, contrast = self.brightnessContrast_values.get(
+            self.filename, (None, None)
+        )
+        prev_brightness, prev_contrast = self._prev_brightness_contrast
+        if prev_brightness is None:
+            prev_brightness = 50
+        if prev_contrast is None:
+            prev_contrast = 50
+        dialog.slider_brightness.setValue(prev_brightness)
+        dialog.slider_contrast.setValue(prev_contrast)
+
+        dialog.onNewValue(None)
+
+        self.brightnessContrast_values[self.filename] = (prev_brightness, prev_contrast)
+        self._prev_brightness_contrast = (brightness, contrast)
 
     def togglePolygons(self, value):
         for item in self.labelList:
