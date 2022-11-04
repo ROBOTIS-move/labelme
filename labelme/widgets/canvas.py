@@ -838,25 +838,26 @@ class Canvas(QtWidgets.QWidget):
     def movePointByKeyboard(self, offset):
         if self.selectedShapes:
             for i in range(len(self.selectedShapes)):
-                if len(self.selectedShapes[i]) == 2:  # rectangle
-                    index = self.shapes.index(self.selectedShapes[i])
-                    left_top_point = QtCore.QPointF(
-                        min(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
-                        min(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
-                    )
-                    right_bottom_point = QtCore.QPointF(
-                        max(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
-                        max(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
-                    )
-                    offset_point = right_bottom_point + offset
-                    moving_point = QtCore.QPointF(
-                        min(max(0, offset_point.x()), self.pixmap.width()),
-                        min(max(0, offset_point.y()), self.pixmap.height())
-                    )
+                if self.selectedShapes[i] in self.shapes:
+                    if len(self.selectedShapes[i]) == 2:  # rectangle
+                        index = self.shapes.index(self.selectedShapes[i])
+                        left_top_point = QtCore.QPointF(
+                            min(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
+                            min(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
+                        )
+                        right_bottom_point = QtCore.QPointF(
+                            max(self.selectedShapes[i][0].x(), self.selectedShapes[i][1].x()),
+                            max(self.selectedShapes[i][0].y(), self.selectedShapes[i][1].y()),
+                        )
+                        offset_point = right_bottom_point + offset
+                        moving_point = QtCore.QPointF(
+                            min(max(0, offset_point.x()), self.pixmap.width()),
+                            min(max(0, offset_point.y()), self.pixmap.height())
+                        )
 
-                    self.selectedShapes[i][0] = left_top_point
-                    self.selectedShapes[i][1] = moving_point
-                    self.shapes[index] = self.selectedShapes[i]
+                        self.selectedShapes[i][0] = left_top_point
+                        self.selectedShapes[i][1] = moving_point
+                        self.shapes[index] = self.selectedShapes[i]
 
             self.repaint()
             self.movingShape = True
@@ -898,15 +899,16 @@ class Canvas(QtWidgets.QWidget):
                 self.snapping = True
         elif self.editing():
             if self.movingShape and self.selectedShapes:
-                index = self.shapes.index(self.selectedShapes[0])
-                if (
-                    self.shapesBackups[-1][index].points
-                    != self.shapes[index].points
-                ):
-                    self.storeShapes()
-                    self.shapeMoved.emit()
+                if self.selectedShapes[0] in self.shapes:
+                    index = self.shapes.index(self.selectedShapes[0])
+                    if (
+                        self.shapesBackups[-1][index].points
+                        != self.shapes[index].points
+                    ):
+                        self.storeShapes()
+                        self.shapeMoved.emit()
 
-                self.movingShape = False
+                    self.movingShape = False
 
     def setLastLabel(self, text, flags):
         assert text
