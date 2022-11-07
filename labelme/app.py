@@ -102,6 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._copied_shapes = None
 
         self._last_label = None
+        self._prev_brightness_contrast = (None, None)
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
@@ -365,6 +366,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.display_label_option.setChecked(self._config["display_label_option"])
 
+        self.display_probability_option = action(
+            self.tr("Display label probability"),
+            self.togglePaintProbabilityOption,
+            None,
+            None,
+            self.tr('Toggle "display label probability" mode'),
+            checkable=True,
+        )
+        self.display_probability_option.setChecked(self._config["display_probability_option"])
+
         createMode = action(
             self.tr("Create Polygons"),
             lambda: self.toggleDrawMode(False, createMode="polygon"),
@@ -622,6 +633,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "Adjust brightness and contrast",
             enabled=False,
         )
+        prevBrightnessContrast = action(
+            "&Previous Brightness Contrast",
+            self.prevBrightnessContrast,
+            shortcuts["set_prev_brightness_contrast"],
+            "color",
+            "Adjust brightness and contrast",
+            enabled=False,
+        )
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -716,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow=fitWindow,
             fitWidth=fitWidth,
             brightnessContrast=brightnessContrast,
+            prevBrightnessContrast=prevBrightnessContrast,
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
@@ -764,6 +784,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 createRectangleMode,
                 editMode,
                 brightnessContrast,
+                prevBrightnessContrast,
             ),
             onLoadSegmentationActive=(
                 close,
@@ -830,6 +851,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
                 self.display_label_option,
+                self.display_probability_option,
                 None,
                 fill_drawing,
                 None,
@@ -846,6 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 brightnessContrast,
                 keep_brightness_contrast,
+                prevBrightnessContrast,
             ),
         )
 
@@ -1050,6 +1073,7 @@ class MainWindow(QtWidgets.QMainWindow):
             action.setEnabled(value)
 
         self.actions.brightnessContrast.setEnabled(value)
+        self.actions.prevBrightnessContrast.setEnabled(value)
         self.actions.edit_label_name.setEnabled(value)
 
         if self._classType is None:
@@ -1335,6 +1359,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addLabel(self, shape):
         shape.paint_label = self.display_label_option.isChecked()
+        shape.paint_probability = self.display_probability_option.isChecked()
         if shape.group_id is None:
             text = shape.label
         else:
@@ -1400,6 +1425,10 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in shapes:
             label = shape["label"]
             points = shape["points"]
+            if "probability" in shape:
+                probability = shape["probability"]
+            else:
+                probability = None
             shape_type = shape["shape_type"]
             flags = shape["flags"]
             group_id = shape["group_id"]
@@ -1411,6 +1440,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             shape = Shape(
                 label=label,
+                probability=probability,
                 shape_type=shape_type,
                 group_id=group_id,
             )
@@ -1448,6 +1478,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
                     points=[(p.x(), p.y()) for p in s.points],
+                    probability=s.probability,
                     group_id=s.group_id,
                     shape_type=s.shape_type,
                     flags=s.flags,
@@ -1655,6 +1686,7 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness, contrast = self.brightnessContrast_values.get(
             self.filename, (None, None)
         )
+        self._prev_brightness_contrast = (brightness, contrast)
         if brightness is not None:
             dialog.slider_brightness.setValue(brightness)
         if contrast is not None:
@@ -1664,6 +1696,28 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness = dialog.slider_brightness.value()
         contrast = dialog.slider_contrast.value()
         self.brightnessContrast_values[self.filename] = (brightness, contrast)
+
+    def prevBrightnessContrast(self):
+        dialog = BrightnessContrastDialog(
+            utils.img_data_to_pil(self.imageData),
+            self.onNewBrightnessContrast,
+            parent=self,
+        )
+        brightness, contrast = self.brightnessContrast_values.get(
+            self.filename, (None, None)
+        )
+        prev_brightness, prev_contrast = self._prev_brightness_contrast
+        if prev_brightness is None:
+            prev_brightness = 50
+        if prev_contrast is None:
+            prev_contrast = 50
+        dialog.slider_brightness.setValue(prev_brightness)
+        dialog.slider_contrast.setValue(prev_contrast)
+
+        dialog.onNewValue(None)
+
+        self.brightnessContrast_values[self.filename] = (prev_brightness, prev_contrast)
+        self._prev_brightness_contrast = (brightness, contrast)
 
     def togglePolygons(self, value):
         for item in self.labelList:
@@ -2184,6 +2238,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def togglePaintLabelsOption(self):
         for shape in self.canvas.shapes:
             shape.paint_label = self.display_label_option.isChecked()
+
+    def togglePaintProbabilityOption(self):
+        for shape in self.canvas.shapes:
+            shape.paint_probability = self.display_probability_option.isChecked()
 
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()
