@@ -20,13 +20,17 @@ from labelme import PY2
 
 from . import utils
 from labelme.config import get_config
+from labelme.cli import draw_object_label
+from labelme.cli import draw_segment_label
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
 from labelme.logger import logger
 from labelme.shape import Shape
 from labelme.widgets import BrightnessContrastDialog
 from labelme.widgets import Canvas
+from labelme.widgets import ConvertLabelPopup
 from labelme.widgets import FileDialogPreview
+from labelme.widgets import ImagePopup
 from labelme.widgets import LabelDialog
 from labelme.widgets import LabelListWidget
 from labelme.widgets import LabelListWidgetItem
@@ -98,6 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._copied_shapes = None
 
         self._last_label = None
+        self._prev_brightness_contrast = (None, None)
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(
@@ -361,6 +366,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.display_label_option.setChecked(self._config["display_label_option"])
 
+        self.display_probability_option = action(
+            self.tr("Display label probability"),
+            self.togglePaintProbabilityOption,
+            None,
+            None,
+            self.tr('Toggle "display label probability" mode'),
+            checkable=True,
+        )
+        self.display_probability_option.setChecked(self._config["display_probability_option"])
+
         createMode = action(
             self.tr("Create Polygons"),
             lambda: self.toggleDrawMode(False, createMode="polygon"),
@@ -417,6 +432,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Move and edit the selected polygons"),
             enabled=False,
         )
+
+        delete_popup = action(
+            self.tr("Enable popup to confirm polygon deletion"),
+            self.toggle_delete_popup,
+            shortcuts["delete_popup"],
+            None,
+            self.tr('Toggle "delete_popup"'),
+            checkable=True,
+        )
+        delete_popup.setChecked(self._config["delete_popup"])
 
         delete = action(
             self.tr("Delete Polygons"),
@@ -508,6 +533,31 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show tutorial page"),
         )
 
+        administrator = action(
+            self.tr("&Check\nLabels"),
+            self.check_labels,
+            shortcuts["check_labels"],
+            icon="eye",
+            tip=self.tr("Check labels"),
+            enabled=False,
+        )
+
+        convert_segmentation = action(
+            self.tr("Convert\nSegmentation"),
+            self.convert_segments,
+            icon="eye",
+            tip=self.tr("Convert segmentation"),
+            enabled=False,
+        )
+
+        convert_objects = action(
+            self.tr("Convert\nObjects"),
+            self.convert_bounding_boxes,
+            icon="eye",
+            tip=self.tr("Convert bounding boxes"),
+            enabled=False,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -583,6 +633,14 @@ class MainWindow(QtWidgets.QMainWindow):
             "Adjust brightness and contrast",
             enabled=False,
         )
+        prevBrightnessContrast = action(
+            "&Previous Brightness Contrast",
+            self.prevBrightnessContrast,
+            shortcuts["set_prev_brightness_contrast"],
+            "color",
+            "Adjust brightness and contrast",
+            enabled=False,
+        )
         # Group zoom controls into a list for easier toggling.
         zoomActions = (
             self.zoomWidget,
@@ -607,6 +665,15 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts["edit_label"],
             "edit",
             self.tr("Modify the label of the selected polygon"),
+            enabled=False,
+        )
+
+        edit_label_name = action(
+            self.tr("&Edit Label Name"),
+            self.editLabel,
+            shortcuts["edit_label_name"],
+            "edit",
+            self.tr("Modify the label name of the selected polygon"),
             enabled=False,
         )
 
@@ -654,6 +721,7 @@ class MainWindow(QtWidgets.QMainWindow):
             removePoint=removePoint,
             createMode=createMode,
             editMode=editMode,
+            edit_label_name=edit_label_name,
             createRectangleMode=createRectangleMode,
             createCircleMode=createCircleMode,
             createLineMode=createLineMode,
@@ -667,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
             fitWindow=fitWindow,
             fitWidth=fitWidth,
             brightnessContrast=brightnessContrast,
+            prevBrightnessContrast=prevBrightnessContrast,
             zoomActions=zoomActions,
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
@@ -675,6 +744,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
                 edit,
+                edit_label_name,
                 duplicate,
                 delete,
                 None,
@@ -684,6 +754,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 removePoint,
                 None,
+                delete_popup,
                 toggle_keep_prev_mode,
                 add_point_mode,
                 single_class_mode,
@@ -713,18 +784,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 createRectangleMode,
                 editMode,
                 brightnessContrast,
+                prevBrightnessContrast,
             ),
             onLoadSegmentationActive=(
                 close,
                 createMode,
                 editMode,
+                convert_segmentation,
             ),
             onLoadObject2dActive=(
                 close,
                 createRectangleMode,
                 editMode,
+                convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
+            onAdministrator=(administrator,),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -734,6 +809,7 @@ class MainWindow(QtWidgets.QMainWindow):
             edit=self.menu(self.tr("&Edit")),
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
+            administrator=self.menu(self.tr("&Administrator")),
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -759,6 +835,15 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         utils.addActions(self.menus.help, (help,))
         utils.addActions(
+            self.menus.administrator,
+            (
+                administrator,
+                None,
+                convert_segmentation,
+                convert_objects
+            )
+        )
+        utils.addActions(
             self.menus.view,
             (
                 self.flag_dock.toggleViewAction(),
@@ -766,6 +851,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
                 self.display_label_option,
+                self.display_probability_option,
                 None,
                 fill_drawing,
                 None,
@@ -782,6 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 brightnessContrast,
                 keep_brightness_contrast,
+                prevBrightnessContrast,
             ),
         )
 
@@ -982,7 +1069,12 @@ class MainWindow(QtWidgets.QMainWindow):
         for z in self.actions.zoomActions:
             z.setEnabled(value)
 
+        for action in self.actions.onAdministrator:
+            action.setEnabled(value)
+
         self.actions.brightnessContrast.setEnabled(value)
+        self.actions.prevBrightnessContrast.setEnabled(value)
+        self.actions.edit_label_name.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -1041,6 +1133,24 @@ class MainWindow(QtWidgets.QMainWindow):
     def tutorial(self):
         url = "https://github.com/wkentaro/labelme/tree/main/examples/tutorial"  # NOQA
         webbrowser.open(url)
+
+    def check_labels(self):
+        if self._classType is None or 'segmentation' in self._classType:
+            self.ImagePopup.masked_widget_state = True
+            self.ImagePopup.overlayed_widget_state = True
+        elif self._classType is None or 'detection' in self._classType:
+            self.ImagePopup.object_widget_state = True
+        self.ImagePopup.popUp(self.filename, True)
+
+    def convert_segments(self):
+        folder_path = os.path.split(self.filename)[0]
+        wait_popup = ConvertLabelPopup()
+        draw_segment_label.convert_segments(folder_path, wait_popup)
+
+    def convert_bounding_boxes(self):
+        folder_path = os.path.split(self.filename)[0]
+        wait_popup = ConvertLabelPopup()
+        draw_object_label.convert_objects(folder_path, wait_popup)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -1249,6 +1359,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addLabel(self, shape):
         shape.paint_label = self.display_label_option.isChecked()
+        shape.paint_probability = self.display_probability_option.isChecked()
         if shape.group_id is None:
             text = shape.label
         else:
@@ -1314,6 +1425,10 @@ class MainWindow(QtWidgets.QMainWindow):
         for shape in shapes:
             label = shape["label"]
             points = shape["points"]
+            if "probability" in shape:
+                probability = shape["probability"]
+            else:
+                probability = None
             shape_type = shape["shape_type"]
             flags = shape["flags"]
             group_id = shape["group_id"]
@@ -1325,6 +1440,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             shape = Shape(
                 label=label,
+                probability=probability,
                 shape_type=shape_type,
                 group_id=group_id,
             )
@@ -1362,6 +1478,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 dict(
                     label=s.label.encode("utf-8") if PY2 else s.label,
                     points=[(p.x(), p.y()) for p in s.points],
+                    probability=s.probability,
                     group_id=s.group_id,
                     shape_type=s.shape_type,
                     flags=s.flags,
@@ -1569,6 +1686,7 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness, contrast = self.brightnessContrast_values.get(
             self.filename, (None, None)
         )
+        self._prev_brightness_contrast = (brightness, contrast)
         if brightness is not None:
             dialog.slider_brightness.setValue(brightness)
         if contrast is not None:
@@ -1578,6 +1696,28 @@ class MainWindow(QtWidgets.QMainWindow):
         brightness = dialog.slider_brightness.value()
         contrast = dialog.slider_contrast.value()
         self.brightnessContrast_values[self.filename] = (brightness, contrast)
+
+    def prevBrightnessContrast(self):
+        dialog = BrightnessContrastDialog(
+            utils.img_data_to_pil(self.imageData),
+            self.onNewBrightnessContrast,
+            parent=self,
+        )
+        brightness, contrast = self.brightnessContrast_values.get(
+            self.filename, (None, None)
+        )
+        prev_brightness, prev_contrast = self._prev_brightness_contrast
+        if prev_brightness is None:
+            prev_brightness = 50
+        if prev_contrast is None:
+            prev_contrast = 50
+        dialog.slider_brightness.setValue(prev_brightness)
+        dialog.slider_contrast.setValue(prev_contrast)
+
+        dialog.onNewValue(None)
+
+        self.brightnessContrast_values[self.filename] = (prev_brightness, prev_contrast)
+        self._prev_brightness_contrast = (brightness, contrast)
 
     def togglePolygons(self, value):
         for item in self.labelList:
@@ -1824,6 +1964,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if filename:
                 self.loadFile(filename)
 
+        self.ImagePopup.popUp(self.filename)
+
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
@@ -1864,6 +2006,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.filename and load:
             self.loadFile(self.filename)
+
+        self.ImagePopup.popUp(self.filename)
 
         self._config["keep_prev"] = keep_prev
 
@@ -2084,6 +2228,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleSingleClassMode(self):
         self._config["single_class"] = not self._config["single_class"]
 
+    def toggle_delete_popup(self):
+        self._config["delete_popup"] = not self._config["delete_popup"]
+
     def toggleKeepBrightnessContrast(self):
         self._config["keep_prev_brightness"] = not self._config["keep_prev_brightness"]
         self._config["keep_prev_contrast"] = not self._config["keep_prev_contrast"]
@@ -2091,6 +2238,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def togglePaintLabelsOption(self):
         for shape in self.canvas.shapes:
             shape.paint_label = self.display_label_option.isChecked()
+
+    def togglePaintProbabilityOption(self):
+        for shape in self.canvas.shapes:
+            shape.paint_probability = self.display_probability_option.isChecked()
 
     def removeSelectedPoint(self):
         self.canvas.removeSelectedPoint()
@@ -2104,14 +2255,21 @@ class MainWindow(QtWidgets.QMainWindow):
                     action.setEnabled(False)
 
     def deleteSelectedShape(self):
-        yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
-        msg = self.tr(
-            "You are about to permanently delete {} polygons, "
-            "proceed anyway?"
-        ).format(len(self.canvas.selectedShapes))
-        if yes == QtWidgets.QMessageBox.warning(
-            self, self.tr("Attention"), msg, yes | no, yes
-        ):
+        if self._config["delete_popup"]:
+            yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
+            msg = self.tr(
+                "You are about to permanently delete {} polygons, "
+                "proceed anyway?"
+            ).format(len(self.canvas.selectedShapes))
+            if yes == QtWidgets.QMessageBox.warning(
+                self, self.tr("Attention"), msg, yes | no, yes
+            ):
+                self.remLabels(self.canvas.deleteSelected())
+                self.setDirty()
+                if self.noShapes():
+                    for action in self.actions.onShapesPresent:
+                        action.setEnabled(False)
+        else:
             self.remLabels(self.canvas.deleteSelected())
             self.setDirty()
             if self.noShapes():
@@ -2243,8 +2401,15 @@ class MainWindow(QtWidgets.QMainWindow):
             for file in files:
                 if file.lower().endswith(tuple(extensions)):
                     relativePath = osp.join(root, file)
-                    images.append(relativePath)
+                    if not ('masked_image' in relativePath or 'overlayed_image' in relativePath):
+                        images.append(relativePath)
         images = natsort.os_sorted(images)
+
+        self.ImagePopup = ImagePopup(
+            parent=self,
+            folder_path=folderPath
+        )
+
         return images
 
     def choose_labels_class(self, target_class=None):

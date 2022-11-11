@@ -7,7 +7,9 @@ keep_prev_brightness: false
 keep_prev_contrast: false
 add_point: false
 single_class: false
+delete_popup: true
 display_label_option: true
+display_probability_option: true
 logger_level: info
 
 flags: null
@@ -138,8 +140,8 @@ shortcuts:
   save_to: null
   delete_file: Ctrl+Delete
 
-  open_next: [D, Ctrl+Shift+D]
-  open_prev: [A, Ctrl+Shift+A]
+  open_next: [D, Ctrl+Shift+D, down, right]
+  open_prev: [A, Ctrl+Shift+A, up, left]
 
   hide_all: Ctrl+H
   show_all: Ctrl+G
@@ -157,7 +159,7 @@ shortcuts:
   create_point: null
   create_linestrip: null
   edit_polygon: Ctrl+J
-  delete_polygon: Delete
+  delete_polygon: [Delete, Q]
   duplicate_polygon: Ctrl+D
   copy_polygon: Ctrl+C
   paste_polygon: Ctrl+V
@@ -166,6 +168,7 @@ shortcuts:
   undo_last_point: Ctrl+Z
   add_point_to_edge: Ctrl+Shift+P
   edit_label: Ctrl+E
+  edit_label_name: E
   toggle_keep_prev_mode: Ctrl+P
   toggle_add_points_mode: Ctrl+B
   single_class_mode: Ctrl+Shift+B
@@ -173,3 +176,7 @@ shortcuts:
   display_label_name: Ctrl+L
   remove_selected_point: [Meta+H, Backspace]
   set_brightness_contrast: Ctrl+M
+  set_prev_brightness_contrast: Z
+
+  check_labels: Ctrl+/
+  delete_popup: Ctrl+Shift+Q
