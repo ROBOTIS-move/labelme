@@ -9,7 +9,7 @@ Changelog for package labelme
 * Added a new segmentation class for midas data labeling
 * Added arrow key shortcuts for loading next/previous image
 * Added q shortcuts to delete label
-* Added delete popup option
+* Added delete pop-up option
 * Added function to edit label name
 * Added function to move box point
 * Added function to view label probabilities
