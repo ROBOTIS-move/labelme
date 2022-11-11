@@ -4,6 +4,17 @@ Changelog for package labelme
 
 4.7.0 (2022-11-11)
 ------------------
+* Added image pop-up function for review
+* Added label converting buttons and pop-up windows
+* Added a new segmentation class for midas data labeling
+* Added arrow key shortcuts for loading next/previous image
+* Added q shortcuts to delete label
+* Added delete popup option
+* Added function to edit label name
+* Added function to move box point
+* Added function to view label probabilities
+* Added function to reset to previous brightness and contrast
+* Contributors: Eungi Cho
 
 4.6.0 (2022-10-21)
 ------------------
