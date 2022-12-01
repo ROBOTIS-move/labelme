@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.8.0 (2022-12-01)
+------------------
+
 4.7.0 (2022-11-11)
 ------------------
 * Added image pop-up function for review
