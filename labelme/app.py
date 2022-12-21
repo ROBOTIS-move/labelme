@@ -1059,10 +1059,11 @@ class MainWindow(QtWidgets.QMainWindow):
             title = "{} - {}".format(title, self.filename)
         self.setWindowTitle(title)
 
-        if self.hasLabelFile():
-            self.actions.deleteFile.setEnabled(True)
-        else:
-            self.actions.deleteFile.setEnabled(False)
+        # if self.hasLabelFile():
+        #     self.actions.deleteFile.setEnabled(True)
+        # else:
+            # self.actions.deleteFile.setEnabled(False)
+        self.actions.deleteFile.setEnabled(False)
 
     def toggleActions(self, value=True):
         """Enable/Disable widgets which depend on an opened image."""
