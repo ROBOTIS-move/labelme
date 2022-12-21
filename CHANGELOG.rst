@@ -4,6 +4,8 @@ Changelog for package labelme
 
 4.9.0 (2022-12-22)
 ------------------
+* Deactivated delete file button
+* Contributors: Jongsub Yu
 
 4.8.0 (2022-12-01)
 ------------------
