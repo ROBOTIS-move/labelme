@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.10.0 (2023-01-12)
+------------------
+
 4.9.0 (2022-12-22)
 ------------------
 * Deactivated delete file button
