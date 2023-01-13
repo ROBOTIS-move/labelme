@@ -311,8 +311,8 @@ class Shape(object):
         points = []
         for p in self.points:
             point = p + offset
-            correct_x = point.x() >= 0 and point.x() <= pixemap.width() - 1
-            correct_y = point.y() >= 0 and point.y() <= pixemap.height() - 1
+            correct_x = point.x() >= 0 and point.x() < pixemap.width() - 1 + 1e-7
+            correct_y = point.y() >= 0 and point.y() < pixemap.height() - 1 + 1e-7
             if correct_x and correct_y:
                 points.append(point)
             else:
