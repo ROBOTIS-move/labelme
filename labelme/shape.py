@@ -265,6 +265,8 @@ class Shape(object):
         min_distance = float("inf")
         post_i = None
         for i in range(len(self.points)):
+            if self.points[i - 1] == self.points[i]:
+                continue
             line = [self.points[i - 1], self.points[i]]
             dist = labelme.utils.distancetoline(point, line)
             if dist <= epsilon and dist < min_distance:
@@ -309,8 +311,8 @@ class Shape(object):
         points = []
         for p in self.points:
             point = p + offset
-            correct_x = point.x() >= 0 and point.x() <= pixemap.width()
-            correct_y = point.y() >= 0 and point.y() <= pixemap.height()
+            correct_x = point.x() >= 0 and point.x() <= pixemap.width() - 1
+            correct_y = point.y() >= 0 and point.y() <= pixemap.height() - 1
             if correct_x and correct_y:
                 points.append(point)
             else:
