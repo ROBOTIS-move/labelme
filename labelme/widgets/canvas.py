@@ -548,13 +548,13 @@ class Canvas(QtWidgets.QWidget):
         bottom = 0
         for s in self.selectedShapes:
             rect = s.boundingRect()
-            if rect.left() <= left:
+            if rect.left() < left:
                 left = rect.left()
-            if rect.right() >= right:
+            if rect.right() > right:
                 right = rect.right()
-            if rect.top() <= top:
+            if rect.top() < top:
                 top = rect.top()
-            if rect.bottom() >= bottom:
+            if rect.bottom() > bottom:
                 bottom = rect.bottom()
 
         x1 = left - point.x()
