@@ -573,6 +573,15 @@ class Canvas(QtWidgets.QWidget):
     def boundedMoveShapes(self, shapes, pos):
         if self.outOfPixmap(pos):
             return False  # No need to move
+        # o1 = pos + self.offsets[0]
+        # if self.outOfPixmap(o1):
+        #     pos -= QtCore.QPoint(min(0, o1.x()), min(0, o1.y()))
+        # o2 = pos + self.offsets[1]
+        # if self.outOfPixmap(o2):
+        #     pos += QtCore.QPoint(
+        #         min(0, self.pixmap.width() - o2.x()),
+        #         min(0, self.pixmap.height() - o2.y()),
+        #     )
         # XXX: The next line tracks the new position of the cursor
         # relative to the shape, but also results in making it
         # a bit "shaky" when nearing the border and allows it to
@@ -580,7 +589,23 @@ class Canvas(QtWidgets.QWidget):
         # self.calculateOffsets(self.selectedShapes, pos)
         dp = pos - self.prevPoint
         if dp:
+            dps_per_shapes = []
             for shape in shapes:
+                for point in shape:
+                    moved_point = point + dp
+                    dp_offset_x = 0
+                    dp_offset_y = 0
+                    if moved_point.x() > self.pixmap.width() - 1:
+                        dp_offset_x = moved_point.x() - (self.pixmap.width() - 1)
+                    if moved_point.y() > self.pixmap.height() - 1:
+                        dp_offset_y = moved_point.y() - (self.pixmap.height() - 1)
+                    if moved_point.x() < 0:
+                        dp_offset_x = moved_point.x()
+                    if moved_point.y() < 0:
+                        dp_offset_y = moved_point.y()
+                    dp -= QtCore.QPointF(dp_offset_x, dp_offset_y)
+                dps_per_shapes.append(dp)
+            for shape, dp in zip(shapes, dps_per_shapes):
                 shape.moveBy(dp, self.pixmap)
             self.prevPoint = pos
             return True
