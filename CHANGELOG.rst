@@ -2,8 +2,14 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+4.11.0 (2023-02-02)
+-------------------
+* Fixed adding point outside of the image bug
+* Modified calculating offset of polygon when moving towards the edge of the image
+* Contributors: Jongsub Yu
+
 4.10.0 (2023-01-12)
-------------------
+-------------------
 
 4.9.0 (2022-12-22)
 ------------------
