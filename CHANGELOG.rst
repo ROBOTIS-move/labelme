@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.0.0 (2023-02-23)
+------------------
+
 4.11.0 (2023-02-02)
 -------------------
 * Fixed adding point outside of the image bug
