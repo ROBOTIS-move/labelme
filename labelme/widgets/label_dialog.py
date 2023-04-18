@@ -131,6 +131,19 @@ class LabelDialog(QtWidgets.QDialog):
         if self._sort_labels:
             self.labelList.sortItems()
 
+    def removeLabelHistory(self, source_labels, erase_targets):
+        if len(erase_targets) == 0:
+            return
+        else:
+            if self._sort_labels:
+                source_labels.sort()
+                erase_targets.sort()
+            for iter_index, target_label in enumerate(erase_targets):
+                target_index = source_labels.index(target_label)
+                self.labelList.takeItem(target_index - iter_index)
+        if self._sort_labels:
+            self.labelList.sortItems()
+
     def labelSelected(self, item):
         self.edit.setText(item.text())
 
@@ -250,7 +263,7 @@ class LabelDialog(QtWidgets.QDialog):
                 column = widget_size.height() - self.labelList.size().height() - 180
             else:
                 column = popup_pos.y() - y_margin
-            self.move(QtCore.QPoint(row + x_margin, column + y_margin))
+            self.move(QtCore.QPoint(int(row + x_margin), int(column + y_margin)))
         if self.exec_():
             return self.edit.text(), self.getFlags(), self.getGroupId()
         else:
