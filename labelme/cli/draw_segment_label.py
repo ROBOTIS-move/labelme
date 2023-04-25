@@ -61,7 +61,7 @@ class Convertor:
                     self.multi_convert_json_to_mask,
                     json_list[i * num_core : (i+1) * num_core])
                 if not popup == None:
-                    popup.set_prograss(int(i / process_num * 100))
+                    popup.set_progress(int(i / process_num * 100))
 
             pool.close()
             pool.join()
