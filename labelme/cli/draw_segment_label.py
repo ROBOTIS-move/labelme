@@ -28,15 +28,18 @@ class Convertor:
             self.created_output_dir(input_dir)
 
         json_list = glob.glob(os.path.join(input_dir, '*.json'))
-        num_core = multiprocessing.cpu_count()
-        if num_core >= 10:
-            num_core = 10
-        elif num_core >= 5:
-            num_core = 5
-        elif num_core >= 2:
-            num_core = 2
-        else:
+        if len(json_list) < 50:
             num_core = 1
+        else:
+            num_core = multiprocessing.cpu_count()
+            if num_core >= 10:
+                num_core = 10
+            elif num_core >= 5:
+                num_core = 5
+            elif num_core >= 2:
+                num_core = 2
+            else:
+                num_core = 1
 
         if not popup == None:
             popup.show()
@@ -58,7 +61,7 @@ class Convertor:
                     self.multi_convert_json_to_mask,
                     json_list[i * num_core : (i+1) * num_core])
                 if not popup == None:
-                    popup.set_prograss(i / process_num * 100)
+                    popup.set_progress(int(i / process_num * 100))
 
             pool.close()
             pool.join()

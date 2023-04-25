@@ -19,10 +19,10 @@ class ConvertLabelPopup(QtWidgets.QProgressBar):
         self.popup.setText('Please wait for a moment...')
         self.popup.setAlignment(Qt.AlignHCenter)
 
-        self.prograss_bar = QtWidgets.QProgressBar(self.popup)
-        self.prograss_bar.setWindowTitle('Convert labels')
-        self.prograss_bar.setGeometry(50, 20, 200, 25)
-        self.prograss_bar.setValue(0)
+        self.progress_bar = QtWidgets.QProgressBar(self.popup)
+        self.progress_bar.setWindowTitle('Convert labels')
+        self.progress_bar.setGeometry(50, 20, 200, 25)
+        self.progress_bar.setValue(0)
 
     def show(self):
         self.popup.show()
@@ -31,5 +31,5 @@ class ConvertLabelPopup(QtWidgets.QProgressBar):
     def close(self):
         self.popup.close()
 
-    def set_prograss(self, value):
-        self.prograss_bar.setValue(value)
+    def set_progress(self, value):
+        self.progress_bar.setValue(value)

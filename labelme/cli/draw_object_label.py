@@ -60,7 +60,7 @@ class Convertor:
                     self.convert_bounding_box,
                     json_list[i * num_core : (i+1) * num_core])
                 if not popup == None:
-                    popup.set_prograss(i / process_num * 100)
+                    popup.set_progress(i / process_num * 100)
 
             pool.close()
             pool.join()
