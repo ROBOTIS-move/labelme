@@ -28,7 +28,7 @@ labels_class:
       ['pattern-block', 'non-pattern-block', 'cement',
       'bicycle-road', 'deck', 'grass', 'pebble', 'void']
     sga:
-      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block',
+      ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
       'asphalt', 'deck', 'pebble', 'manhole', 'wall', 'void']
   outdoor_detection:
     default:
