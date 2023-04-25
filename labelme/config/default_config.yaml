@@ -29,7 +29,7 @@ labels_class:
       'bicycle-road', 'deck', 'grass', 'pebble', 'void']
     sga:
       ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
-      'asphalt', 'deck', 'pebble', 'manhole', 'wall', 'void']
+      'asphalt', 'deck', 'manhole', 'wall', 'void']
   outdoor_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
