@@ -27,6 +27,9 @@ labels_class:
     cma:
       ['pattern-block', 'non-pattern-block', 'cement',
       'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+    sga:
+      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block',
+      'asphalt', 'deck', 'grass', 'pebble', 'void']
   outdoor_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -54,6 +57,9 @@ label_colors:
   deck : [255, 165, 0]
   grass : [252, 107, 3]
   pebble : [0, 128, 128]
+  wall: [150, 150, 100]
+  drain: [100, 200, 255]
+  manhole: [255, 200, 255]
   void : [0, 0, 0]
   person: [252, 107, 3]  # outdoor_detection
   bicycle: [128, 0, 0]
