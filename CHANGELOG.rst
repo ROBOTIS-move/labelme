@@ -4,6 +4,9 @@ Changelog for package labelme
 
 5.3.0 (2023-04-27)
 ------------------
+* Added setting specific labels according to service area
+* Added new service area with new target classes
+* Contributors: Jongsub Yu
 
 5.2.0 (2023-04-06)
 ------------------
