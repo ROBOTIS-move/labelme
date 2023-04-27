@@ -60,6 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
+        self._last_label_names = []
         if output is not None:
             logger.warning(
                 "argument output is deprecated, use output_file instead"
@@ -1616,8 +1617,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setScroll(orientation, value)
 
     def setScroll(self, orientation, value):
-        self.scrollBars[orientation].setValue(value)
-        self.scroll_values[orientation][self.filename] = value
+        self.scrollBars[orientation].setValue(int(value))
+        self.scroll_values[orientation][self.filename] = int(value)
 
     def setZoom(self, value):
         self.actions.fitWidth.setChecked(False)
@@ -2419,10 +2420,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 for label_name in self._config['labels_class'][label_class]:
                     self.labelDialog.addLabelHistory(label_name)
         else:
-            for label_name in self._config['labels_class'][target_class]:
-                self.labelDialog.addLabelHistory(label_name)
+            class_type = None
+            service_area = None
+            if '/' in target_class:
+                class_type, service_area = target_class.split('/')
+                erase_label_names = []
+                current_label_names = self._config['labels_class'][class_type][service_area]
+                if len(self._last_label_names) != 0:
+                    for last_class_name in self._last_label_names:
+                        if last_class_name not in current_label_names:
+                            erase_label_names.append(last_class_name)
+                for label_name in current_label_names:
+                    self.labelDialog.addLabelHistory(label_name)
+                self.labelDialog.removeLabelHistory(self._last_label_names, erase_label_names)
+                self._last_label_names = current_label_names
 
     def get_target_class(self, file_path):
+        service_area = None
         target_class = None
         if os.path.isfile(file_path):
             try:
@@ -2432,10 +2446,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 raise LabelFileError(e)
 
             if 'classType' in data:
-                target_class = data['classType']
-                if target_class == 'segmentation':
-                    target_class = 'outdoor_segmentation'
-                elif target_class == 'object-2d':
-                    target_class = 'outdoor_detection'
-
+                class_type = data['classType']
+                target_class = class_type
+                if 'serviceArea' in data:
+                    service_area = data['serviceArea']
+                    target_class = class_type + '/' + service_area
+                else:
+                    target_class = class_type + '/default'
         return target_class

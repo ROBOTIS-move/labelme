@@ -21,15 +21,24 @@ validate_label: null
 
 labels_class:
   outdoor_segmentation:
-    ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-    'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+    default:
+      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
+      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+    cma:
+      ['pattern-block', 'non-pattern-block', 'cement',
+      'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+    sga:
+      ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
+      'asphalt', 'deck', 'manhole', 'wall', 'void']
   outdoor_detection:
-    ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
-    'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
-    'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
+    default:
+      ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
+      'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
+      'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
-    ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
-    'sticker', 'admin-key', 'indicator', 'handi-symbol', 'screw', 'others']
+    default:
+      ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
+      'sticker', 'admin-key', 'indicator', 'handi-symbol', 'screw', 'others']
 
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
@@ -48,6 +57,9 @@ label_colors:
   deck : [255, 165, 0]
   grass : [252, 107, 3]
   pebble : [0, 128, 128]
+  wall: [150, 150, 100]
+  drain: [100, 200, 255]
+  manhole: [255, 200, 255]
   void : [0, 0, 0]
   person: [252, 107, 3]  # outdoor_detection
   bicycle: [128, 0, 0]

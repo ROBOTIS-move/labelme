@@ -12,6 +12,9 @@ outdoor_segmentation:
   deck : [255, 165, 0]
   grass : [252, 107, 3]
   pebble : [0, 128, 128]
+  wall: [150, 150, 100]
+  drain: [100, 200, 255]
+  manhole: [255, 200, 255]
   void : [0, 0, 0]
 indoor_segmentation:
   in_panel : [128, 128, 128]

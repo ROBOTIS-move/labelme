@@ -49,6 +49,7 @@ class ImagePopup(QtWidgets.QLabel):
             else:
                 masked_image = os.path.join(self.masked_path, data_name + 'png')
                 if os.path.isfile(masked_image):
+                    self.masked_widget.setWindowTitle('masked image: ' + data_name + 'png')
                     mask, (mask_width, mask_height) = self.load_image(masked_image)
                     mask = QtGui.QImage.fromData(mask)
                     self.masked_widget.setMinimumHeight(mask_height)
@@ -62,6 +63,7 @@ class ImagePopup(QtWidgets.QLabel):
             else:
                 overlayed_image = os.path.join(self.overlayed_path, data_name + 'jpg')
                 if os.path.isfile(overlayed_image):
+                    self.overlayed_widget.setWindowTitle('overlayed image: ' + data_name + 'jpg')
                     overlay, (overlay_width, overlay_height) = self.load_image(overlayed_image)
                     overlay = QtGui.QImage.fromData(overlay)
                     self.overlayed_widget.setMinimumHeight(overlay_height)
