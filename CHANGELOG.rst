@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.4.0 (2023-05-18)
+------------------
+
 5.3.0 (2023-04-27)
 ------------------
 * Added setting specific labels according to service area
