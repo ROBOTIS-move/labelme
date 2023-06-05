@@ -2426,7 +2426,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 class_type, service_area = target_class.split('/')
                 erase_label_names = []
                 if service_area not in self._config['labels_class'][class_type].keys():
-                    print(self._config['labels_class'][class_type].keys())
                     service_area = 'default'
                 current_label_names = self._config['labels_class'][class_type][service_area]
                 if len(self._last_label_names) != 0:
