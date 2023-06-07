@@ -2449,6 +2449,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if 'classType' in data:
                 class_type = data['classType']
+                if class_type == 'segmentation':
+                    class_type = 'outdoor_segmentation'
                 target_class = class_type
                 if 'serviceArea' in data:
                     service_area = data['serviceArea']
