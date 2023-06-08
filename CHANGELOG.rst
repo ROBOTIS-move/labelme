@@ -4,6 +4,8 @@ Changelog for package labelme
 
 5.5.0 (2023-06-08)
 ------------------
+* Added setting service area as default if the target area does not exist in config file
+* Contributors: Jongsub Yu
 
 5.4.0 (2023-05-18)
 ------------------
