@@ -15,6 +15,10 @@ outdoor_segmentation:
   wall: [150, 150, 100]
   drain: [100, 200, 255]
   manhole: [255, 200, 255]
+  vegetation: [107, 142, 35]
+  pedestrian: [220, 20, 60]
+  animal: [200, 100, 100]
+  dynamic: [150, 100, 255]
   void : [0, 0, 0]
 indoor_segmentation:
   in_panel : [128, 128, 128]
