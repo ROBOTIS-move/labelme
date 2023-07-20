@@ -4,6 +4,8 @@ Changelog for package labelme
 
 5.7.0 (2023-07-20)
 ------------------
+* Added segmentation non-target class info
+* Contributors: Jaehun Park
 
 5.6.0 (2023-06-29)
 ------------------
