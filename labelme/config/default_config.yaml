@@ -23,13 +23,14 @@ labels_class:
   outdoor_segmentation:
     default:
       ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void',
+      'vegetation', 'pedestrian', 'animal', 'dynamic']
     cma:
-      ['pattern-block', 'non-pattern-block', 'cement',
-      'bicycle-road', 'deck', 'grass', 'pebble', 'void']
+      ['pattern-block', 'non-pattern-block', 'cement', 'bicycle-road', 'deck', 'grass', 'pebble',
+      'void', 'pedestrian', 'animal', 'dynamic']
     sga:
       ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
-      'asphalt', 'deck', 'manhole', 'wall', 'void']
+      'asphalt', 'deck', 'manhole', 'wall', 'void', 'pedestrian', 'animal', 'dynamic']
   outdoor_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -44,7 +45,7 @@ default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
 label_colors:
-  pattern-block: [0, 102, 0]  # outdoor_segmentation
+  pattern-block: [0, 102, 0]
   non-pattern-block: [204, 255, 204]
   curb : [102, 102, 255]
   braille-block : [255, 255, 0]
@@ -60,13 +61,16 @@ label_colors:
   wall: [150, 150, 100]
   drain: [100, 200, 255]
   manhole: [255, 200, 255]
+  vegetation: [107, 142, 35]
+  pedestrian: [220, 20, 60]
+  dynamic: [150, 100, 255]
   void : [0, 0, 0]
-  person: [252, 107, 3]  # outdoor_detection
+  person: [252, 107, 3]
   bicycle: [128, 0, 0]
   motorcycle : [0, 128, 0]
   kickboard : [128, 128, 0]
   robot : [0, 0, 128]
-  animal : [102, 0, 153]
+  animal : [200, 100, 100]
   mailbox : [128, 0, 128]
   car : [0, 128, 128]
   bus : [128, 128, 128]
@@ -78,7 +82,7 @@ label_colors:
   countdown-light-out : [153, 102, 0]
   traffic-sign : [64, 0, 128]
   unknown : [204, 255, 204]
-  in_panel : [128, 128, 128] # indoor_segmentation
+  in_panel : [128, 128, 128]
   out_panel : [192, 192, 192]
   rect-btn : [255, 0, 0]
   circle-btn : [0, 255, 0]
