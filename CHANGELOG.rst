@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.8.0 (2023-08-10)
+------------------
+
 5.7.0 (2023-07-20)
 ------------------
 * Added segmentation non-target class info
