@@ -23,11 +23,16 @@ labels_class:
   outdoor_segmentation:
     default:
       ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void',
-      'vegetation', 'pedestrian', 'animal', 'dynamic']
+      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble',
+      'wall', 'drain', 'manhole', 'vegetation', 'pedestrian', 'animal', 'dynamic',
+      'docking-station', 'void']
     cma:
       ['pattern-block', 'non-pattern-block', 'cement', 'bicycle-road', 'deck', 'grass', 'pebble',
       'void', 'pedestrian', 'animal', 'dynamic']
+    mla:
+      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
+      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void',
+      'vegetation', 'pedestrian', 'animal', 'dynamic', 'docking-station']
     sga:
       ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
       'asphalt', 'deck', 'manhole', 'wall', 'void', 'pedestrian', 'animal', 'dynamic']
@@ -95,6 +100,7 @@ label_colors:
   indicator : [0, 128, 0]
   handi-symbol : [128, 0, 128]
   screw : [0, 128, 128]
+  docking-station : [0, 100 ,255]
   others : [100, 200, 150]
 
 shape:
