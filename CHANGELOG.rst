@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.9.0 (2023-09-21)
+------------------
+* Added docking-station segmentation class
+* Contributors: Jaehun Park
+
 5.8.0 (2023-08-10)
 ------------------
 
