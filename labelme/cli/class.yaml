@@ -20,6 +20,9 @@ outdoor_segmentation:
   animal: [200, 100, 100]
   dynamic: [150, 100, 255]
   docking-station : [0, 100, 255]
+  tree : [150, 50, 0]
+  poll : [250, 0, 150]
+  mat : [0, 100, 150]
   void : [0, 0, 0]
 indoor_segmentation:
   in_panel : [128, 128, 128]
