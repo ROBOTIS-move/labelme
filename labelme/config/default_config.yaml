@@ -25,7 +25,7 @@ labels_class:
       ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
       'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble',
       'wall', 'drain', 'manhole', 'vegetation', 'pedestrian', 'animal', 'dynamic',
-      'docking-station', 'void']
+      'docking-station', 'void', 'tree', 'poll', 'mat']
     cma:
       ['pattern-block', 'non-pattern-block', 'cement', 'bicycle-road', 'deck', 'grass', 'pebble',
       'void', 'pedestrian', 'animal', 'dynamic']
@@ -70,6 +70,9 @@ label_colors:
   pedestrian: [220, 20, 60]
   dynamic: [150, 100, 255]
   void : [0, 0, 0]
+  tree : [150, 50, 0]
+  poll : [250, 0, 150]
+  mat : [0, 100, 150]
   person: [252, 107, 3]
   bicycle: [128, 0, 0]
   motorcycle : [0, 128, 0]
