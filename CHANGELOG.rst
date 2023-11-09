@@ -4,6 +4,8 @@ Changelog for package labelme
 
 5.11.0 (2023-11-09)
 -------------------
+* Added new segmentation class : tree, poll, mat
+* Contributors: Jaehun Park
 
 5.10.0 (2023-10-12)
 -------------------
