@@ -17,7 +17,7 @@ CURSOR_DRAW = QtCore.Qt.CrossCursor
 CURSOR_MOVE = QtCore.Qt.ClosedHandCursor
 CURSOR_GRAB = QtCore.Qt.OpenHandCursor
 
-MOVE_SPEED = 2.0
+MOVE_SPEED = 2
 
 
 class Canvas(QtWidgets.QWidget):
@@ -892,21 +892,21 @@ class Canvas(QtWidgets.QWidget):
                 self.snapping = False
         elif self.editing():
             if key == QtCore.Qt.Key_Up:
-                self.moveByKeyboard(QtCore.QPoint(0.0, -MOVE_SPEED))
+                self.moveByKeyboard(QtCore.QPoint(0, -MOVE_SPEED))
             elif key == QtCore.Qt.Key_Down:
-                self.moveByKeyboard(QtCore.QPoint(0.0, MOVE_SPEED))
+                self.moveByKeyboard(QtCore.QPoint(0, MOVE_SPEED))
             elif key == QtCore.Qt.Key_Left:
-                self.moveByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0.0))
+                self.moveByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0))
             elif key == QtCore.Qt.Key_Right:
-                self.moveByKeyboard(QtCore.QPoint(MOVE_SPEED, 0.0))
+                self.moveByKeyboard(QtCore.QPoint(MOVE_SPEED, 0))
             elif key == 49:
-                self.movePointByKeyboard(QtCore.QPoint(0.0, -MOVE_SPEED))
+                self.movePointByKeyboard(QtCore.QPoint(0, -MOVE_SPEED))
             elif key == 50:
-                self.movePointByKeyboard(QtCore.QPoint(0.0, MOVE_SPEED))
+                self.movePointByKeyboard(QtCore.QPoint(0, MOVE_SPEED))
             elif key == 51:
-                self.movePointByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0.0))
+                self.movePointByKeyboard(QtCore.QPoint(-MOVE_SPEED, 0))
             elif key == 52:
-                self.movePointByKeyboard(QtCore.QPoint(MOVE_SPEED, 0.0))
+                self.movePointByKeyboard(QtCore.QPoint(MOVE_SPEED, 0))
 
     def keyReleaseEvent(self, ev):
         modifiers = ev.modifiers()
