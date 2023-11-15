@@ -2424,17 +2424,12 @@ class MainWindow(QtWidgets.QMainWindow):
             service_area = None
             if '/' in target_class:
                 class_type, service_area = target_class.split('/')
-                erase_label_names = []
                 if service_area not in self._config['labels_class'][class_type].keys():
                     service_area = 'default'
                 current_label_names = self._config['labels_class'][class_type][service_area]
-                if len(self._last_label_names) != 0:
-                    for last_class_name in self._last_label_names:
-                        if last_class_name not in current_label_names:
-                            erase_label_names.append(last_class_name)
+                self.labelDialog.removeAllLabelHistory(self._last_label_names)
                 for label_name in current_label_names:
                     self.labelDialog.addLabelHistory(label_name)
-                self.labelDialog.removeLabelHistory(self._last_label_names, erase_label_names)
                 self._last_label_names = current_label_names
 
     def get_target_class(self, file_path):

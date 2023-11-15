@@ -36,11 +36,13 @@ labels_class:
     sga:
       ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
       'asphalt', 'deck', 'manhole', 'wall', 'void', 'pedestrian', 'animal', 'dynamic']
-  outdoor_detection:
+  outdoor_detection-object_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
-      'robot', 'animal', 'mailbox', 'traffic-sign', 'unknown',
-      'stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
+      'robot', 'animal', 'unknown']
+  outdoor_detection-traffic_light_detection:
+    default:
+      ['stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
     default:
       ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
@@ -80,9 +82,9 @@ label_colors:
   robot : [0, 0, 128]
   animal : [200, 100, 100]
   mailbox : [128, 0, 128]
-  car : [0, 128, 128]
-  bus : [128, 128, 128]
-  truck : [64, 0, 0]
+  car : [255, 255, 0]
+  bus : [0, 255, 0]
+  truck : [64, 255, 255]
   stop : [192, 0, 0]
   walk : [64, 128, 0]
   light-out : [51, 204, 204]
