@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.12.0 (2023-11-30)
+-------------------
+
 5.11.0 (2023-11-09)
 -------------------
 * Added new segmentation class : tree, poll, mat
