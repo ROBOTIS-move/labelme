@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.12.0 (2023-11-30)
+-------------------
+* Fixed bug of moving box coordinates and modified erasing class list
+* Contributors: Jongsub Yu
+
 5.11.0 (2023-11-09)
 -------------------
 * Added new segmentation class : tree, poll, mat
