@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.13.0 (2023-12-21)
+-------------------
+
 5.12.0 (2023-11-30)
 -------------------
 * Fixed bug of moving box coordinates and modified erasing class list
