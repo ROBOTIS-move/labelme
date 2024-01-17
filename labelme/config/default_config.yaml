@@ -22,20 +22,9 @@ validate_label: null
 labels_class:
   outdoor_segmentation:
     default:
-      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble',
-      'wall', 'drain', 'manhole', 'vegetation', 'pedestrian', 'animal', 'dynamic',
-      'docking-station', 'void', 'tree', 'poll', 'mat']
-    cma:
-      ['pattern-block', 'non-pattern-block', 'cement', 'bicycle-road', 'deck', 'grass', 'pebble',
-      'void', 'pedestrian', 'animal', 'dynamic']
-    mla:
-      ['pattern-block', 'non-pattern-block', 'curb', 'braille-block', 'cement', 'asphalt',
-      'cross-walk', 'speed-bump', 'sand', 'bicycle-road', 'deck', 'grass', 'pebble', 'void',
-      'vegetation', 'pedestrian', 'animal', 'dynamic', 'docking-station']
-    sga:
-      ['pattern-block', 'non-pattern-block', 'cement', 'curb', 'braille-block',
-      'asphalt', 'deck', 'manhole', 'wall', 'void', 'pedestrian', 'animal', 'dynamic']
+      ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'speed-bump', 'manhole',
+      'terrain', 'vegetation', 'sky', 'building', 'poll', 'deck', 'pedestrian', 'animal',
+      'vehicle', 'dynamic', 'static', 'void']
   outdoor_detection-object_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -70,35 +59,31 @@ default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
 label_colors:
-  pattern-block: [0, 102, 0]
-  non-pattern-block: [204, 255, 204]
-  curb : [102, 102, 255]
-  braille-block : [255, 255, 0]
-  cement : [51, 204, 204]
-  asphalt : [204, 51, 51]
-  cross-walk : [64, 255, 0]
-  speed-bump : [153, 102, 0]
-  sand : [102, 0, 153]
-  bicycle-road : [204, 51, 204]
-  deck : [255, 165, 0]
-  grass : [252, 107, 3]
-  pebble : [0, 128, 128]
-  wall: [150, 150, 100]
-  drain: [100, 200, 255]
+  runway: [0, 102, 0]
+  road: [128, 64, 128]
+  curb: [102, 102, 255]
+  mat: [0, 100, 150]
+  braille-block: [255, 255, 0]
+  cross-walk: [64, 255, 0]
+  speed-bump: [153, 102, 0]
   manhole: [255, 200, 255]
+  terrain: [152, 251, 152]
   vegetation: [107, 142, 35]
+  sky: [70, 130, 180]
+  building: [150, 150, 100]
+  poll: [250, 0, 150]
+  deck: [255, 165, 0]
   pedestrian: [220, 20, 60]
+  animal: [200, 100, 100]
+  vehicle: [0, 0, 230]
   dynamic: [150, 100, 255]
-  void : [0, 0, 0]
-  tree : [150, 50, 0]
-  poll : [250, 0, 150]
-  mat : [0, 100, 150]
+  static: [204, 51, 204]
+  void: [63, 63, 63]
   person: [252, 107, 3]
   bicycle: [128, 0, 0]
   motorcycle : [0, 128, 0]
   kickboard : [128, 128, 0]
   robot : [0, 0, 128]
-  animal : [200, 100, 100]
   mailbox : [128, 0, 128]
   car : [255, 255, 0]
   bus : [0, 255, 0]
