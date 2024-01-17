@@ -22,9 +22,9 @@ validate_label: null
 labels_class:
   outdoor_segmentation:
     default:
-      ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'speed-bump', 'manhole',
-      'terrain', 'vegetation', 'sky', 'building', 'poll', 'deck', 'pedestrian', 'animal',
-      'vehicle', 'dynamic', 'static', 'void']
+      ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll', 'deck',
+      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
   outdoor_detection-object_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -47,6 +47,7 @@ label_colors:
   mat: [0, 100, 150]
   braille-block: [255, 255, 0]
   cross-walk: [64, 255, 0]
+  bicycle-road: [204, 51, 204]
   speed-bump: [153, 102, 0]
   manhole: [255, 200, 255]
   terrain: [152, 251, 152]
@@ -59,7 +60,7 @@ label_colors:
   animal: [200, 100, 100]
   vehicle: [0, 0, 230]
   dynamic: [150, 100, 255]
-  static: [204, 51, 204]
+  static: [0, 128, 128]
   void: [63, 63, 63]
   person: [252, 107, 3]
   bicycle: [128, 0, 0]

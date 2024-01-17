@@ -5,6 +5,7 @@ outdoor_segmentation:
   mat: [0, 100, 150]
   braille-block: [255, 255, 0]
   cross-walk: [64, 255, 0]
+  bicycle-road: [204, 51, 204]
   speed-bump: [153, 102, 0]
   manhole: [255, 200, 255]
   terrain: [152, 251, 152]
@@ -17,7 +18,7 @@ outdoor_segmentation:
   animal: [200, 100, 100]
   vehicle: [0, 0, 230]
   dynamic: [150, 100, 255]
-  static: [204, 51, 204]
+  static: [0, 128, 128]
   void: [63, 63, 63]
 indoor_segmentation:
   in_panel : [128, 128, 128]
