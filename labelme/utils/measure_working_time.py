@@ -14,9 +14,10 @@ class MeasureTime():
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         
     def write_description(self, save_path):
-        description = 'test'
+        description = ['test', 'test2']
         with open(save_path + '/Cache.txt', "a") as f:
             for text in description:
+                text = text + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
                 if self.crypto_mode:
                     encrypted_text = self.encrypt_text(text)
                     f.write(str(encrypted_text) + '\n')
