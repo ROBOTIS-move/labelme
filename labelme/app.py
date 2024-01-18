@@ -1475,7 +1475,6 @@ class MainWindow(QtWidgets.QMainWindow):
         lf = LabelFile()
 
         def format_shape(s):
-            print("TEST_CHCEK")
             data = s.other_data.copy()
             data.update(
                 dict(

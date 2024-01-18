@@ -175,7 +175,6 @@ def main():
         output_file=output_file,
         output_dir=output_dir,
     )
-    print("CHECK")
 
     if reset_config:
         logger.info("Resetting Qt config: %s" % win.settings.fileName())

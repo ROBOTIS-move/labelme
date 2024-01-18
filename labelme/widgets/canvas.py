@@ -92,7 +92,7 @@ class Canvas(QtWidgets.QWidget):
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
-        self.measureWorkingTime = MeasureTime('ctrl+s')
+        self.measureWorkingTime = MeasureTime('')
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -227,7 +227,6 @@ class Canvas(QtWidgets.QWidget):
                 pos = self.transformPos(ev.posF())
         except AttributeError:
             return
-        print("CANVAS1")
         self.measureWorkingTime.measure_time()
         self.prevMovePoint = pos
         self.restoreCursor()
@@ -386,7 +385,6 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
-        print("CANVAS2")
         if ev.button() == QtCore.Qt.LeftButton:
             if self.drawing():
                 if self.current:
@@ -444,7 +442,6 @@ class Canvas(QtWidgets.QWidget):
             self.prevPoint = pos
 
     def mouseReleaseEvent(self, ev):
-        print("CANVAS3")
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             self.restoreCursor()
@@ -508,7 +505,6 @@ class Canvas(QtWidgets.QWidget):
         return self.drawing() and self.current and len(self.current) > 2
 
     def mouseDoubleClickEvent(self, ev):
-        print("CANVAS4")
         # We need at least 4 points here, since the mousePress handler
         # adds an extra one before this handler is called.
         if (
