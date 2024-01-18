@@ -217,7 +217,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
 
         # Actions
-        print("Shortcut TEst")
         action = functools.partial(utils.newAction, self)
         shortcuts = self._config["shortcuts"]
         quit = action(
@@ -1476,6 +1475,7 @@ class MainWindow(QtWidgets.QMainWindow):
         lf = LabelFile()
 
         def format_shape(s):
+            print("TEST_CHCEK")
             data = s.other_data.copy()
             data.update(
                 dict(
