@@ -92,7 +92,7 @@ class Canvas(QtWidgets.QWidget):
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
-        self.measureWorkingTime = MeasureTime('')
+        self.measureWorkingTime = MeasureTime()
 
     def fillDrawing(self):
         return self._fill_drawing
