@@ -3,8 +3,7 @@ import os
 import datetime as dt
 
 class MeasureTime():
-    def __init__(self, save_path, crypto_mode = False):
-        self.save_path = save_path
+    def __init__(self, crypto_mode = False):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
@@ -14,8 +13,9 @@ class MeasureTime():
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         
-    def write_description(self, description):
-        with open(self.save_path + '/Cache.txt', "a") as f:
+    def write_description(self, save_path):
+        description = 'test'
+        with open(save_path + '/Cache.txt', "a") as f:
             for text in description:
                 if self.crypto_mode:
                     encrypted_text = self.encrypt_text(text)
