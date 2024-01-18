@@ -5,6 +5,7 @@ from qtpy import QtWidgets
 from labelme import QT5
 from labelme.shape import Shape
 import labelme.utils
+from labelme.utils.measure_working_time import MeasureTime
 
 
 # TODO(unknown):
@@ -91,6 +92,7 @@ class Canvas(QtWidgets.QWidget):
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
+        self.measureWorkingTime = MeasureTime()
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -225,7 +227,7 @@ class Canvas(QtWidgets.QWidget):
                 pos = self.transformPos(ev.posF())
         except AttributeError:
             return
-
+        self.measureWorkingTime.measure()
         self.prevMovePoint = pos
         self.restoreCursor()
         if self.createMode == "rectangle":
