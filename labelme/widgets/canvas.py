@@ -92,7 +92,7 @@ class Canvas(QtWidgets.QWidget):
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
-        self.measureWorkingTime = MeasureTime()
+        self.measureWorkingTime = MeasureTime('ctrl+s')
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -228,7 +228,7 @@ class Canvas(QtWidgets.QWidget):
         except AttributeError:
             return
         print("CANVAS1")
-        self.measureWorkingTime.measure()
+        self.measureWorkingTime.measure_time()
         self.prevMovePoint = pos
         self.restoreCursor()
         if self.createMode == "rectangle":
