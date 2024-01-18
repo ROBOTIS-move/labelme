@@ -1973,7 +1973,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
-        self.canvas.measureWorkingTime.write_description(osp.splitext(self.imagePath)[0])
+        # self.canvas.measureWorkingTime.write_description(osp.splitext(self.imagePath)[0])
         if self.imagePath:
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
