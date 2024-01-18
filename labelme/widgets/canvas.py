@@ -179,13 +179,16 @@ class Canvas(QtWidgets.QWidget):
         self.redoShapesBackups = []
 
     def enterEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         self.overrideCursor(self._cursor)
 
     def leaveEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         self.unHighlight()
         self.restoreCursor()
 
     def focusOutEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         self.restoreCursor()
 
     def isVisible(self, shape):
@@ -385,6 +388,7 @@ class Canvas(QtWidgets.QWidget):
             pos = self.transformPos(ev.localPos())
         else:
             pos = self.transformPos(ev.posF())
+        self.measureWorkingTime.measure_time()
         if ev.button() == QtCore.Qt.LeftButton:
             if self.drawing():
                 if self.current:
@@ -442,6 +446,7 @@ class Canvas(QtWidgets.QWidget):
             self.prevPoint = pos
 
     def mouseReleaseEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             self.restoreCursor()
@@ -507,6 +512,7 @@ class Canvas(QtWidgets.QWidget):
     def mouseDoubleClickEvent(self, ev):
         # We need at least 4 points here, since the mousePress handler
         # adds an extra one before this handler is called.
+        self.measureWorkingTime.measure_time()
         if (
             self.double_click == "close"
             and self.canCloseShape()
@@ -817,6 +823,7 @@ class Canvas(QtWidgets.QWidget):
         return super(Canvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         if QT5:
             mods = ev.modifiers()
             delta = ev.angleDelta()
@@ -881,6 +888,7 @@ class Canvas(QtWidgets.QWidget):
             self.movingShape = True
 
     def keyPressEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         modifiers = ev.modifiers()
         key = ev.key()
         if self.drawing():
@@ -911,6 +919,7 @@ class Canvas(QtWidgets.QWidget):
                 self.movePointByKeyboard(QtCore.QPoint(MOVE_SPEED, 0))
 
     def keyReleaseEvent(self, ev):
+        self.measureWorkingTime.measure_time()
         modifiers = ev.modifiers()
         if self.drawing():
             if int(modifiers) == 0:
