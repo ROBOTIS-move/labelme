@@ -15,6 +15,7 @@ class MeasureTime():
         
     def write_description(self, save_path):
         description = ['test', 'test2']
+        print(save_path)
         with open(save_path + '/Cache.txt', "a") as f:
             for text in description:
                 text = text + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
