@@ -8,7 +8,7 @@ class MeasureTime():
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
-        self.pre_interaction_time = 0
+        self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second
         self.break_standard_time = 5
         self.limit_time = 3600 * 24
         if self.crypto_mode:
