@@ -13,14 +13,21 @@ class MeasureTime():
         self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
         self.worker_name = ''
+        self.name_file_path = sys.path[0] + '/worker_name.txt'
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
     
     def read_worker_name(self):
-        print(sys.path[0])
-        # with open(sys.path[0] + '/worker_name.txt', "a") as f:
-        #     for i, line in enumerate(f):
-        #         print(line)
+        if os.path.exists(self.name_file_path):
+            with open(self.name_file_path, "a") as f:
+                self.worker_name = f[0]
+            return True
+        else:
+            return False
+        
+    def write_worker_name(self, worker_name):
+        with open(sys.path[0] + '/worker_name.txt', "a") as f:
+            f.write(worker_name)
             
     def read_crypt_description(self, file_path):
         decode_text = []
