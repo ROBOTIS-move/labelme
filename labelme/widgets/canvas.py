@@ -447,6 +447,7 @@ class Canvas(QtWidgets.QWidget):
 
     def mouseReleaseEvent(self, ev):
         self.measureWorkingTime.measure_time()
+        self.measureWorkingTime.working_count += 1
         if ev.button() == QtCore.Qt.RightButton:
             menu = self.menus[len(self.selectedShapesCopy) > 0]
             self.restoreCursor()
