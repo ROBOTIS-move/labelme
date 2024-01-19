@@ -196,6 +196,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
+        
+        self.canvas.measureWorkingTime.read_worker_name()
 
         self.setCentralWidget(scrollArea)
 
@@ -1975,7 +1977,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         
         if self.imagePath:
-            self.canvas.measureWorkingTime.write_description(self.imagePath)
+            self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
                 if self.output_dir:
