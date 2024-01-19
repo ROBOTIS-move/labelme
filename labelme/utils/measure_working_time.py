@@ -1,6 +1,7 @@
 from cryptography.fernet import Fernet
 import os
 import datetime as dt
+import sys
 
 class MeasureTime():
     def __init__(self, crypto_mode = True):
@@ -9,12 +10,31 @@ class MeasureTime():
         self.break_total_time = 0
         self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second
         self.break_standard_time = 5
-        self.limit_time = 3600 * 24
+        self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
+        self.worker_name = ''
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
-        
-    def write_description(self, save_path):
+    
+    def read_worker_name(self):
+        print(sys.path[0])
+        # with open(sys.path[0] + '/worker_name.txt', "a") as f:
+        #     for i, line in enumerate(f):
+        #         print(line)
+            
+    def read_crypt_description(self, file_path):
+        decode_text = []
+        with open(file_path, "r") as file:
+            for i, line in enumerate(file):
+                # print(i, "th Line")
+                print(line.strip())
+                bytes_str = line.strip().replace("b'", "").replace("'", "").encode()
+                # bytes를 일반 문자열로 변환
+                result_str = bytes_str.decode()
+                decode_text.append(result_str)
+        return decode_text
+            
+    def write_crypt_description(self, save_path):
         folder_path = save_path.split('\\')[0]
         img_name = save_path.split('\\')[1]
         with open(folder_path + '/Cache.txt', "a") as f:
@@ -31,6 +51,11 @@ class MeasureTime():
         cipher_suite = Fernet(self.crypto_key)
         encrypted_text = cipher_suite.encrypt(text.encode())
         return encrypted_text
+    
+    def decrypt_text(key, encrypted_text):
+        cipher_suite = Fernet(key)
+        decrypted_text = cipher_suite.decrypt(encrypted_text).decode()
+        return decrypted_text
     
     def measure_time(self):
         cur_interaction_time_date = dt.datetime.now()
