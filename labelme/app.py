@@ -197,12 +197,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
-        
-        if not self.canvas.measureWorkingTime.read_worker_name():
-            workerNameDialog = WorkerNameDialog()
-            workerNameDialog.show()
-            # print(workerNameDialog.accept())
-            
 
         self.setCentralWidget(scrollArea)
 
@@ -222,6 +216,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
+        
+        if not self.canvas.measureWorkingTime.read_worker_name():
+            workerNameDialog = WorkerNameDialog()
+            workerNameDialog.show()
+            # print(workerNameDialog.accept())
 
         # Actions
         action = functools.partial(utils.newAction, self)
