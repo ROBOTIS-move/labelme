@@ -14,8 +14,8 @@ class MeasureTime():
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         
     def write_description(self, save_path):
-        folder_path = self.imagePath.split('\\')[0]
-        img_name = self.imagePath.split('\\')[1]
+        folder_path = save_path.split('\\')[0]
+        img_name = save_path.split('\\')[1]
         with open(folder_path + '/Cache.txt', "a") as f:
             text = img_name + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
             if self.crypto_mode:
