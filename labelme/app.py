@@ -37,6 +37,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
+from labelme.widgets import WorkerNameDialog
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -197,7 +198,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
         
-        self.canvas.measureWorkingTime.read_worker_name()
+        if not self.canvas.measureWorkingTime.read_worker_name():
+            workerNameDialog = WorkerNameDialog()
+            workerNameDialog.show()
+            print(workerNameDialog.accept())
+            
 
         self.setCentralWidget(scrollArea)
 
