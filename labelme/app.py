@@ -1975,8 +1975,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         
         if self.imagePath:
-            print(self.imagePath.split('\\')[0])
-            self.canvas.measureWorkingTime.write_description(self.imagePath.split('\\')[0])
+            self.canvas.measureWorkingTime.write_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
                 if self.output_dir:

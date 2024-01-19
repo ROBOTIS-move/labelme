@@ -14,16 +14,15 @@ class MeasureTime():
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         
     def write_description(self, save_path):
-        description = ['test', 'test2']
-        print(save_path)
-        with open(save_path + '/Cache.txt', "a") as f:
-            for text in description:
-                text = text + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
-                if self.crypto_mode:
-                    encrypted_text = self.encrypt_text(text)
-                    f.write(str(encrypted_text) + '\n')
-                else :
-                    f.write(text + '\n')
+        folder_path = self.imagePath.split('\\')[0]
+        img_name = self.imagePath.split('\\')[1]
+        with open(folder_path + '/Cache.txt', "a") as f:
+            text = img_name + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
+            if self.crypto_mode:
+                encrypted_text = self.encrypt_text(text)
+                f.write(str(encrypted_text) + '\n')
+            else :
+                f.write(text + '\n')
 
     def encrypt_text(self, text):
         cipher_suite = Fernet(self.crypto_key)
