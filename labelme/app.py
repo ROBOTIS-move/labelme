@@ -216,11 +216,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
-        
-        if not self.canvas.measureWorkingTime.read_worker_name():
-            workerNameDialog = WorkerNameDialog()
-            workerNameDialog.show()
-            # print(workerNameDialog.accept())
 
         # Actions
         action = functools.partial(utils.newAction, self)
@@ -979,6 +974,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget.valueChanged.connect(self.paintCanvas)
 
         self.populateModeActions()
+        
+        if not self.canvas.measureWorkingTime.read_worker_name():
+            workerNameDialog = WorkerNameDialog()
+            workerNameDialog.show()
+            # print(workerNameDialog.accept())
 
         # self.firstStart = True
         # if self.firstStart:
