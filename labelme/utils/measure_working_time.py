@@ -3,13 +3,14 @@ import os
 import datetime as dt
 
 class MeasureTime():
-    def __init__(self, crypto_mode = False):
+    def __init__(self, crypto_mode = True):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
         self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second
         self.break_standard_time = 5
         self.limit_time = 3600 * 24
+        self.working_count = 0
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         
@@ -17,7 +18,7 @@ class MeasureTime():
         folder_path = save_path.split('\\')[0]
         img_name = save_path.split('\\')[1]
         with open(folder_path + '/Cache.txt', "a") as f:
-            text = img_name + ' - working_time, break_time : ' + str(self.working_total_time) + ', ' + str(self.break_total_time)  
+            text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time)  
             if self.crypto_mode:
                 encrypted_text = self.encrypt_text(text)
                 f.write(str(encrypted_text) + '\n')
