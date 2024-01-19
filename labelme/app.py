@@ -978,7 +978,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.canvas.measureWorkingTime.read_worker_name():
             workerNameDialog = WorkerNameDialog()
             workerNameDialog.show()
-            # print(workerNameDialog.accept())
+            while workerNameDialog.accept() != '':
+                print(workerNameDialog.accept())
 
         # self.firstStart = True
         # if self.firstStart:
