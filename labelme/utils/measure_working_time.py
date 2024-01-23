@@ -19,8 +19,9 @@ class MeasureTime():
     
     def read_worker_name(self):
         if os.path.exists(self.name_file_path):
-            with open(self.name_file_path, "a") as f:
-                self.worker_name = f[0]
+            with open(self.name_file_path, "r") as f:
+                for line in f:
+                    self.worker_name = line
             return True
         else:
             return False
