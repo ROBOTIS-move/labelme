@@ -53,7 +53,7 @@ labels_class:
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
       'alarm', 'call', 'star', '-', 'key', 'etc',
       'open_←|→', 'close_→|←', 'open_◀▶', 'close_▶◀', 'open_<>', 'close_><', 'open_◀||▶', 'close_▶||◀', 'open_◁▷', 'close_▷◁', 'open_◀|▶', 'close_▶|◀', 'open_◁|▷', 'close_▷|◁', 'open_<|>', 'close_>|<',
-      'up_∧', 'down_∨', 'up_∧∧', 'down_∨∨', 'up_↑', 'down_↓', 'up_♠', 'down_♥', 'up_♤', 'down_♡', 'up_▲', 'down_▼', 'up_△', 'down_▽',
+      'up_∧', 'down_v', 'up_∧∧', 'down_vv', 'up_↑', 'down_↓', 'up_♠', 'down_♥', 'up_♤', 'down_♡', 'up_▲', 'down_▼', 'up_△', 'down_▽',
       'off_red', 'off_green', 'off_blue', 'off_yellow', 'off_white', 'on_red', 'on_green', 'on_blue', 'on_yellow', 'on_white'
       ]
 
