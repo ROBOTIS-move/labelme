@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 class MeasureTime():
-    def __init__(self, crypto_mode = True):
+    def __init__(self, crypto_mode = False):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
@@ -13,6 +13,7 @@ class MeasureTime():
         self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
         self.worker_name = ''
+        self.init_write_worker_name = True
         self.name_file_path = sys.path[0] + '/worker_name.txt'
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
@@ -39,14 +40,19 @@ class MeasureTime():
                 result_str = bytes_str.decode()
                 decode_text.append(result_str)
         return decode_text
-            
+
     def write_crypt_description(self, save_path):
         folder_path = save_path.split('\\')[0]
         img_name = save_path.split('\\')[1]
-        with open(folder_path + '/Cache.txt', "a") as f:
+            
+        with open(folder_path + '/Cache.txt', "a") as f:    
             working_time_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time)
             working_count_text = img_name + ' - working_count : ' + str(self.working_count)
-            text = working_time_text + '\n' + working_count_text
+            if self.init_write_worker_name:
+                text = self.worker_name + '\n' + working_time_text + '\n' + working_count_text
+                self.init_write_worker_name = False
+            else :
+                text = working_time_text + '\n' + working_count_text
             if self.crypto_mode:
                 encrypted_text = self.encrypt_text(text)
                 f.write(str(encrypted_text) + '\n')
