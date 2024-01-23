@@ -1,28 +1,30 @@
-#!/usr/bin/env python3
-# Copyright 2022 ROBOTIS CO., LTD.
-# Authors: Dongyun Kim
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 
-from qtpy import QT_VERSION
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
-
-class WorkerNameDialog(QtWidgets.QDialog):
+class PopupWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # 창의 레이아웃을 설정합니다.
-        layout = QtWidgets.QVBoxLayout(self)
+        self.initUI()
 
-        # 텍스트 입력 필드를 추가합니다.
-        self.text_edit = QtWidgets.QTextEdit()
-        layout.addWidget(self.text_edit)
+    def initUI(self):
+        self.setWindowTitle('팝업 창')
+        self.setGeometry(300, 300, 300, 150)
 
-        # 확인 버튼을 추가합니다.
-        button = QtWidgets.QPushButton("확인")
-        button.clicked.connect(self.accept)
-        layout.addWidget(button)
+        layout = QVBoxLayout()
 
-    def accept(self):
-        # 텍스트 입력 필드의 텍스트를 반환합니다.
-        return self.text_edit.toPlainText()
+        label = QLabel('텍스트를 입력하세요:')
+        self.text_input = QLineEdit(self)
+        confirm_button = QPushButton('확인', self)
+        confirm_button.clicked.connect(self.onConfirm)
+
+        layout.addWidget(label)
+        layout.addWidget(self.text_input)
+        layout.addWidget(confirm_button)
+
+        self.setLayout(layout)
+
+    def onConfirm(self):
+        entered_text = self.text_input.text()
+        print(f'입력된 텍스트: {entered_text}')
+        self.close()
