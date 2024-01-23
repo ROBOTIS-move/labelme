@@ -47,14 +47,23 @@ labels_class:
     default:
       ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
       'sticker', 'admin-key', 'indicator', 'handi-symbol', 'screw', 'others']
-  indoor_detection:
+  indoor_detection-ev_state:
+    default:
+      ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
+      'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
+      ]
+  indoor_detection-ev_button:
     default:
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
       'alarm', 'call', 'star', '-', 'key', 'etc',
       'open_←|→', 'close_→|←', 'open_◀▶', 'close_▶◀', 'open_<>', 'close_><', 'open_◀||▶', 'close_▶||◀', 'open_◁▷', 'close_▷◁', 'open_◀|▶', 'close_▶|◀', 'open_◁|▷', 'close_▷|◁', 'open_<|>', 'close_>|<',
       'up_∧', 'down_v', 'up_∧∧', 'down_vv', 'up_↑', 'down_↓', 'up_♠', 'down_♥', 'up_♤', 'down_♡', 'up_▲', 'down_▼', 'up_△', 'down_▽',
-      'off_red', 'off_green', 'off_blue', 'off_yellow', 'off_white', 'on_red', 'on_green', 'on_blue', 'on_yellow', 'on_white'
+      'edge_red', 'edge_green', 'edge_blue', 'edge_yellow', 'edge_white', 'number_red', 'number_green', 'number_blue', 'number_yellow', 'number_white', 'number_black',
+      'edge_circle', 'edge_rect', 'edge_ellipse', 'edge_line', 'edge_dot', 
+      'edge_on', 'edge_off', 'number_on', 'number_off'
       ]
 
 default_shape_color: [0, 0, 255]
