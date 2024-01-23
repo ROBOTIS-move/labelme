@@ -1,19 +1,19 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
 
-class PopupWindow(QDialog):
+class workerNameWindow(QDialog):
     def __init__(self):
         super().__init__()
 
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('팝업 창')
+        self.setWindowTitle('User name input')
         self.setGeometry(300, 300, 300, 150)
 
         layout = QVBoxLayout()
 
-        label = QLabel('텍스트를 입력하세요:')
+        label = QLabel('작업자의 이름을 입력해주세요:')
         self.text_input = QLineEdit(self)
         confirm_button = QPushButton('확인', self)
         confirm_button.clicked.connect(self.onConfirm)
@@ -25,6 +25,10 @@ class PopupWindow(QDialog):
         self.setLayout(layout)
 
     def onConfirm(self):
-        entered_text = self.text_input.text()
-        print(f'입력된 텍스트: {entered_text}')
+        entered_text = 'worker_name:' + self.text_input.text()
+        self.write_worker_name(entered_text)
         self.accept()
+    
+    def write_worker_name(self, worker_name):
+        with open(sys.path[0] + '/worker_name.txt', "a") as f:
+            f.write(worker_name)
