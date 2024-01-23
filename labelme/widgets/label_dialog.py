@@ -42,6 +42,7 @@ class LabelDialog(QtWidgets.QDialog):
         if fit_to_content is None:
             fit_to_content = {"row": False, "column": True}
         self._fit_to_content = fit_to_content
+        self.setGeometry(300, 300, 300, 150)
 
         super(LabelDialog, self).__init__(parent)
         self.edit = LabelQLineEdit()
