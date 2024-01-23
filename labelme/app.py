@@ -975,9 +975,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.populateModeActions()
         
-        if not self.canvas.measureWorkingTime.read_worker_name():
-            popwin = PopupWindow()
-            popwin.show()
+        
 
         # self.firstStart = True
         # if self.firstStart:
@@ -2298,6 +2296,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         if not self.mayContinue():
             return
+        
+        print("OPEN DIRECTORY")
+        if not self.canvas.measureWorkingTime.read_worker_name():
+            popwin = PopupWindow()
+            popwin.show()
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):
