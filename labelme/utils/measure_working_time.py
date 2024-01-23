@@ -46,13 +46,12 @@ class MeasureTime():
         img_name = save_path.split('\\')[1]
             
         with open(folder_path + '/Cache.txt', "a") as f:    
-            working_time_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time)
-            working_count_text = img_name + ' - working_count : ' + str(self.working_count)
+            description_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time) + ', working_count : ' + str(self.working_count)
             if self.init_write_worker_name:
-                text = self.worker_name + '\n' + working_time_text + '\n' + working_count_text
+                text = self.worker_name + '\n' + description_text
                 self.init_write_worker_name = False
             else :
-                text = working_time_text + '\n' + working_count_text
+                text = description_text
             if self.crypto_mode:
                 encrypted_text = self.encrypt_text(text)
                 f.write(str(encrypted_text) + '\n')
