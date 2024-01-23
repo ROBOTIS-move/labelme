@@ -37,7 +37,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
-from labelme.widgets import WorkerNameDialog
+from labelme.widgets import PopupWindow
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -976,10 +976,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.populateModeActions()
         
         if not self.canvas.measureWorkingTime.read_worker_name():
-            workerNameDialog = WorkerNameDialog()
-            workerNameDialog.show()
-            while workerNameDialog.accept() != '':
-                print(workerNameDialog.accept())
+            popwin = PopupWindow()
+            popwin.show()
 
         # self.firstStart = True
         # if self.firstStart:
