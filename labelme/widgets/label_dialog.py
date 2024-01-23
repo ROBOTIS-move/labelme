@@ -86,7 +86,8 @@ class LabelDialog(QtWidgets.QDialog):
         if labels:
             self.labelList.addItems(labels)
         if self._sort_labels:
-            self.labelList.sortItems()
+            print("Sort")
+            #self.labelList.sortItems()
         else:
             self.labelList.setDragDropMode(
                 QtWidgets.QAbstractItemView.InternalMove
