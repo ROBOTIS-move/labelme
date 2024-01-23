@@ -4,7 +4,7 @@ import datetime as dt
 import sys
 
 class MeasureTime():
-    def __init__(self, crypto_mode = False):
+    def __init__(self, crypto_mode = True):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
