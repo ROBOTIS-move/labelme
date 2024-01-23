@@ -76,11 +76,11 @@ class LabelDialog(QtWidgets.QDialog):
         self.labelList = QtWidgets.QListWidget()
         if self._fit_to_content["row"]:
             self.labelList.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarAlwaysOn
             )
         if self._fit_to_content["column"]:
             self.labelList.setVerticalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarAlwaysOn
             )
         self._sort_labels = sort_labels
         if labels:
