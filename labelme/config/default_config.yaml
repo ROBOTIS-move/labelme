@@ -47,6 +47,15 @@ labels_class:
     default:
       ['in_panel', 'out_panel', 'rect-btn', 'circle-btn', 'ellipse-btn', 'rect-circle-btn', 'rect-rect-btn', 'special-btn',
       'sticker', 'admin-key', 'indicator', 'handi-symbol', 'screw', 'others']
+  indoor_detection:
+    default:
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
+      'alarm', 'call', 'star', '-', 'key', 'etc',
+      'open_←|→', 'close_→|←', 'open_◀▶', 'close_▶◀', 'open_<>', 'close_><', 'open_◀||▶', 'close_▶||◀', 'open_◁▷', 'close_▷◁', 'open_◀|▶', 'close_▶|◀', 'open_◁|▷', 'close_▷|◁', 'open_<|>', 'close_>|<',
+      'up_∧', 'down_∨', 'up_∧∧', 'down_∨∨', 'up_↑', 'down_↓', 'up_♠', 'down_♥', 'up_♤', 'down_♡', 'up_▲', 'down_▼', 'up_△', 'down_▽',
+      'off_red', 'off_green', 'off_blue', 'off_yellow', 'off_white', 'on_red', 'on_green', 'on_blue', 'on_yellow', 'on_white'
+      ]
 
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'

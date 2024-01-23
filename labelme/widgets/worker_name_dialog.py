@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
 
-class workerNameWindow(QDialog):
+class WorkerNameWindow(QDialog):
     def __init__(self):
         super().__init__()
 
