@@ -24,10 +24,6 @@ class MeasureTime():
             return True
         else:
             return False
-        
-    def write_worker_name(self, worker_name):
-        with open(sys.path[0] + '/worker_name.txt', "a") as f:
-            f.write(worker_name)
             
     def read_crypt_description(self, file_path):
         decode_text = []

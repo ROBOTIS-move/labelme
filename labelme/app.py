@@ -37,7 +37,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
-from labelme.widgets import PopupWindow
+from labelme.widgets import workerNameWindow
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -2299,7 +2299,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         print("OPEN DIRECTORY")
         if not self.canvas.measureWorkingTime.read_worker_name():
-            popwin = PopupWindow()
+            popwin = workerNameWindow()
             popwin.setModal(True)
             popwin.exec_() 
 
