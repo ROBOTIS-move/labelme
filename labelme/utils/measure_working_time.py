@@ -19,9 +19,11 @@ class MeasureTime():
     
     def read_worker_name(self):
         if os.path.exists(self.name_file_path):
+            print("worker_name_path : ", self.name_file_path)
             with open(self.name_file_path, "r") as f:
                 for line in f:
                     self.worker_name = line
+            print(self.worker_name)
             return True
         else:
             return False
@@ -67,12 +69,9 @@ class MeasureTime():
         diff_interaction_time = cur_interaction_time - self.pre_interaction_time
         if diff_interaction_time < 0 :
             diff_interaction_time = cur_interaction_time + self.limit_time - self.pre_interaction_time
-        print("Interaction time check : ", diff_interaction_time)
         self.pre_interaction_time = cur_interaction_time
         if diff_interaction_time > self.break_standard_time:
             self.break_total_time += diff_interaction_time
         else :
             self.working_total_time += diff_interaction_time
-        print("Total Time - break : ", self.break_total_time)
-        print("Total Time - working : ", self.working_total_time)
 
