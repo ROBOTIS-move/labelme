@@ -9,7 +9,7 @@ class MeasureTime():
         self.working_total_time = 0
         self.break_total_time = 0
         self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second
-        self.break_standard_time = 5
+        self.break_standard_time = 10
         self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
         self.worker_name = ''
