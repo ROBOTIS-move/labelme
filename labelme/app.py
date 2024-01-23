@@ -2300,7 +2300,8 @@ class MainWindow(QtWidgets.QMainWindow):
         print("OPEN DIRECTORY")
         if not self.canvas.measureWorkingTime.read_worker_name():
             popwin = PopupWindow()
-            popwin.show()
+            popwin.setModal(True)
+            popwin.exec_() 
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):

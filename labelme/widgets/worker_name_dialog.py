@@ -1,7 +1,7 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
 
-class PopupWindow(QWidget):
+class PopupWindow(QDialog):
     def __init__(self):
         super().__init__()
 
@@ -27,4 +27,4 @@ class PopupWindow(QWidget):
     def onConfirm(self):
         entered_text = self.text_input.text()
         print(f'입력된 텍스트: {entered_text}')
-        self.close()
+        self.accept()
