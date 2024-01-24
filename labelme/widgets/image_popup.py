@@ -41,6 +41,7 @@ class ImagePopup(QtWidgets.QLabel):
         self.object_widget_state = False
 
     def popUp(self, current_image=None, trigger=False):
+        print(current_image)
         data_name = os.path.split(current_image)[1][:-3]
 
         if self.masked_widget_state:
