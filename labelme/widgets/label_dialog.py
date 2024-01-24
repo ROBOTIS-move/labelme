@@ -86,8 +86,7 @@ class LabelDialog(QtWidgets.QDialog):
         if labels:
             self.labelList.addItems(labels)
         if self._sort_labels:
-            print("Sort")
-            #self.labelList.sortItems()
+            self.labelList.sortItems()
         else:
             self.labelList.setDragDropMode(
                 QtWidgets.QAbstractItemView.InternalMove
@@ -124,8 +123,6 @@ class LabelDialog(QtWidgets.QDialog):
             raise ValueError("Unsupported completion: {}".format(completion))
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
-        
-        self.setGeometry(300, 300, 300, 150)
 
     def addLabelHistory(self, label):
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):

@@ -16,7 +16,7 @@ flags: null
 label_flags: null
 labels: null
 file_search: null
-sort_labels: false
+sort_labels: true
 validate_label: null
 
 labels_class:
