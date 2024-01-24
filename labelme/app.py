@@ -1976,6 +1976,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
+        print(self.imagePath)
         
         if self.imagePath:
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
