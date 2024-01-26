@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.14.0 (2024-01-26)
+-------------------
+* Changed outdoor segmentation label
+* Contributors: Jaehun Park
+
 5.13.0 (2023-12-21)
 -------------------
 
