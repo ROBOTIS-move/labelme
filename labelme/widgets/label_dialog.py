@@ -144,7 +144,10 @@ class LabelDialog(QtWidgets.QDialog):
             self.labelList.sortItems()
 
     def labelSelected(self, item):
-        self.edit.setText(item.text())
+        if item is not None:
+            self.edit.setText(item.text())
+        else:
+            print('[ERROR] PyQt5.QtWidgets.QListWidgetItem is NoneType')
 
     def validate(self):
         text = self.edit.text()
