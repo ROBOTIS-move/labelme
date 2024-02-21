@@ -131,6 +131,11 @@ class LabelDialog(QtWidgets.QDialog):
         if self._sort_labels:
             self.labelList.sortItems()
 
+    def default_completion_mode(self):
+        completer = QtWidgets.QCompleter()
+        completer.setModel(self.labelList.model())
+        self.edit.setCompleter(completer)
+
     def removeAllLabelHistory(self, source_labels):
         if len(source_labels) == 0:
             return
