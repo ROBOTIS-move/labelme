@@ -22,3 +22,5 @@ from .zoom_widget import ZoomWidget
 
 from .image_popup import ImagePopup
 from .convert_label_popup import ConvertLabelPopup
+
+from .worker_name_dialog import WorkerNameWindow
