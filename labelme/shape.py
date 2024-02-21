@@ -170,7 +170,7 @@ class Shape(object):
                         min_y = min(min_y, point.y())
                     if min_x != sys.maxsize and min_y != sys.maxsize:
                         font = QtGui.QFont()
-                        font.setPointSize(self.label_font_size * 3)
+                        font.setPointSize(self.label_font_size)
                         font.setBold(True)
                         painter.setFont(font)
                         if self.label is None:

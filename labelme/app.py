@@ -92,6 +92,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Set point size from config file
         Shape.point_size = self._config["shape"]["point_size"]
+        Shape.label_font_size = self._config["shape"]["label_font_size"]
 
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
