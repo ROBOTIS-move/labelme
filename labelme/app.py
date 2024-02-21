@@ -1980,6 +1980,7 @@ class MainWindow(QtWidgets.QMainWindow):
         
         if self.imagePath:
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
+            Shape.label_font_size = 30 * self.labelFile.imageHeight / 2160
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
                 if self.output_dir:

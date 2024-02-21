@@ -172,7 +172,6 @@ shape:
   select_fill_color: [0, 255, 0, 155]
   hvertex_fill_color: [255, 255, 255, 255]
   point_size: 8
-  label_font_size : 30
 
 # main
 flag_dock:
