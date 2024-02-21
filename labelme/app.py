@@ -1764,7 +1764,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelFile = LabelFile(label_file)
                 Shape.label_font_size = 30 * self.labelFile.imageHeight / 2160
                 if self.labelFile.classType == "indoor_detection-ev_state":
-                    Shape.point_size = 4
+                    Shape.point_size = 2
                 
             except LabelFileError as e:
                 self.errorMessage(
