@@ -20,11 +20,10 @@ class MeasureTime():
     
     def read_worker_name(self):
         if os.path.exists(self.name_file_path):
-            print("worker_name_path : ", self.name_file_path)
             with open(self.name_file_path, "r") as f:
                 for line in f:
                     self.worker_name = line
-            print(self.worker_name)
+            print("작업자 이름 : ", self.worker_name)
             return True
         else:
             return False
@@ -33,8 +32,6 @@ class MeasureTime():
         decode_text = []
         with open(file_path, "r") as file:
             for i, line in enumerate(file):
-                # print(i, "th Line")
-                print(line.strip())
                 bytes_str = line.strip().replace("b'", "").replace("'", "").encode()
                 # bytes를 일반 문자열로 변환
                 result_str = bytes_str.decode()

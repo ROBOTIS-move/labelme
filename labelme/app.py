@@ -1976,7 +1976,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
-        print(self.imagePath)
         
         if self.imagePath:
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
@@ -2298,7 +2297,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
         
-        print("OPEN DIRECTORY")
         if not self.canvas.measureWorkingTime.read_worker_name():
             popwin = WorkerNameWindow()
             popwin.setModal(True)
