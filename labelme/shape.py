@@ -146,7 +146,7 @@ class Shape(object):
             )
             pen = QtGui.QPen(color)
             # Try using integer sizes for smoother drawing(?)
-            pen.setWidth(max(1, int(round(10.0 / self.scale))))
+            pen.setWidth(max(1, int(round(2.0 / self.scale))))
             painter.setPen(pen)
 
             line_path = QtGui.QPainterPath()
@@ -170,7 +170,7 @@ class Shape(object):
                         min_y = min(min_y, point.y())
                     if min_x != sys.maxsize and min_y != sys.maxsize:
                         font = QtGui.QFont()
-                        font.setPointSize(self.label_font_size)
+                        font.setPointSize(self.label_font_size * 3)
                         font.setBold(True)
                         painter.setFont(font)
                         if self.label is None:
