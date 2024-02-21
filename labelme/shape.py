@@ -146,7 +146,7 @@ class Shape(object):
             )
             pen = QtGui.QPen(color)
             # Try using integer sizes for smoother drawing(?)
-            pen.setWidth(max(1, int(round(2.0 / self.scale))))
+            pen.setWidth(max(1, int(round(10.0 / self.scale))))
             painter.setPen(pen)
 
             line_path = QtGui.QPainterPath()
