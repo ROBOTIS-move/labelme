@@ -76,11 +76,11 @@ class LabelDialog(QtWidgets.QDialog):
         self.labelList = QtWidgets.QListWidget()
         if self._fit_to_content["row"]:
             self.labelList.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarAlwaysOn
             )
         if self._fit_to_content["column"]:
             self.labelList.setVerticalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
+                QtCore.Qt.ScrollBarAlwaysOn
             )
         self._sort_labels = sort_labels
         if labels:
@@ -130,6 +130,11 @@ class LabelDialog(QtWidgets.QDialog):
         self.labelList.addItem(label)
         if self._sort_labels:
             self.labelList.sortItems()
+
+    def default_completion_mode(self):
+        completer = QtWidgets.QCompleter()
+        completer.setModel(self.labelList.model())
+        self.edit.setCompleter(completer)
 
     def removeAllLabelHistory(self, source_labels):
         if len(source_labels) == 0:
