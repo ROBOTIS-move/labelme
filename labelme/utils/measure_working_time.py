@@ -23,7 +23,7 @@ class MeasureTime():
             with open(self.name_file_path, "r") as f:
                 for line in f:
                     self.worker_name = line
-            print("작업자 이름 : ", self.worker_name)
+            print(self.worker_name)
             return True
         else:
             return False
