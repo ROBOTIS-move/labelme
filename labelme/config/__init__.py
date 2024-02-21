@@ -29,7 +29,6 @@ def update_dict(target_dict, new_dict, validate_item=None):
 
 def get_default_config():
     config_file = osp.join(here, "default_config.yaml")
-    print(config_file)
     with open(config_file, 'rt', encoding='UTF8') as f:
         config = yaml.safe_load(f)
 
