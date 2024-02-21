@@ -1763,8 +1763,9 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 self.labelFile = LabelFile(label_file)
                 Shape.label_font_size = 30 * self.labelFile.imageHeight / 2160
-                if self.labelFile.classType == "indoor_detection-ev_state":
+                if self.labelFile.classType == "indoor_detection-ev_state" or self.labelFile.classType == "indoor_detection-ev_button":
                     Shape.point_size = 2
+                    self.labelDialog.default_completion_mode()
                 
             except LabelFileError as e:
                 self.errorMessage(
