@@ -44,8 +44,7 @@ class MeasureTime():
         return decode_text
 
     def write_crypt_description(self, save_path):
-        folder_path = save_path.split(self.split_char)[0]
-        img_name = save_path.split(self.split_char)[1]
+        folder_path , img_name = os.path.split(save_path)
 
         with open(folder_path + self.split_char +'Cache.txt', "a") as f:    
             description_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time) + ', working_count : ' + str(self.working_count)
