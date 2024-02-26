@@ -975,8 +975,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.populateModeActions()
         
-        
-
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
@@ -1981,7 +1979,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
-        
         if self.imagePath:
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
