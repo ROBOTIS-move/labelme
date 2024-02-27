@@ -77,7 +77,7 @@ def get_config(config_file_or_yaml=None, config_from_args=None):
     if config_file_or_yaml is not None:
         config_from_yaml = yaml.safe_load(config_file_or_yaml)
         if not isinstance(config_from_yaml, dict):
-            with open(config_from_yaml) as f:
+            with open(config_from_yaml, 'rt', encoding='UTF8') as f:
                 logger.info(
                     "Loading config file from: {}".format(config_from_yaml)
                 )

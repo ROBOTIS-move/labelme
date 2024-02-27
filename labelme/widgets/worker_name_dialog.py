@@ -1,11 +1,15 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
+import platform
 
 class WorkerNameWindow(QDialog):
     def __init__(self):
         super().__init__()
-
         self.initUI()
+        current_platform = platform.system()
+        self.split_char = '\\'
+        if current_platform == 'Linux':
+            self.split_char = '/'
 
     def initUI(self):
         self.setWindowTitle('User name input')
@@ -30,5 +34,5 @@ class WorkerNameWindow(QDialog):
         self.accept()
 
     def write_worker_name(self, worker_name):
-        with open(sys.path[0] + '/worker_name.txt', "a") as f:
+        with open(sys.path[0] + self.split_char +'worker_name.txt', "a") as f:
             f.write(worker_name)
