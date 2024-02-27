@@ -40,6 +40,8 @@ class LabelFile(object):
         self.shapes = []
         self.imagePath = None
         self.imageData = None
+        self.imageHeight = 360
+        self.imageWidth = 1920
         if filename is not None:
             self.load(filename)
         self.filename = filename
@@ -120,6 +122,12 @@ class LabelFile(object):
                 data.get("imageHeight"),
                 data.get("imageWidth"),
             )
+            loaded_image_width = data.get("imageWidth")
+            loaded_image_height = data.get("imageHeight")
+            if loaded_image_width is not None:
+                self.imageWidth = loaded_image_width
+            if loaded_image_height is not None:
+                self.imageHeight = loaded_image_height
             shapes = [
                 dict(
                     label=s["label"],
