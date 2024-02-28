@@ -30,5 +30,5 @@ class WorkerNameWindow(QDialog):
         self.accept()
 
     def write_worker_name(self, worker_name):
-        with open(os.path.join(sys.path[0] + 'worker_name.txt'), "a") as f:
+        with open(os.path.join(sys.path[0], 'worker_name.txt'), "a") as f:
             f.write(worker_name)
