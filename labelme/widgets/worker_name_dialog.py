@@ -1,10 +1,10 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
+import os
 
 class WorkerNameWindow(QDialog):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
@@ -30,5 +30,5 @@ class WorkerNameWindow(QDialog):
         self.accept()
 
     def write_worker_name(self, worker_name):
-        with open(sys.path[0] + '/worker_name.txt', "a") as f:
+        with open(os.path.join(sys.path[0], 'worker_name.txt'), "a") as f:
             f.write(worker_name)
