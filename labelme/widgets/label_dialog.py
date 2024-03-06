@@ -123,6 +123,7 @@ class LabelDialog(QtWidgets.QDialog):
             raise ValueError("Unsupported completion: {}".format(completion))
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
+        self._prev_labels = []
 
     def addLabelHistory(self, label):
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
@@ -136,15 +137,23 @@ class LabelDialog(QtWidgets.QDialog):
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
 
-    def removeAllLabelHistory(self, source_labels):
+    def update_prev_label_history(self):
+        for i in range(self.labelList.count()):
+            prev_item = self.labelList.item(i).text()
+            if prev_item not in self._prev_labels:
+                self._prev_labels.append(prev_item)
+
+    def removeDuplicatedLabelHistory(self, source_labels):
         if len(source_labels) == 0:
             return
         else:
             if self._sort_labels:
                 source_labels.sort()
-            for iter_index, source_label in enumerate(source_labels):
-                source_index = source_labels.index(source_label)
-                self.labelList.takeItem(source_index - iter_index)
+            for prev_label in self._prev_labels:
+                matched_labels = self.labelList.findItems(prev_label, QtCore.Qt.MatchExactly)
+                for matched_label in matched_labels:
+                    row = self.labelList.row(matched_label)
+                    self.labelList.takeItem(row)
         if self._sort_labels:
             self.labelList.sortItems()
 
