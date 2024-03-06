@@ -93,6 +93,10 @@ class Canvas(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
         self.measureWorkingTime = MeasureTime()
+        self.labelType = 'outdoor_detection'
+
+    def updateType(self, label_type):
+        self.labelType = label_type
 
     def fillDrawing(self):
         return self._fill_drawing
@@ -395,15 +399,18 @@ class Canvas(QtWidgets.QWidget):
                     # Add point to existing shape.
                     if self.createMode == "polygon":
                         self.current.addPoint(self.line[1])
+                        self.current.updateCorners()
                         self.line[0] = self.current[-1]
                         if self.current.isClosed():
                             self.finalise()
                     elif self.createMode in ["rectangle", "circle", "line"]:
                         assert len(self.current.points) == 1
                         self.current.points = self.line.points
+                        self.current.corners = self.line.corners
                         self.finalise()
                     elif self.createMode == "linestrip":
                         self.current.addPoint(self.line[1])
+                        self.current.updateCorners()
                         self.line[0] = self.current[-1]
                         if int(ev.modifiers()) == QtCore.Qt.ControlModifier:
                             self.finalise()
@@ -411,6 +418,8 @@ class Canvas(QtWidgets.QWidget):
                     # Create new shape.
                     self.current = Shape(shape_type=self.createMode)
                     self.current.addPoint(pos)
+                    if len(self.current.points) == 2:
+                        self.current.updateCorners()
                     if self.createMode == "point":
                         self.finalise()
                     else:
@@ -574,7 +583,15 @@ class Canvas(QtWidgets.QWidget):
 
     def boundedMoveVertex(self, pos):
         index, shape = self.hVertex, self.hShape
-        point = shape[index]
+        shape_index = index
+        if "segmentation" in self.labelType:
+            point = shape.points[shape_index]
+        else:
+            if shape_index > 1:
+                shape_index -= 2
+                point = shape.corners[shape_index]
+            else:
+                point = shape.points[shape_index]
         if self.outOfPixmap(pos):
             pos = self.intersectionPoint(point, pos)
         shape.moveVertexBy(index, pos - point)
