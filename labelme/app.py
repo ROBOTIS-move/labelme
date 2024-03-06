@@ -2444,9 +2444,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     service_area = 'default'
                 current_label_names = self._config['labels_class'][class_type][service_area]
                 self.labelDialog.update_prev_label_history()
+                self.labelDialog.removeDuplicatedLabelHistory(self._last_label_names)
                 for label_name in current_label_names:
                     self.labelDialog.addLabelHistory(label_name)
-                self.labelDialog.removeDuplicatedLabelHistory(self._last_label_names)
                 self._last_label_names = current_label_names
 
     def get_target_class(self, file_path):
