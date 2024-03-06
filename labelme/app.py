@@ -1449,6 +1449,8 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
+            if len(shape.points) == 2 and "detection" in self.labelFile.classType:
+                shape.updateCorners()
             shape.close()
 
             default_flags = {}
@@ -1767,7 +1769,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if self.labelFile.classType == "indoor_detection-ev_state" or self.labelFile.classType == "indoor_detection-ev_button":
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
-                
+                self.canvas.updateType(self.labelFile.classType)
+
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -2301,11 +2304,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         if not self.mayContinue():
             return
-        
         if not self.canvas.measureWorkingTime.read_worker_name():
             popwin = WorkerNameWindow()
             popwin.setModal(True)
-            popwin.exec_() 
+            popwin.exec_()
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):
