@@ -54,6 +54,10 @@ class MeasureTime():
                 f.write(str(encrypted_text) + '\n')
             else :
                 f.write(text + '\n')
+        self.working_total_time = 0
+        self.break_total_time = 0
+        self.working_count = 0
+        
 
     def encrypt_text(self, text):
         cipher_suite = Fernet(self.crypto_key)

@@ -2327,6 +2327,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
         self.importDirImages(targetDirPath)
+        self.canvas.measureWorkingTime.init_write_worker_name = True
 
         try:
             self.choose_labels_class(self._target_class)
