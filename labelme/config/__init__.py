@@ -29,7 +29,7 @@ def update_dict(target_dict, new_dict, validate_item=None):
 
 def get_default_config():
     config_file = osp.join(here, "default_config.yaml")
-    with open(config_file) as f:
+    with open(config_file, 'rt', encoding='UTF8') as f:
         config = yaml.safe_load(f)
 
     # save default config to ~/.labelmerc
@@ -42,7 +42,7 @@ def get_default_config():
     else:
         create_time = osp.getmtime(user_config_file)
         target_time = time.mktime(
-            datetime.datetime.strptime('2024-01-29 19:00:00', '%Y-%m-%d %H:%M:%S').timetuple())
+            datetime.datetime.strptime('2024-02-21 14:00:00', '%Y-%m-%d %H:%M:%S').timetuple())
         if create_time < target_time:
             try:
                 shutil.copy(config_file, user_config_file)
@@ -77,7 +77,7 @@ def get_config(config_file_or_yaml=None, config_from_args=None):
     if config_file_or_yaml is not None:
         config_from_yaml = yaml.safe_load(config_file_or_yaml)
         if not isinstance(config_from_yaml, dict):
-            with open(config_from_yaml) as f:
+            with open(config_from_yaml, 'rt', encoding='UTF8') as f:
                 logger.info(
                     "Loading config file from: {}".format(config_from_yaml)
                 )

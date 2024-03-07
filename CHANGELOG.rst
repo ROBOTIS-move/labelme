@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.16.0 (2024-03-07)
+-------------------
+* Added functionality to track worker task time and new indoor classes
+* Contributors: Dongyun Kim
+
 5.15.0 (2024-02-15)
 -------------------
 * Changed vehicle color

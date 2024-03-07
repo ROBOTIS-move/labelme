@@ -37,6 +37,7 @@ from labelme.widgets import LabelListWidgetItem
 from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
+from labelme.widgets import WorkerNameWindow
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -1759,6 +1760,14 @@ class MainWindow(QtWidgets.QMainWindow):
         ):
             try:
                 self.labelFile = LabelFile(label_file)
+                size_weight = 30
+                if "outdoor" in self.labelFile.classType:
+                    size_weight = 50
+                Shape.label_font_size = size_weight * self.labelFile.imageHeight / 2160
+                if self.labelFile.classType == "indoor_detection-ev_state" or self.labelFile.classType == "indoor_detection-ev_button":
+                    Shape.point_size = 3
+                    self.labelDialog.default_completion_mode()
+                
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -1973,8 +1982,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
-
         if self.imagePath:
+            self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
                 if self.output_dir:
@@ -2292,6 +2301,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         if not self.mayContinue():
             return
+        
+        if not self.canvas.measureWorkingTime.read_worker_name():
+            popwin = WorkerNameWindow()
+            popwin.setModal(True)
+            popwin.exec_() 
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):
