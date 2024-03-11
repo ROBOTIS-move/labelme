@@ -136,6 +136,30 @@ class Shape(object):
         self.points[0] = (x1y1)
         self.points[1] = x2y2
 
+    def align_points(self):
+        if len(self.points) == 2:
+            x1y1, x2y2 = self.points
+            x1 = x1y1.x()
+            y1 = x1y1.y()
+            x2 = x2y2.x()
+            y2 = x2y2.y()
+
+            if x2 < x1:
+                aligned_x1 = x2
+                aligned_x2 = x1
+            else:
+                aligned_x1 = x1
+                aligned_x2 = x2
+
+            if y2 < y1:
+                aligned_y1 = y2
+                aligned_y2 = y1
+            else:
+                aligned_y1 = y1
+                aligned_y2 = y2
+            self.points[0] = QtCore.QPointF(aligned_x1, aligned_y1)
+            self.points[1] = QtCore.QPointF(aligned_x2, aligned_y2)
+
     def canAddPoint(self):
         return self.shape_type in ["polygon", "linestrip"]
 
@@ -346,6 +370,7 @@ class Shape(object):
                 return
         self.points = points
         if self.shape_type == "rectangle":
+            self.align_points()
             self.updateCorners()
 
     def moveVertexBy(self, i, offset):

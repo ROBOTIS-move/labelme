@@ -1450,6 +1450,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
             if len(shape.points) == 2 and "detection" in self.labelFile.classType:
+                shape.align_points()
                 shape.updateCorners()
             shape.close()
 

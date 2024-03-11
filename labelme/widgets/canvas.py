@@ -399,7 +399,6 @@ class Canvas(QtWidgets.QWidget):
                     # Add point to existing shape.
                     if self.createMode == "polygon":
                         self.current.addPoint(self.line[1])
-                        self.current.updateCorners()
                         self.line[0] = self.current[-1]
                         if self.current.isClosed():
                             self.finalise()
@@ -407,6 +406,8 @@ class Canvas(QtWidgets.QWidget):
                         assert len(self.current.points) == 1
                         self.current.points = self.line.points
                         self.current.corners = self.line.corners
+                        self.current.updateCorners()
+                        self.current.align_points()
                         self.finalise()
                     elif self.createMode == "linestrip":
                         self.current.addPoint(self.line[1])
@@ -478,6 +479,8 @@ class Canvas(QtWidgets.QWidget):
                         [x for x in self.selectedShapes if x != self.hShape]
                     )
 
+        if self.hShape and "detection" in self.labelType:
+            self.hShape.align_points()
         if self.movingShape and self.hShape:
             index = self.shapes.index(self.hShape)
             if (
@@ -486,7 +489,6 @@ class Canvas(QtWidgets.QWidget):
             ):
                 self.storeShapes()
                 self.shapeMoved.emit()
-
             self.movingShape = False
 
     def endMove(self, copy):
