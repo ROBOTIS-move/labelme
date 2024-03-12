@@ -57,7 +57,6 @@ class MeasureTime():
         self.working_total_time = 0
         self.break_total_time = 0
         self.working_count = 0
-        
 
     def encrypt_text(self, text):
         cipher_suite = Fernet(self.crypto_key)
@@ -73,7 +72,7 @@ class MeasureTime():
         cur_interaction_time_date = dt.datetime.now()
         cur_interaction_time = cur_interaction_time_date.hour * 3600 + cur_interaction_time_date.minute * 60 + cur_interaction_time_date.second + cur_interaction_time_date.microsecond * 0.000001
         diff_interaction_time = cur_interaction_time - self.pre_interaction_time
-        if diff_interaction_time < 0 :
+        if diff_interaction_time < 0:
             diff_interaction_time = cur_interaction_time + self.limit_time - self.pre_interaction_time
         self.pre_interaction_time = cur_interaction_time
         if diff_interaction_time > self.break_standard_time:
