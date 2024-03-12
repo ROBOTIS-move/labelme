@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>labelme</name>
-  <version>5.16.0</version>
+  <version>5.16.1</version>
   <description>
     Labeling tools.
   </description>
@@ -10,4 +10,7 @@
   <maintainer email="osh@robotis.com">SungHyeon Oh</maintainer>
   <license>GPLv3</license>
   <author email="ceg@robotis.com">Eungi Cho</author>
+  <author email="yujs@robotis.com">Jongsub Yu</author>
+  <author email="pjh@robotis.com">Jaehun Park</author>
+  <author email="kdy@robotis.com">Dongyun Kim</author>
 </package>
