@@ -60,6 +60,7 @@ class Shape(object):
         self.label = label
         self.group_id = group_id
         self.points = []
+        self.corners = [QtCore.QPointF(0, 0), QtCore.QPointF(0, 0)]
         self.fill = False
         self.selected = False
         self.probability = probability
@@ -114,6 +115,51 @@ class Shape(object):
         else:
             self.points.append(point)
 
+    def updateCorners(self):
+        if len(self.points) == 2:
+            x1 = self.points[0].x()
+            y1 = self.points[0].y()
+            x2 = self.points[1].x()
+            y2 = self.points[1].y()
+            x2y1 = QtCore.QPointF(x2, y1)
+            x1y2 = QtCore.QPointF(x1, y2)
+            self.corners[0] = x2y1
+            self.corners[1] = x1y2
+
+    def updatePoints(self):
+        x2 = self.corners[0].x()
+        y1 = self.corners[0].y()
+        x1 = self.corners[1].x()
+        y2 = self.corners[1].y()
+        x1y1 = QtCore.QPointF(x1, y1)
+        x2y2 = QtCore.QPointF(x2, y2)
+        self.points[0] = (x1y1)
+        self.points[1] = x2y2
+
+    def align_points(self):
+        if len(self.points) == 2:
+            x1y1, x2y2 = self.points
+            x1 = x1y1.x()
+            y1 = x1y1.y()
+            x2 = x2y2.x()
+            y2 = x2y2.y()
+
+            if x2 < x1:
+                aligned_x1 = x2
+                aligned_x2 = x1
+            else:
+                aligned_x1 = x1
+                aligned_x2 = x2
+
+            if y2 < y1:
+                aligned_y1 = y2
+                aligned_y2 = y1
+            else:
+                aligned_y1 = y1
+                aligned_y2 = y2
+            self.points[0] = QtCore.QPointF(aligned_x1, aligned_y1)
+            self.points[1] = QtCore.QPointF(aligned_x2, aligned_y2)
+
     def canAddPoint(self):
         return self.shape_type in ["polygon", "linestrip"]
 
@@ -158,7 +204,9 @@ class Shape(object):
                     rectangle = self.getRectFromLine(*self.points)
                     line_path.addRect(rectangle)
                 for i in range(len(self.points)):
-                    self.drawVertex(vrtx_path, i)
+                    self.drawVertex(vrtx_path, i, self.points[i])
+                for i in range(len(self.corners)):
+                    self.drawVertex(vrtx_path, i + 2, self.corners[i])
 
                 # Draw text at the top-left
                 if self.paint_label:
@@ -203,12 +251,12 @@ class Shape(object):
                     rectangle = self.getCircleRectFromLine(self.points)
                     line_path.addEllipse(rectangle)
                 for i in range(len(self.points)):
-                    self.drawVertex(vrtx_path, i)
+                    self.drawVertex(vrtx_path, i, self.points[i])
             elif self.shape_type == "linestrip":
                 line_path.moveTo(self.points[0])
                 for i, p in enumerate(self.points):
                     line_path.lineTo(p)
-                    self.drawVertex(vrtx_path, i)
+                    self.drawVertex(vrtx_path, i, self.points[i])
             else:
                 line_path.moveTo(self.points[0])
                 # Uncommenting the following line will draw 2 paths
@@ -218,7 +266,7 @@ class Shape(object):
 
                 for i, p in enumerate(self.points):
                     line_path.lineTo(p)
-                    self.drawVertex(vrtx_path, i)
+                    self.drawVertex(vrtx_path, i, self.points[i])
                 if self.isClosed():
                     line_path.lineTo(self.points[0])
 
@@ -233,10 +281,9 @@ class Shape(object):
                 )
                 painter.fillPath(line_path, color)
 
-    def drawVertex(self, path, i):
+    def drawVertex(self, path, i, point):
         d = self.point_size / self.scale
         shape = self.point_type
-        point = self.points[i]
         if i == self._highlightIndex:
             size, shape = self._highlightSettings[self._highlightMode]
             d *= size
@@ -245,8 +292,12 @@ class Shape(object):
         else:
             self._vertex_fill_color = self.vertex_fill_color
         if shape == self.P_SQUARE:
+            if len(self.points) == 2 and self.shape_type == "rectangle":
+                self.updateCorners()
             path.addRect(point.x() - d / 2, point.y() - d / 2, d, d)
         elif shape == self.P_ROUND:
+            if self.shape_type == "rectangle":
+                self.updateCorners()
             path.addEllipse(point, d / 2.0, d / 2.0)
         else:
             assert False, "unsupported vertex shape"
@@ -254,7 +305,7 @@ class Shape(object):
     def nearestVertex(self, point, epsilon):
         min_distance = float("inf")
         min_i = None
-        for i, p in enumerate(self.points):
+        for i, p in enumerate(self.points + self.corners):
             dist = labelme.utils.distance(p - point)
             if dist <= epsilon and dist < min_distance:
                 min_distance = dist
@@ -307,20 +358,31 @@ class Shape(object):
     def boundingRect(self):
         return self.makePath().boundingRect()
 
-    def moveBy(self, offset, pixemap):
+    def moveBy(self, offset, pixmap):
         points = []
         for p in self.points:
             point = p + offset
-            correct_x = point.x() >= 0 and point.x() < pixemap.width()
-            correct_y = point.y() >= 0 and point.y() < pixemap.height()
+            correct_x = point.x() >= 0 and point.x() < pixmap.width()
+            correct_y = point.y() >= 0 and point.y() < pixmap.height()
             if correct_x and correct_y:
                 points.append(point)
             else:
                 return
         self.points = points
+        if self.shape_type == "rectangle":
+            self.align_points()
+            self.updateCorners()
 
     def moveVertexBy(self, i, offset):
-        self.points[i] = self.points[i] + offset
+        if self.shape_type == "rectangle":
+            if i < 2:
+                self.points[i] = self.points[i] + offset
+                self.updateCorners()
+            else:
+                self.corners[i - 2] = self.corners[i - 2] + offset
+                self.updatePoints()
+        else:
+            self.points[i] = self.points[i] + offset
 
     def highlightVertex(self, i, action):
         """Highlight a vertex appropriately based on the current action

@@ -50,7 +50,7 @@ labels_class:
       'open_←|→', 'close_→|←', 'open_◀▶', 'close_▶◀', 'open_<>', 'close_><', 'open_◀||▶', 'close_▶||◀', 'open_◁▷', 'close_▷◁', 'open_◀|▶', 'close_▶|◀', 'open_◁|▷', 'close_▷|◁', 'open_<|>', 'close_>|<',
       'up_∧', 'down_v', 'up_∧∧', 'down_vv', 'up_↑', 'down_↓', 'up_♠', 'down_♥', 'up_♤', 'down_♡', 'up_▲', 'down_▼', 'up_△', 'down_▽',
       'edge_red', 'edge_green', 'edge_blue', 'edge_yellow', 'edge_white', 'number_red', 'number_green', 'number_blue', 'number_yellow', 'number_white', 'number_black',
-      'edge_circle', 'edge_rect', 'edge_ellipse', 'edge_line', 'edge_dot', 
+      'edge_circle', 'edge_rect', 'edge_ellipse', 'edge_line', 'edge_dot',
       'edge_on', 'edge_off', 'number_on', 'number_off']
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
@@ -117,7 +117,6 @@ label_colors:
   Hall_LED_off : [102, 0, 153]
   up : [204, 51, 204]
   down : [255, 165, 0]
-  unknown : [252, 107, 3]
   '1' : [0, 128, 128]
   '2' : [150, 150, 100]
   '3' : [100, 200, 255]

@@ -9,7 +9,7 @@ class MeasureTime():
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
-        self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second
+        self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second + dt.datetime.now().microsecond * 0.000001
         self.break_standard_time = 10
         self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
@@ -54,6 +54,9 @@ class MeasureTime():
                 f.write(str(encrypted_text) + '\n')
             else :
                 f.write(text + '\n')
+        self.working_total_time = 0
+        self.break_total_time = 0
+        self.working_count = 0
 
     def encrypt_text(self, text):
         cipher_suite = Fernet(self.crypto_key)
@@ -67,9 +70,9 @@ class MeasureTime():
 
     def measure_time(self):
         cur_interaction_time_date = dt.datetime.now()
-        cur_interaction_time = cur_interaction_time_date.hour * 3600 + cur_interaction_time_date.minute * 60 + cur_interaction_time_date.second
+        cur_interaction_time = cur_interaction_time_date.hour * 3600 + cur_interaction_time_date.minute * 60 + cur_interaction_time_date.second + cur_interaction_time_date.microsecond * 0.000001
         diff_interaction_time = cur_interaction_time - self.pre_interaction_time
-        if diff_interaction_time < 0 :
+        if diff_interaction_time < 0:
             diff_interaction_time = cur_interaction_time + self.limit_time - self.pre_interaction_time
         self.pre_interaction_time = cur_interaction_time
         if diff_interaction_time > self.break_standard_time:

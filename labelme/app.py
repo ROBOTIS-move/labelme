@@ -1449,6 +1449,9 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
+            if len(shape.points) == 2 and "detection" in self.labelFile.classType:
+                shape.align_points()
+                shape.updateCorners()
             shape.close()
 
             default_flags = {}
@@ -1767,7 +1770,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if self.labelFile.classType == "indoor_detection-ev_state" or self.labelFile.classType == "indoor_detection-ev_button":
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
-                
+                self.canvas.updateType(self.labelFile.classType)
+
             except LabelFileError as e:
                 self.errorMessage(
                     self.tr("Error opening file"),
@@ -2301,11 +2305,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def openDirDialog(self, _value=False, dirpath=None):
         if not self.mayContinue():
             return
-        
         if not self.canvas.measureWorkingTime.read_worker_name():
             popwin = WorkerNameWindow()
             popwin.setModal(True)
-            popwin.exec_() 
+            popwin.exec_()
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):
@@ -2325,6 +2328,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
         self.importDirImages(targetDirPath)
+        self.canvas.measureWorkingTime.init_write_worker_name = True
 
         try:
             self.choose_labels_class(self._target_class)
@@ -2441,7 +2445,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if service_area not in self._config['labels_class'][class_type].keys():
                     service_area = 'default'
                 current_label_names = self._config['labels_class'][class_type][service_area]
-                self.labelDialog.removeAllLabelHistory(self._last_label_names)
+                self.labelDialog.update_prev_label_history()
+                self.labelDialog.removeDuplicatedLabelHistory(self._last_label_names)
                 for label_name in current_label_names:
                     self.labelDialog.addLabelHistory(label_name)
                 self._last_label_names = current_label_names
