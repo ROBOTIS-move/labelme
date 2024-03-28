@@ -4,6 +4,8 @@ Changelog for package labelme
 
 5.17.0 (2024-03-28)
 -------------------
+* Added editing bounding box size with top right and bottom left corner and fixed bug in measuring working time
+* Contributors: Jongsub Yu
 
 5.16.0 (2024-03-07)
 -------------------
