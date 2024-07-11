@@ -5,7 +5,7 @@ import sys
 import platform
 
 class MeasureTime():
-    def __init__(self, crypto_mode = True):
+    def __init__(self, crypto_mode = False):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
@@ -44,6 +44,7 @@ class MeasureTime():
 
         with open(os.path.join(folder_path, 'Cache.txt'), "a") as f:
             description_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time) + ', working_count : ' + str(self.working_count)
+            print(description_text)
             if self.init_write_worker_name:
                 text = self.worker_name + '\n' + description_text
                 self.init_write_worker_name = False

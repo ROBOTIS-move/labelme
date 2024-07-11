@@ -38,6 +38,7 @@ from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from labelme.widgets import WorkerNameWindow
+from labelme.widgets import InvalidVersionWindow
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -61,6 +62,16 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
+        version_checker = utils.VersionChecker()
+        version_checker.check_version()
+        if not version_checker.internet_status:
+            version_popup = InvalidVersionWindow(0)
+            version_popup.setModal(True)
+            version_popup.exec_()
+        if not version_checker.version_result:
+            version_popup = InvalidVersionWindow(1)
+            version_popup.setModal(True)
+            version_popup.exec_()
         self._last_label_names = []
         if output is not None:
             logger.warning(
@@ -1917,6 +1928,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
+        self.canvas.measureWorkingTime.measure_time()
+        self.canvas.measureWorkingTime.working_count += 1
+        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         if not self.mayContinue():
             event.ignore()
         self.settings.setValue(
@@ -1957,7 +1971,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         if self.canvas.drawing() and self.canvas.current:
             return
-
+        self.canvas.measureWorkingTime.measure_time()
+        self.canvas.measureWorkingTime.working_count += 1
+        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
@@ -1987,6 +2003,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.drawing() and self.canvas.current:
             return
         if self.imagePath:
+            self.canvas.measureWorkingTime.measure_time()
+            self.canvas.measureWorkingTime.working_count += 1
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
