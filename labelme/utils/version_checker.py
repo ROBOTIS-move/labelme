@@ -35,6 +35,8 @@ class VersionChecker:
     def check_version(self):
         internet_status, github_version = self.get_version('github')
         _, local_version = self.get_version('local')
+        self.github_version = github_version
+        self.local_version = local_version
         if github_version != local_version:
             self.version_result = False
         else:

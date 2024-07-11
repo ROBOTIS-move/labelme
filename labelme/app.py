@@ -65,11 +65,11 @@ class MainWindow(QtWidgets.QMainWindow):
         version_checker = utils.VersionChecker()
         version_checker.check_version()
         if not version_checker.internet_status:
-            version_popup = InvalidVersionWindow(0)
+            version_popup = InvalidVersionWindow(0, version_checker.local_version, version_checker.github_version)
             version_popup.setModal(True)
             version_popup.exec_()
         if not version_checker.version_result:
-            version_popup = InvalidVersionWindow(1)
+            version_popup = InvalidVersionWindow(1, version_checker.local_version, version_checker.github_version)
             version_popup.setModal(True)
             version_popup.exec_()
         self._last_label_names = []
