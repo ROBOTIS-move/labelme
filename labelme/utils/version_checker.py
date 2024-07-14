@@ -4,7 +4,7 @@ import os
 
 class VersionChecker:
     def __init__(self):
-        self.url = 'https://raw.githubusercontent.com/ROBOTIS-move/labelme/feature-add-version-checker/version.xml'
+        self.url = 'https://raw.githubusercontent.com/ROBOTIS-move/labelme/develop/version.xml'
         self.current_path = os.path.dirname(os.path.abspath(__file__))
         self.local_path = self.current_path + '/../../version.xml'
 
