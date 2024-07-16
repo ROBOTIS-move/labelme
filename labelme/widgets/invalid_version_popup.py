@@ -10,10 +10,17 @@ class InvalidVersionWindow(QDialog):
         self.alarm_text = {
             0: [
                 'Internet Checker',
-                '!!! 버전 정보를 확인할 수 없습니다. !!!\n네트워크 상태를 확인해주세요. !!!'],
+                (
+                    '!!! 버전 정보를 확인할 수 없습니다. !!!\n'
+                    '네트워크 상태를 확인해주세요. !!!'
+                )],
             1: [
                 'Version Checker',
-                f'!!! 버전 정보가 맞지 않습니다. !!!\n 최신 버전을 다운로드 해주세요.\n현재 버전 : {local_version}, 최신 버전 : {github_version}']}
+                (
+                    f'!!! 버전 정보가 맞지 않습니다. !!!\n'
+                    '최신 버전을 다운로드 해주세요.\n'
+                    f'현재 버전 : {local_version}, 최신 버전 : {github_version}'
+                )]}
         self.initUI()
 
     def initUI(self):

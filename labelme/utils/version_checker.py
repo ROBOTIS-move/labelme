@@ -1,6 +1,7 @@
+import os
 import requests
 import xml.etree.ElementTree as ET
-import os
+
 
 class VersionChecker:
     def __init__(self):
@@ -22,6 +23,7 @@ class VersionChecker:
                 with open(self.local_path, 'r', encoding='utf-8') as file:
                     return True, file.read()
             except Exception as e:
+                print('Error:', e)
                 return False, None
 
     def get_version(self, mode):
@@ -31,7 +33,7 @@ class VersionChecker:
         root = ET.fromstring(file_content)
         version = root.find('version').text
         return True, version
-    
+
     def check_version(self):
         internet_status, github_version = self.get_version('github')
         _, local_version = self.get_version('local')
@@ -42,4 +44,3 @@ class VersionChecker:
         else:
             self.version_result = True
         self.internet_status = internet_status
-            

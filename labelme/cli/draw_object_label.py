@@ -41,7 +41,7 @@ class Convertor:
         else:
             num_core = 1
 
-        if not popup == None:
+        if popup is not None:
             popup.show()
 
         print('===========================================')
@@ -59,7 +59,7 @@ class Convertor:
                 pool.map(
                     self.convert_bounding_box,
                     json_list[i * num_core:(i+1) * num_core])
-                if not popup is None:
+                if popup is not None:
                     popup.set_progress(i / process_num * 100)
 
             pool.close()
