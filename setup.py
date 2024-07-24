@@ -32,7 +32,8 @@ def get_install_requires():
         "qtpy!=1.11.2",
         "termcolor",
         "cryptography",
-        "lxml"
+        "lxml",
+        "requests"
     ]
 
     # Find python binding for qt with priority:

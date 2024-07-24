@@ -263,6 +263,24 @@ class Shape(object):
                 # for the 1st vertex, and make it non-filled, which
                 # may be desirable.
                 # self.drawVertex(vrtx_path, 0)
+                # Draw text at the top-left
+                if self.paint_label:
+                    min_y_label = int(1.0 * self.label_font_size)
+                    (center_x, center_y) = self.calculate_polygon_center(self.points)
+                    if center_x != sys.maxsize and center_y != sys.maxsize:
+                        font = QtGui.QFont()
+                        font.setPointSize(int(self.label_font_size))
+                        font.setBold(True)
+                        painter.setFont(font)
+                        if self.label is None:
+                            self.label = ""
+                        if center_y < min_y_label:
+                            center_y += min_y_label
+                        text_center_ratio = 0.5
+                        text_width_ratio = 0.8
+                        x_offset = int(
+                            len(self.label) * text_center_ratio * self.label_font_size * text_width_ratio)
+                        painter.drawText(int(center_x) - x_offset, int(center_y), self.label)
 
                 for i, p in enumerate(self.points):
                     line_path.lineTo(p)
@@ -280,6 +298,28 @@ class Shape(object):
                     else self.fill_color
                 )
                 painter.fillPath(line_path, color)
+
+    def calculate_polygon_center(self, qt_points):
+        # Polygon 데이터의 center를계산
+        points = [(point.x(), point.y()) for point in qt_points]
+        n = len(points)
+        area = 0.0001
+        for i in range(n):
+            x0, y0 = points[i]
+            x1, y1 = points[(i + 1) % n]
+            area += x0 * y1 - x1 * y0
+        area *= 0.5
+        cx = 0
+        cy = 0
+        for i in range(n):
+            x0, y0 = points[i]
+            x1, y1 = points[(i + 1) % n]
+            factor = (x0 * y1 - x1 * y0)
+            cx += (x0 + x1) * factor
+            cy += (y0 + y1) * factor
+        cx /= (6 * area)
+        cy /= (6 * area)
+        return (cx, cy)
 
     def drawVertex(self, path, i, point):
         d = self.point_size / self.scale
