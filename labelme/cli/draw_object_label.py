@@ -140,8 +140,8 @@ def convert_objects(input_dir, popup=None):
         print('Opening data file : {0}'.format(class_data_yaml))
         f = open(class_data_yaml, 'r')
         CONFIG = yaml.load(f, Loader=yaml.FullLoader)
-    except:
-        print('Error opening data yaml file!')
+    except Exception as e:
+        print('Error opening data yaml file! {0}'.format(e))
         sys.exit()
 
     Convertor(CONFIG, input_dir, popup)

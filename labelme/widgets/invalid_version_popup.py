@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QLabel, QPushButton, QVBoxLayout, QDialog
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
+
 class InvalidVersionWindow(QDialog):
     def __init__(self, mode, local_version, github_version):
         super().__init__()

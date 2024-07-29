@@ -1079,7 +1079,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # if self.hasLabelFile():
         #     self.actions.deleteFile.setEnabled(True)
         # else:
-            # self.actions.deleteFile.setEnabled(False)
+        #     self.actions.deleteFile.setEnabled(False)
         self.actions.deleteFile.setEnabled(False)
 
     def toggleActions(self, value=True):
@@ -1791,7 +1791,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     size_weight = 50
                 Shape.label_font_size = size_weight * self.labelFile.imageHeight / 2160
                 if (self.labelFile.classType == "indoor_detection-ev_state" or
-                    self.labelFile.classType == "indoor_detection-ev_button"):
+                        self.labelFile.classType == "indoor_detection-ev_button"):
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
                 self.canvas.updateType(self.labelFile.classType)

@@ -276,10 +276,10 @@ class Shape(object):
                             self.label = ""
                         if center_y < min_y_label:
                             center_y += min_y_label
-                        text_center_ratio = 0.5
-                        text_width_ratio = 0.8
+                        center_ratio = 0.5
+                        width_ratio = 0.8
                         x_offset = int(
-                            len(self.label) * text_center_ratio * self.label_font_size * text_width_ratio)
+                            len(self.label) * center_ratio * self.label_font_size * width_ratio)
                         painter.drawText(int(center_x) - x_offset, int(center_y), self.label)
 
                 for i, p in enumerate(self.points):

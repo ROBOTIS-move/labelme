@@ -22,6 +22,7 @@ def lblsave(filename, lbl):
             "Please consider using the .npy format." % filename
         )
 
+
 def lblsave_old(filename, lbl, names, class_rgb, segmentation_class):
     here = osp.dirname(osp.abspath(__file__))
 
