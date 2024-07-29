@@ -1061,14 +1061,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createRectangleMode.setEnabled(True)
             self.actions.createMode.setEnabled(True)
         else:
-            if 'detection' in self._classType or self._classType is None:
+            if 'indoor' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
-            else:
-                self.actions.createRectangleMode.setEnabled(False)
-            if 'segmentation' in self._classType or self._classType is None:
                 self.actions.createMode.setEnabled(True)
             else:
-                self.actions.createMode.setEnabled(False)
+                self.actions.createRectangleMode.setEnabled('detection' in self._classType)
+                self.actions.createMode.setEnabled('segmentation' in self._classType)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -1188,69 +1186,77 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if self._classType is None or 'segmentation' in self._classType:
+            if 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
-            else:
-                self.actions.createMode.setEnabled(False)
-            if self._classType is None or 'detection' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
             else:
-                self.actions.createRectangleMode.setEnabled(False)
+                if self._classType is None or 'segmentation' in self._classType:
+                    self.actions.createMode.setEnabled(True)
+                else:
+                    self.actions.createMode.setEnabled(False)
+                if self._classType is None or 'detection' in self._classType:
+                    self.actions.createRectangleMode.setEnabled(True)
+                else:
+                    self.actions.createRectangleMode.setEnabled(False)
             self.actions.createCircleMode.setEnabled(False)
             self.actions.createLineMode.setEnabled(False)
             self.actions.createPointMode.setEnabled(False)
             self.actions.createLineStripMode.setEnabled(False)
         else:
-            if createMode == "polygon":
-                self.actions.createMode.setEnabled(False)
-                if self._classType is None or 'detection' in self._classType:
-                    self.actions.createRectangleMode.setEnabled(True)
-                else:
-                    self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(False)
-            elif createMode == "rectangle":
-                if self._classType is None or 'segmentation' in self._classType:
-                    self.actions.createMode.setEnabled(True)
-                else:
-                    self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(False)
-            elif createMode == "line":
+            if 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "point":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "circle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "linestrip":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(False)
             else:
-                raise ValueError("Unsupported createMode: %s" % createMode)
+                if createMode == "polygon":
+                    self.actions.createMode.setEnabled(False)
+                    if self._classType is None or 'detection' in self._classType:
+                        self.actions.createRectangleMode.setEnabled(True)
+                    else:
+                        self.actions.createRectangleMode.setEnabled(False)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(False)
+                elif createMode == "rectangle":
+                    if self._classType is None or 'segmentation' in self._classType:
+                        self.actions.createMode.setEnabled(True)
+                    else:
+                        self.actions.createMode.setEnabled(False)
+                    self.actions.createRectangleMode.setEnabled(False)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(False)
+                elif createMode == "line":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "point":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "circle":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "linestrip":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(False)
+                else:
+                    raise ValueError("Unsupported createMode: %s" % createMode)
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
@@ -1466,7 +1472,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
-            if len(shape.points) == 2 and "detection" in self.labelFile.classType:
+            if len(shape.points) == 2:
                 shape.align_points()
                 shape.updateCorners()
             shape.close()
