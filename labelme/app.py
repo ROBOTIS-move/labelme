@@ -1190,14 +1190,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:
-                if self._classType is None or 'segmentation' in self._classType:
-                    self.actions.createMode.setEnabled(True)
-                else:
-                    self.actions.createMode.setEnabled(False)
-                if self._classType is None or 'detection' in self._classType:
-                    self.actions.createRectangleMode.setEnabled(True)
-                else:
-                    self.actions.createRectangleMode.setEnabled(False)
+                self.actions.createRectangleMode.setEnabled(
+                    self._classType is None or 'segmentation' in self._classType)
+                self.actions.createMode.setEnabled(
+                    self._classType is None or 'detection' in self._classType)
             self.actions.createCircleMode.setEnabled(False)
             self.actions.createLineMode.setEnabled(False)
             self.actions.createPointMode.setEnabled(False)
@@ -1209,19 +1205,16 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 if createMode == "polygon":
                     self.actions.createMode.setEnabled(False)
-                    if self._classType is None or 'detection' in self._classType:
-                        self.actions.createRectangleMode.setEnabled(True)
-                    else:
-                        self.actions.createRectangleMode.setEnabled(False)
+                    self.actions.createRectangleMode.setEnabled(
+                        self._classType is None or 'detection' in self._classType)
                     self.actions.createCircleMode.setEnabled(False)
                     self.actions.createLineMode.setEnabled(False)
                     self.actions.createPointMode.setEnabled(False)
                     self.actions.createLineStripMode.setEnabled(False)
                 elif createMode == "rectangle":
-                    if self._classType is None or 'segmentation' in self._classType:
-                        self.actions.createMode.setEnabled(True)
-                    else:
-                        self.actions.createMode.setEnabled(False)
+                    self.actions.createMode.setEnabled(
+                        self._classType is None or 'segmentation' in self._classType
+                    )
                     self.actions.createRectangleMode.setEnabled(False)
                     self.actions.createCircleMode.setEnabled(False)
                     self.actions.createLineMode.setEnabled(False)
