@@ -16,7 +16,7 @@ class VersionChecker:
                 return True, response.content
 
             except requests.exceptions.ConnectionError:
-                print('INTERNET CONECTION Fail')
+                print('INTERNET CONNECTION Fail')
                 return False, None
         elif mode == 'local':
             try:
