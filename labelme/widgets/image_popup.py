@@ -7,7 +7,6 @@ import os
 
 import PIL.Image
 from qtpy import QT_VERSION
-from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 

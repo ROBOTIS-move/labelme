@@ -134,7 +134,7 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             shapesBackup.append(shape.copy())
         if len(self.shapesBackups) > self.num_backups:
-            self.shapesBackups = self.shapesBackups[-self.num_backups - 1 :]
+            self.shapesBackups = self.shapesBackups[-self.num_backups - 1:]
         self.shapesBackups.append(shapesBackup)
 
     @property
@@ -586,14 +586,26 @@ class Canvas(QtWidgets.QWidget):
     def boundedMoveVertex(self, pos):
         index, shape = self.hVertex, self.hShape
         shape_index = index
-        if "segmentation" in self.labelType:
-            point = shape.points[shape_index]
-        else:
-            if shape_index > 1:
-                shape_index -= 2
-                point = shape.corners[shape_index]
-            else:
+        if "indoor" in self.labelType:
+            if len(shape.points) > 2:
+                # Polygon points
                 point = shape.points[shape_index]
+            else:
+                # Box Points
+                if shape_index > 1:
+                    shape_index -= 2
+                    point = shape.corners[shape_index]
+                else:
+                    point = shape.points[shape_index]
+        else:
+            if "segmentation" in self.labelType:
+                point = shape.points[shape_index]
+            else:
+                if shape_index > 1:
+                    shape_index -= 2
+                    point = shape.corners[shape_index]
+                else:
+                    point = shape.points[shape_index]
         if self.outOfPixmap(pos):
             pos = self.intersectionPoint(point, pos)
         shape.moveVertexBy(index, pos - point)
