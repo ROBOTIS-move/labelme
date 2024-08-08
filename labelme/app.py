@@ -38,6 +38,7 @@ from labelme.widgets import ToolBar
 from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from labelme.widgets import WorkerNameWindow
+from labelme.widgets import InvalidVersionWindow
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -61,6 +62,22 @@ class MainWindow(QtWidgets.QMainWindow):
         output_file=None,
         output_dir=None,
     ):
+        version_checker = utils.VersionChecker()
+        version_checker.check_version()
+        if not version_checker.internet_status:
+            version_popup = InvalidVersionWindow(
+                0,
+                version_checker.local_version,
+                version_checker.github_version)
+            version_popup.setModal(True)
+            version_popup.exec_()
+        if not version_checker.version_result:
+            version_popup = InvalidVersionWindow(
+                1,
+                version_checker.local_version,
+                version_checker.github_version)
+            version_popup.setModal(True)
+            version_popup.exec_()
         self._last_label_names = []
         if output is not None:
             logger.warning(
@@ -1044,14 +1061,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createRectangleMode.setEnabled(True)
             self.actions.createMode.setEnabled(True)
         else:
-            if 'detection' in self._classType or self._classType is None:
+            if 'indoor' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
-            else:
-                self.actions.createRectangleMode.setEnabled(False)
-            if 'segmentation' in self._classType or self._classType is None:
                 self.actions.createMode.setEnabled(True)
             else:
-                self.actions.createMode.setEnabled(False)
+                self.actions.createRectangleMode.setEnabled('detection' in self._classType)
+                self.actions.createMode.setEnabled('segmentation' in self._classType)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -1064,7 +1079,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # if self.hasLabelFile():
         #     self.actions.deleteFile.setEnabled(True)
         # else:
-            # self.actions.deleteFile.setEnabled(False)
+        #     self.actions.deleteFile.setEnabled(False)
         self.actions.deleteFile.setEnabled(False)
 
     def toggleActions(self, value=True):
@@ -1171,69 +1186,70 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if self._classType is None or 'segmentation' in self._classType:
+            if 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
-            else:
-                self.actions.createMode.setEnabled(False)
-            if self._classType is None or 'detection' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
             else:
-                self.actions.createRectangleMode.setEnabled(False)
+                self.actions.createRectangleMode.setEnabled(
+                    self._classType is None or 'segmentation' in self._classType)
+                self.actions.createMode.setEnabled(
+                    self._classType is None or 'detection' in self._classType)
             self.actions.createCircleMode.setEnabled(False)
             self.actions.createLineMode.setEnabled(False)
             self.actions.createPointMode.setEnabled(False)
             self.actions.createLineStripMode.setEnabled(False)
         else:
-            if createMode == "polygon":
-                self.actions.createMode.setEnabled(False)
-                if self._classType is None or 'detection' in self._classType:
-                    self.actions.createRectangleMode.setEnabled(True)
-                else:
-                    self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(False)
-            elif createMode == "rectangle":
-                if self._classType is None or 'segmentation' in self._classType:
-                    self.actions.createMode.setEnabled(True)
-                else:
-                    self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(False)
-            elif createMode == "line":
+            if 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "point":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "circle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "linestrip":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(False)
             else:
-                raise ValueError("Unsupported createMode: %s" % createMode)
+                if createMode == "polygon":
+                    self.actions.createMode.setEnabled(False)
+                    self.actions.createRectangleMode.setEnabled(
+                        self._classType is None or 'detection' in self._classType)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(False)
+                elif createMode == "rectangle":
+                    self.actions.createMode.setEnabled(
+                        self._classType is None or 'segmentation' in self._classType
+                    )
+                    self.actions.createRectangleMode.setEnabled(False)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(False)
+                elif createMode == "line":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(False)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "point":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(False)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "circle":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(False)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(True)
+                elif createMode == "linestrip":
+                    self.actions.createMode.setEnabled(True)
+                    self.actions.createRectangleMode.setEnabled(True)
+                    self.actions.createCircleMode.setEnabled(True)
+                    self.actions.createLineMode.setEnabled(True)
+                    self.actions.createPointMode.setEnabled(True)
+                    self.actions.createLineStripMode.setEnabled(False)
+                else:
+                    raise ValueError("Unsupported createMode: %s" % createMode)
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
@@ -1449,7 +1465,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
-            if len(shape.points) == 2 and "detection" in self.labelFile.classType:
+            if len(shape.points) == 2:
                 shape.align_points()
                 shape.updateCorners()
             shape.close()
@@ -1767,7 +1783,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if "outdoor" in self.labelFile.classType:
                     size_weight = 50
                 Shape.label_font_size = size_weight * self.labelFile.imageHeight / 2160
-                if self.labelFile.classType == "indoor_detection-ev_state" or self.labelFile.classType == "indoor_detection-ev_button":
+                if (self.labelFile.classType == "indoor_detection-ev_state" or
+                        self.labelFile.classType == "indoor_detection-ev_button"):
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
                 self.canvas.updateType(self.labelFile.classType)
@@ -1917,6 +1934,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
+        self.canvas.measureWorkingTime.measure_time()
+        self.canvas.measureWorkingTime.working_count += 1
+        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         if not self.mayContinue():
             event.ignore()
         self.settings.setValue(
@@ -1957,7 +1977,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         if self.canvas.drawing() and self.canvas.current:
             return
-
+        self.canvas.measureWorkingTime.measure_time()
+        self.canvas.measureWorkingTime.working_count += 1
+        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
@@ -1987,6 +2009,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.drawing() and self.canvas.current:
             return
         if self.imagePath:
+            self.canvas.measureWorkingTime.measure_time()
+            self.canvas.measureWorkingTime.working_count += 1
             self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"

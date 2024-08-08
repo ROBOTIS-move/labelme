@@ -1,0 +1,157 @@
+name: Auto Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  BUMP:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Define allowed and ignored files
+        run: |
+          ALLOWED_FILES="package.xml CMakeLists.txt CHANGELOG.rst setup.py"
+          echo "ALLOWED_FILES=$ALLOWED_FILES" >> $GITHUB_ENV
+
+          IGNORED_FILES=".github .jenkins"
+          echo "IGNORED_FILES=$IGNORED_FILES" >> $GITHUB_ENV
+
+      - name: Check if PR should be merged
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --name-only)
+
+          mapfile -t change_files < <(echo "$CHANGED_FILES")
+
+          ALLOWED_FILES_STRING="${{ env.ALLOWED_FILES }}"
+          IFS=' ' read -r -a allowed_files <<< "$ALLOWED_FILES_STRING"
+
+          IGNORED_FILES_STRING="${{ env.IGNORED_FILES }}"
+          IFS=' ' read -r -a ignored_files <<< "$IGNORED_FILES_STRING"
+
+          filtered_change_files=()
+          for change_file in "${change_files[@]}"; do
+            exclude_item=false
+            for ignored_file in "${ignored_files[@]}"; do
+              if [[ "$change_file" == *"$ignored_file"* ]]; then
+                exclude_item=true
+                break;
+              fi
+            done
+            if [ "$exclude_item" = false ]; then
+              filtered_change_files+=("$change_file")
+            fi
+          done
+
+          only_allowed_files=true
+          for filtered_change_file in "${filtered_change_files[@]}"; do
+            allowed_change_file=false
+            filtered_change_file_name=$(basename "$filtered_change_file")
+            for allowed_file in "${allowed_files[@]}"; do
+              if [ "$filtered_change_file_name" = "$allowed_file" ]; then
+                allowed_change_file=true
+                break;
+              fi
+            done
+            if [ "$allowed_change_file" = false ]; then
+              only_allowed_files=false
+              break;
+            fi
+          done
+
+          if [[ "$BASE_BRANCH" == "main" && "$HEAD_BRANCH" == "develop" && "$only_allowed_files" == true ]]; then
+            echo "should_merge=true" >> $GITHUB_ENV
+          else
+            echo "should_merge=false" >> $GITHUB_ENV
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+
+      - name: Wait and Check PR status
+        if: env.should_merge == 'true'
+        run: |
+          PR_NUMBER=$(jq -r '.pull_request.number' < $GITHUB_EVENT_PATH)
+          COMMIT_SHA=$(gh pr view $PR_NUMBER --json commits --jq '.commits[-1].oid')
+
+          echo "pr_status_all_success=false" >> $GITHUB_ENV
+          for i in {1..30}; do
+            echo "Checking status checks... (Attempt $i)"
+
+            STATUS_CHECKS=$(gh api graphql -f query='
+              query($owner: String!, $repo: String!, $commit: String!) {
+                repository(owner: $owner, name: $repo) {
+                  object(expression: $commit) {
+                    ... on Commit {
+                      status {
+                        contexts {
+                          context
+                          state
+                        }
+                      }
+                    }
+                  }
+                }
+              }' -f owner="${{ github.repository_owner }}" -f repo="${{ github.event.repository.name }}" -f commit="$COMMIT_SHA" --jq '.data.repository.object.status.contexts')
+
+            SUCCESSFUL_CHECKS=0
+            TOTAL_CHECKS=0
+            for status in $(echo "$STATUS_CHECKS" | jq -r '.[] | @base64'); do
+              _jq() {
+                echo "${status}" | base64 --decode | jq -r ${1}
+              }
+
+              CONTEXT=$(_jq '.context')
+              STATE=$(_jq '.state')
+
+              if [[ "$CONTEXT" == "automerge" ]]; then
+                continue
+              fi
+
+              TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+
+              if [[ "$STATE" == "SUCCESS" ]]; then
+                SUCCESSFUL_CHECKS=$((SUCCESSFUL_CHECKS + 1))
+              fi
+            done
+
+            if [[ "$SUCCESSFUL_CHECKS" -eq "$TOTAL_CHECKS" && "$TOTAL_CHECKS" -gt 0 ]]; then
+              echo "pr_status_all_success=true" >> $GITHUB_ENV
+              break
+            fi
+            sleep 60
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+
+      - name: Check all checkboxes
+        if: env.should_merge == 'true' && env.pr_status_all_success == 'true'
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} --json body --jq .body > pr_body.txt
+
+          PR_BODY=$(cat pr_body.txt)
+
+          CHECKED_BODY=$(echo "$PR_BODY" | sed 's/\[ \]/[x]/g')
+
+          if [[ "$PR_BODY" != "$CHECKED_BODY" ]]; then
+            gh pr edit ${{ github.event.pull_request.number }} --body "$CHECKED_BODY"
+            echo "All checkboxes have been checked"
+          else
+            echo "No checkboxes found or all checkboxes are already checked"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+
+      - name: Merged PR
+        if: success() && env.should_merge == 'true' && env.pr_status_all_success == 'true'
+        run: |
+          COMMENT="본 패키지는 변경 사항이 없는 리포지토리 / 패키지임을 확인하여 병합되었습니다!"
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"
+          gh pr merge ${{ github.event.pull_request.number }} --merge --admin
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+

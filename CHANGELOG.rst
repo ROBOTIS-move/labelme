@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.23.0 (2024-08-08)
+-------------------
+* Added a version checker and enhanced the logging mode for labeling both polygons and bounding boxes
+* Contributors: Dongyun Kim
+
 5.22.0 (2024-07-18)
 -------------------
 

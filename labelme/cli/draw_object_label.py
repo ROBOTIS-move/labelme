@@ -41,7 +41,7 @@ class Convertor:
         else:
             num_core = 1
 
-        if not popup == None:
+        if popup is not None:
             popup.show()
 
         print('===========================================')
@@ -58,8 +58,8 @@ class Convertor:
             for i in range(process_num):
                 pool.map(
                     self.convert_bounding_box,
-                    json_list[i * num_core : (i+1) * num_core])
-                if not popup == None:
+                    json_list[i * num_core:(i+1) * num_core])
+                if popup is not None:
                     popup.set_progress(i / process_num * 100)
 
             pool.close()
@@ -114,7 +114,7 @@ class Convertor:
 
             class_name = shape['label']
 
-            if not class_name in class_names:
+            if class_name not in class_names:
                 print('Generating dataset from : {0}'.format(json_file))
                 print('wrong class name : {0}'.format(class_name))
                 check_wrong_class = True
@@ -140,11 +140,12 @@ def convert_objects(input_dir, popup=None):
         print('Opening data file : {0}'.format(class_data_yaml))
         f = open(class_data_yaml, 'r')
         CONFIG = yaml.load(f, Loader=yaml.FullLoader)
-    except:
-        print('Error opening data yaml file!')
+    except Exception as e:
+        print('Error opening data yaml file! {0}'.format(e))
         sys.exit()
 
     Convertor(CONFIG, input_dir, popup)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

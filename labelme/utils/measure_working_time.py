@@ -2,16 +2,20 @@ from cryptography.fernet import Fernet
 import os
 import datetime as dt
 import sys
-import platform
+
 
 class MeasureTime():
-    def __init__(self, crypto_mode = True):
+    def __init__(self, crypto_mode=True):
         self.crypto_mode = crypto_mode
         self.working_total_time = 0
         self.break_total_time = 0
-        self.pre_interaction_time = dt.datetime.now().hour * 3600 + dt.datetime.now().minute * 60 + dt.datetime.now().second + dt.datetime.now().microsecond * 0.000001
+        self.pre_interaction_time = (
+            dt.datetime.now().hour * 3600 +
+            dt.datetime.now().minute * 60 +
+            dt.datetime.now().second +
+            dt.datetime.now().microsecond * 0.000001)
         self.break_standard_time = 10
-        self.limit_time = 3600 * 24 # 24시 이후 diff time이 - 값이 나오는 현상 방지
+        self.limit_time = 3600 * 24  # 24시 이후 diff time이 - 값이 나오는 현상 방지
         self.working_count = 0
         self.worker_name = ''
         self.init_write_worker_name = True
@@ -40,19 +44,24 @@ class MeasureTime():
         return decode_text
 
     def write_crypt_description(self, save_path):
-        folder_path , img_name = os.path.split(save_path)
+        folder_path, img_name = os.path.split(save_path)
 
         with open(os.path.join(folder_path, 'Cache.txt'), "a") as f:
-            description_text = img_name + ' - working_time : ' + str(self.working_total_time) + ', break_time : ' + str(self.break_total_time) + ', working_count : ' + str(self.working_count)
+            description_text = (
+                img_name +
+                ' - working_time : '
+                + str(self.working_total_time) +
+                ', break_time : ' + str(self.break_total_time) +
+                ', working_count : ' + str(self.working_count))
             if self.init_write_worker_name:
                 text = self.worker_name + '\n' + description_text
                 self.init_write_worker_name = False
-            else :
+            else:
                 text = description_text
             if self.crypto_mode:
                 encrypted_text = self.encrypt_text(text)
                 f.write(str(encrypted_text) + '\n')
-            else :
+            else:
                 f.write(text + '\n')
         self.working_total_time = 0
         self.break_total_time = 0
@@ -70,12 +79,19 @@ class MeasureTime():
 
     def measure_time(self):
         cur_interaction_time_date = dt.datetime.now()
-        cur_interaction_time = cur_interaction_time_date.hour * 3600 + cur_interaction_time_date.minute * 60 + cur_interaction_time_date.second + cur_interaction_time_date.microsecond * 0.000001
+        cur_interaction_time = (
+            cur_interaction_time_date.hour * 3600 +
+            cur_interaction_time_date.minute * 60 +
+            cur_interaction_time_date.second +
+            cur_interaction_time_date.microsecond * 0.000001)
         diff_interaction_time = cur_interaction_time - self.pre_interaction_time
         if diff_interaction_time < 0:
-            diff_interaction_time = cur_interaction_time + self.limit_time - self.pre_interaction_time
+            diff_interaction_time = (
+                cur_interaction_time +
+                self.limit_time -
+                self.pre_interaction_time)
         self.pre_interaction_time = cur_interaction_time
         if diff_interaction_time > self.break_standard_time:
             self.break_total_time += diff_interaction_time
-        else :
+        else:
             self.working_total_time += diff_interaction_time

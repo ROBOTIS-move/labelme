@@ -1,4 +1,5 @@
 import io
+import math
 import os.path as osp
 
 import numpy as np
@@ -49,7 +50,7 @@ def getClsId(label, names, seg_class, file_name=''):
             cls_id = 1
             names.append(label)
         else:
-            if not label in names:
+            if label not in names:
                 names.append(label)
                 cls_id = len(names)
                 # print("get new class")
@@ -74,7 +75,7 @@ def shapes_to_label(img_shape, shapes, label_name_to_value, seg_class, type='cla
         points = shape['points']
         label = shape['label']
         shape_type = shape.get('shape_type', None)
-        class_names=[]
+        class_names = []
         if type == 'class':
             cls_name = label
             # print(cls_name)
@@ -86,14 +87,13 @@ def shapes_to_label(img_shape, shapes, label_name_to_value, seg_class, type='cla
 
         cls_id, names = getClsId(label, names, seg_class, file_name)
 
-        if names == None:
+        if names is None:
             return None, None
         else:
             mask = shape_to_mask(img_shape[:2], points, shape_type)
             cls[mask] = cls_id
             if type == 'instance':
                 ins[mask] = ins_id
-                
     if type == 'instance':
         return cls, ins
     return cls, names
@@ -147,7 +147,7 @@ def label2rgb(
     # print("lbl", list(lbl[1000]))
     # print("test :", colormap)
     lbl_viz = colormap[lbl]
-    
+
     # print("lbl_viz :", lbl_viz)
     lbl_viz[lbl == -1] = (0, 0, 0)  # unlabeled
     # lbl_viz[lbl == 1] = (68, 68, 128)
@@ -162,7 +162,15 @@ def label2rgb(
     return lbl_viz
 
 
-def draw_label(label, img=None, label_names=None, names=None, class_rgb=None, segmentation_class=None, colormap=None, **kwargs):
+def draw_label(
+        label,
+        img=None,
+        label_names=None,
+        names=None,
+        class_rgb=None,
+        segmentation_class=None,
+        colormap=None,
+        **kwargs):
     """Draw pixel-wise label with colorization and label names.
 
     label: ndarray, (H, W)
@@ -173,12 +181,12 @@ def draw_label(label, img=None, label_names=None, names=None, class_rgb=None, se
         List of label names.
     """
     import matplotlib.pyplot as plt
-    
+
     if label_names is None:
         label_names = [str(l) for l in range(label.max() + 1)]
 
     colormap = _validate_colormap(colormap, len(label_names))
- 
+
     class_rgb = np.array(class_rgb, np.uint8)
 
     for index, labels in enumerate(names):
@@ -209,7 +217,7 @@ def draw_label(label, img=None, label_names=None, names=None, class_rgb=None, se
     # plt.close()
 
     # plt.switch_backend(backend_org)
-    
+
     out_size = (label_viz.shape[1], label_viz.shape[0])
     out = PIL.Image.open(f).resize(out_size, PIL.Image.BILINEAR).convert('RGB')
     out = np.asarray(out)
@@ -242,13 +250,22 @@ def draw_instances(
     font = PIL.ImageFont.truetype(font_path, font_size)
 
     colormap = label_colormap(255)
-    
+
     for bbox, label, caption in zip(bboxes, labels, captions):
         color = colormap[label]
         color = tuple((color * 255).astype(np.uint8).tolist())
 
         xmin, ymin, xmax, ymax = bbox
-        draw.line([(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)], width=5 ,fill=color)
+        draw.line(
+            [
+                (xmin, ymin),
+                (xmin, ymax),
+                (xmax, ymax),
+                (xmax, ymin),
+                (xmin, ymin)
+            ],
+            width=5,
+            fill=color)
         # draw.rectangle((xmin, ymin, xmax, ymax), outline=color)
         draw.text((xmin, ymin), caption, font=font)
 

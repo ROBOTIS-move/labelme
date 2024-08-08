@@ -41,7 +41,7 @@ class Convertor:
             else:
                 num_core = 1
 
-        if not popup == None:
+        if popup is not None:
             popup.show()
 
         print('===========================================')
@@ -59,8 +59,8 @@ class Convertor:
             for i in range(process_num):
                 pool.map(
                     self.multi_convert_json_to_mask,
-                    json_list[i * num_core : (i+1) * num_core])
-                if not popup == None:
+                    json_list[i * num_core: (i+1) * num_core])
+                if popup is not None:
                     popup.set_progress(int(i / process_num * 100))
 
             pool.close()
@@ -68,7 +68,7 @@ class Convertor:
 
         print('Completed convert [{0}] folder'.format(self.folder_name))
 
-        if not popup == None:
+        if popup is not None:
             popup.close()
 
     def get_class(self, class_type):
@@ -170,7 +170,8 @@ class Convertor:
                 self.overlayed_image_dir,
                 image_name))
 
-        except:
+        except Exception as e:
+            print('Unexpected error: {0}'.format(e))
             pass
 
 
@@ -181,8 +182,8 @@ def convert_segments(input_dir, popup=None):
         print('Opening data file : {0}'.format(class_data_yaml))
         f = open(class_data_yaml, 'r')
         CONFIG = yaml.load(f, Loader=yaml.FullLoader)
-    except:
-        print('Error opening data yaml file!')
+    except Exception as e:
+        print('Error opening data yaml file! {0}'.format(e))
         sys.exit()
 
     Convertor(CONFIG, input_dir, popup)
