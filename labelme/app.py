@@ -1191,9 +1191,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createRectangleMode.setEnabled(True)
             else:
                 self.actions.createRectangleMode.setEnabled(
-                    self._classType is None or 'segmentation' in self._classType)
-                self.actions.createMode.setEnabled(
                     self._classType is None or 'detection' in self._classType)
+                self.actions.createMode.setEnabled(
+                    self._classType is None or 'segmentation' in self._classType)
             self.actions.createCircleMode.setEnabled(False)
             self.actions.createLineMode.setEnabled(False)
             self.actions.createPointMode.setEnabled(False)
@@ -1203,7 +1203,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:
-                if createMode == "polygon":
+                if createMode == "rectangle":
                     self.actions.createMode.setEnabled(False)
                     self.actions.createRectangleMode.setEnabled(
                         self._classType is None or 'detection' in self._classType)
@@ -1211,7 +1211,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.actions.createLineMode.setEnabled(False)
                     self.actions.createPointMode.setEnabled(False)
                     self.actions.createLineStripMode.setEnabled(False)
-                elif createMode == "rectangle":
+                elif createMode == "polygon":
                     self.actions.createMode.setEnabled(
                         self._classType is None or 'segmentation' in self._classType
                     )
