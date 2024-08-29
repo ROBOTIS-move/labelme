@@ -13,7 +13,7 @@ jobs:
 
       - name: Define allowed and ignored files
         run: |
-          ALLOWED_FILES="package.xml CMakeLists.txt CHANGELOG.rst setup.py"
+          ALLOWED_FILES="package.json package.xml CMakeLists.txt CHANGELOG.rst setup.py"
           echo "ALLOWED_FILES=$ALLOWED_FILES" >> $GITHUB_ENV
 
           IGNORED_FILES=".github .jenkins"
@@ -64,7 +64,7 @@ jobs:
             fi
           done
 
-          if [[ "$BASE_BRANCH" == "main" && "$HEAD_BRANCH" == "develop" && "$only_allowed_files" == true ]]; then
+          if [[ "$BASE_BRANCH" == "main" && ( "$HEAD_BRANCH" == "develop" || "$HEAD_BRANCH" == "tote" ) && "$only_allowed_files" == true ]]; then
             echo "should_merge=true" >> $GITHUB_ENV
           else
             echo "should_merge=false" >> $GITHUB_ENV
@@ -72,69 +72,58 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
 
-      - name: Wait and Check PR status
-        if: env.should_merge == 'true'
+      - name: Ready for review
+        if: success() && env.should_merge == 'true'
         run: |
-          PR_NUMBER=$(jq -r '.pull_request.number' < $GITHUB_EVENT_PATH)
-          COMMIT_SHA=$(gh pr view $PR_NUMBER --json commits --jq '.commits[-1].oid')
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          IS_DRAFT=$(gh pr view $PR_NUMBER --json isDraft --jq '.isDraft')
 
-          echo "pr_status_all_success=false" >> $GITHUB_ENV
-          for i in {1..30}; do
+          if [[ "$IS_DRAFT" == "true" ]]; then
+            gh pr ready $PR_NUMBER
+            echo "Draft status removed. Ready to merge."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+
+      - name: Wait and Check PR status
+        if: success() && env.should_merge == 'true'
+        run: |
+          PR_NUMBER=$(jq -r '.pull_request.number' < "$GITHUB_EVENT_PATH")
+          STATUS_CHECKS=$(gh pr checks "$PR_NUMBER" --json name,state --jq '.[]')
+          echo "$STATUS_CHECKS" | jq -r '. | "\(.name): \(.state)"'
+
+          PR_STATUS_ALL_SUCCESS=true
+          echo "pr_status_all_success=true" >> $GITHUB_ENV
+
+          for i in {1..10}; do
             echo "Checking status checks... (Attempt $i)"
+            PR_NUMBER=$(jq -r '.pull_request.number' < "$GITHUB_EVENT_PATH")
+            STATUS_CHECKS=$(gh pr checks "$PR_NUMBER" --json name,state --jq '.[]')
 
-            STATUS_CHECKS=$(gh api graphql -f query='
-              query($owner: String!, $repo: String!, $commit: String!) {
-                repository(owner: $owner, name: $repo) {
-                  object(expression: $commit) {
-                    ... on Commit {
-                      status {
-                        contexts {
-                          context
-                          state
-                        }
-                      }
-                    }
-                  }
-                }
-              }' -f owner="${{ github.repository_owner }}" -f repo="${{ github.event.repository.name }}" -f commit="$COMMIT_SHA" --jq '.data.repository.object.status.contexts')
-
-            SUCCESSFUL_CHECKS=0
-            TOTAL_CHECKS=0
-            for status in $(echo "$STATUS_CHECKS" | jq -r '.[] | @base64'); do
-              _jq() {
-                echo "${status}" | base64 --decode | jq -r ${1}
-              }
-
-              CONTEXT=$(_jq '.context')
-              STATE=$(_jq '.state')
-
-              if [[ "$CONTEXT" == "automerge" ]]; then
-                continue
+            while IFS= read -r status; do
+              CHECK_NAME=$(echo "$status" | jq -r '.name')
+              CHECK_STATE=$(echo "$status" | jq -r '.state')
+              if [[ "$CHECK_NAME" != "BUMP" && "$CHECK_STATE" != "SUCCESS" ]]; then
+                PR_STATUS_ALL_SUCCESS=false
+                break
               fi
+            done <<< "$STATUS_CHECKS"
 
-              TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
-
-              if [[ "$STATE" == "SUCCESS" ]]; then
-                SUCCESSFUL_CHECKS=$((SUCCESSFUL_CHECKS + 1))
-              fi
-            done
-
-            if [[ "$SUCCESSFUL_CHECKS" -eq "$TOTAL_CHECKS" && "$TOTAL_CHECKS" -gt 0 ]]; then
+            if [ "$PR_STATUS_ALL_SUCCESS" = true ]; then
+              echo "All required status checks are successful."
               echo "pr_status_all_success=true" >> $GITHUB_ENV
               break
             fi
             sleep 60
           done
         env:
-          GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check all checkboxes
-        if: env.should_merge == 'true' && env.pr_status_all_success == 'true'
+        if: success() && env.should_merge == 'true' && env.pr_status_all_success == 'true'
         run: |
           gh pr view ${{ github.event.pull_request.number }} --json body --jq .body > pr_body.txt
-
           PR_BODY=$(cat pr_body.txt)
-
           CHECKED_BODY=$(echo "$PR_BODY" | sed 's/\[ \]/[x]/g')
 
           if [[ "$PR_BODY" != "$CHECKED_BODY" ]]; then
@@ -154,4 +143,3 @@ jobs:
           gh pr merge ${{ github.event.pull_request.number }} --merge --admin
         env:
           GITHUB_TOKEN: ${{ secrets.SECRETS_GITHUB_TOKEN }}
-

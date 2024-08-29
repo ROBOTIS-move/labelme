@@ -2,6 +2,11 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.24.0 (2024-08-29)
+-------------------
+* Fixed a bug in setting rectangle and polygon which were set inversely
+* Contributors: Dongyun Kim
+
 5.23.0 (2024-08-08)
 -------------------
 * Added a version checker and enhanced the logging mode for labeling both polygons and bounding boxes
