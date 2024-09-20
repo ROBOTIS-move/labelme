@@ -2,6 +2,9 @@
 Changelog for package labelme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+5.25.0 (2024-09-20)
+-------------------
+
 5.24.0 (2024-08-29)
 -------------------
 * Fixed a bug in setting rectangle and polygon which were set inversely
