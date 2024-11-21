@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <version>5.27.0</version>
+  <version>5.28.0</version>
   <maintainer email="pyo@robotis.com">Pyo</maintainer>
   <maintainer email="osh@robotis.com">SungHyeon Oh</maintainer>
   <license>GPLv3</license>
