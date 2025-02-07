@@ -1061,12 +1061,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createRectangleMode.setEnabled(True)
             self.actions.createMode.setEnabled(True)
         else:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
                 self.actions.createMode.setEnabled(True)
             else:
-                self.actions.createRectangleMode.setEnabled('detection' in self._classType)
-                self.actions.createMode.setEnabled('segmentation' in self._classType)
+                self.actions.createRectangleMode.setEnabled('Detection' in self._classType)
+                self.actions.createMode.setEnabled('Segmentation' in self._classType)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -1186,7 +1186,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:
@@ -1199,7 +1199,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createPointMode.setEnabled(False)
             self.actions.createLineStripMode.setEnabled(False)
         else:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:

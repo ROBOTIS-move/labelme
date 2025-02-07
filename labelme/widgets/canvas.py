@@ -93,7 +93,7 @@ class Canvas(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
         self.measureWorkingTime = MeasureTime()
-        self.labelType = 'outdoor_detection'
+        self.labelType = 'PanoramicViewDetection'
 
     def updateType(self, label_type):
         self.labelType = label_type
@@ -586,7 +586,7 @@ class Canvas(QtWidgets.QWidget):
     def boundedMoveVertex(self, pos):
         index, shape = self.hVertex, self.hShape
         shape_index = index
-        if "indoor" in self.labelType:
+        if "ELButtonShapeSegmentation" in self.labelType:
             if len(shape.points) > 2:
                 # Polygon points
                 point = shape.points[shape_index]
@@ -598,7 +598,7 @@ class Canvas(QtWidgets.QWidget):
                 else:
                     point = shape.points[shape_index]
         else:
-            if "segmentation" in self.labelType:
+            if "DrivingAreaSegmentation" in self.labelType:
                 point = shape.points[shape_index]
             else:
                 if shape_index > 1:
