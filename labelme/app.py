@@ -141,10 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.flag_dock = QtWidgets.QDockWidget(self.tr("Flags"), self)
         self.flag_dock.setObjectName("Flags")
         self.flag_widget = QtWidgets.QListWidget()
-        if config["flags"]:
-            self.loadFlags({k: False for k in config["flags"]})
         self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
 
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         self.labelList.itemDoubleClicked.connect(self.editLabel)
@@ -1833,15 +1830,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
             self._classType = self.labelFile.classType
             self.loadLabels(self.labelFile.shapes)
-            if self.labelFile.flags is not None:
-                flags.update(self.labelFile.flags)
         else:
             self._classType = None
-        self.loadFlags(flags)
+        if 'ELButtonStateClassification' in self.labelFile.classType:
+            if self._config["flags"]:
+                if self.labelFile.flags == {}:
+                    self.loadFlags({k: v for k, v in self._config["flags"].items()})
+                else:
+                    self.loadFlags({k: v for k, v in self.labelFile.flags.items()})
+            self.flag_widget.itemChanged.connect(self.onItemChanged)
+        else:
+            self.flag_widget.clear()
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
             self.setDirty()
@@ -2495,3 +2497,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     target_class = class_type + '/default'
         return target_class
+
+    def onItemChanged(self, item):
+        if item.checkState() == QtCore.Qt.Checked:
+            for i in range(self.flag_widget.count()):
+                list_item = self.flag_widget.item(i)
+                if list_item is not item:
+                    list_item.setCheckState(QtCore.Qt.Unchecked)
+        self.setDirty()
