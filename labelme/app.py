@@ -1780,11 +1780,12 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 self.labelFile = LabelFile(label_file)
                 size_weight = 30
-                if "outdoor" in self.labelFile.classType:
+                # if "outdoor" in self.labelFile.classType:
+                if "EL" not in self.labelFile.classType:
                     size_weight = 50
                 Shape.label_font_size = size_weight * self.labelFile.imageHeight / 2160
-                if (self.labelFile.classType == "indoor_detection-ev_state" or
-                        self.labelFile.classType == "indoor_detection-ev_button"):
+                if (self.labelFile.classType == "ELStateDetection" or
+                        self.labelFile.classType == "ELButtonStateClassification"):
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
                 self.canvas.updateType(self.labelFile.classType)

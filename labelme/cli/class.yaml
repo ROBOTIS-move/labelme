@@ -37,7 +37,7 @@ outdoor_detection:
    'light-out',
    'countdown-walk',
    'countdown-light-out']
-indoor_segmentation:
+ELButtonShapeSegmentation:
   in_panel : [128, 128, 128]
   out_panel : [192, 192, 192]
   rect-btn : [255, 0, 0]
@@ -52,7 +52,7 @@ indoor_segmentation:
   handi-symbol : [128, 0, 128]
   screw : [0, 128, 128]
   others : [100, 200, 150]
-indoor_serindoor_detection-ev_state:
+ELStateDetection:
   Door_open : [0, 102, 0]
   Door_close : [102, 102, 255]
   Door_moving : [255, 255, 0]
@@ -71,7 +71,7 @@ indoor_serindoor_detection-ev_state:
   '5' : [107, 142, 35]
   '6' : [220, 20, 60]
   '7' : [150, 100, 255]
-  '8' : [0, 0, 0]
+  '8' : [0, 255, 255]
   '9' : [150, 50, 0]
   '0' : [250, 0, 150]
   A : [0, 100, 150]
