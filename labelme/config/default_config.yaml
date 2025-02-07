@@ -20,16 +20,20 @@ sort_labels: true
 validate_label: null
 
 labels_class:
-  outdoor_segmentation:
+  DrivingAreaSegmentation:
     default:
       ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
       'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
       'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
-  outdoor_detection-object_detection:
+  PanoramicViewDetection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
       'robot', 'animal', 'unknown']
-  outdoor_detection-traffic_light_detection:
+  RearViewDetection:
+    default:
+      ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
+      'robot', 'animal', 'unknown']
+  TrafficLightDetection:
     default:
       ['stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   ELButtonShapeSegmentation:
@@ -90,7 +94,7 @@ label_colors:
   in_panel : [128, 128, 128]
   out_panel : [192, 192, 192]
   rect-btn : [255, 0, 0]
-  circle-btn : [0, 255, 0]
+  circle-btn : [0, 255, 125]
   ellipse-btn : [200, 100, 50]
   rect-circle-btn : [255, 255, 0]
   rect-rect-btn : [0, 255, 255]

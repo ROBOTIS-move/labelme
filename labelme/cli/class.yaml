@@ -1,4 +1,4 @@
-outdoor_segmentation:
+DrivingAreaSegmentation:
   runway: [0, 102, 0]
   road: [128, 64, 128]
   curb: [102, 102, 255]
@@ -19,7 +19,7 @@ outdoor_segmentation:
   dynamic: [150, 100, 255]
   static: [0, 128, 128]
   void: [63, 63, 63]
-outdoor_detection:
+PanoramicViewDetection:
   ['person',
    'bicycle',
    'motorcycle',
@@ -31,8 +31,22 @@ outdoor_detection:
    'unknown',
    'car',
    'bus',
-   'truck',
-   'stop',
+   'truck']
+RearViewDetection:
+  ['person',
+   'bicycle',
+   'motorcycle',
+   'kickboard',
+   'robot',
+   'animal',
+   'mailbox',
+   'traffic-sign',
+   'unknown',
+   'car',
+   'bus',
+   'truck']
+TrafficLightDetection:
+  ['stop',
    'walk',
    'light-out',
    'countdown-walk',
@@ -41,7 +55,7 @@ ELButtonShapeSegmentation:
   in_panel : [128, 128, 128]
   out_panel : [192, 192, 192]
   rect-btn : [255, 0, 0]
-  circle-btn : [0, 255, 0]
+  circle-btn : [0, 255, 125]
   ellipse-btn : [200, 100, 50]
   rect-circle-btn : [255, 255, 0]
   rect-rect-btn : [0, 255, 255]
