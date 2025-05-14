@@ -45,6 +45,12 @@ labels_class:
       'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
       '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
+  indoor_detection-ev_state:
+    default:
+      ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
+      'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
+      '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
   ELButtonStateClassification:
     default:
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
