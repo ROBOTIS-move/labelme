@@ -12,7 +12,7 @@ display_label_option: true
 display_probability_option: true
 logger_level: info
 
-flags: {'on': false, 'off': true}
+flags: {'on': false, 'off': true, 'none': false}
 label_flags: null
 labels: null
 file_search: null
