@@ -586,7 +586,7 @@ class Canvas(QtWidgets.QWidget):
     def boundedMoveVertex(self, pos):
         index, shape = self.hVertex, self.hShape
         shape_index = index
-        if "ELButtonShapeSegmentation" in self.labelType:
+        if "ELButtonShapeSegmentation" in self.labelType or "indoor" in self.labelType:
             if len(shape.points) > 2:
                 # Polygon points
                 point = shape.points[shape_index]
@@ -598,7 +598,7 @@ class Canvas(QtWidgets.QWidget):
                 else:
                     point = shape.points[shape_index]
         else:
-            if "DrivingAreaSegmentation" in self.labelType:
+            if "DrivingAreaSegmentation" in self.labelType or "segmentation" in self.labelType:
                 point = shape.points[shape_index]
             else:
                 if shape_index > 1:
