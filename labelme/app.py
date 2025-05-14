@@ -141,10 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.flag_dock = QtWidgets.QDockWidget(self.tr("Flags"), self)
         self.flag_dock.setObjectName("Flags")
         self.flag_widget = QtWidgets.QListWidget()
-        if config["flags"]:
-            self.loadFlags({k: False for k in config["flags"]})
         self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
 
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         self.labelList.itemDoubleClicked.connect(self.editLabel)
@@ -1061,10 +1058,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createRectangleMode.setEnabled(True)
             self.actions.createMode.setEnabled(True)
         else:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType or 'indoor' in self._classType:
                 self.actions.createRectangleMode.setEnabled(True)
                 self.actions.createMode.setEnabled(True)
             else:
+                self.actions.createRectangleMode.setEnabled('Detection' in self._classType)
+                self.actions.createMode.setEnabled('Segmentation' in self._classType)
                 self.actions.createRectangleMode.setEnabled('detection' in self._classType)
                 self.actions.createMode.setEnabled('segmentation' in self._classType)
         self.actions.createCircleMode.setEnabled(False)
@@ -1186,10 +1185,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         if edit:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType or 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:
+                self.actions.createRectangleMode.setEnabled(
+                    self._classType is None or 'Detection' in self._classType)
+                self.actions.createMode.setEnabled(
+                    self._classType is None or 'Segmentation' in self._classType)
                 self.actions.createRectangleMode.setEnabled(
                     self._classType is None or 'detection' in self._classType)
                 self.actions.createMode.setEnabled(
@@ -1199,12 +1202,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createPointMode.setEnabled(False)
             self.actions.createLineStripMode.setEnabled(False)
         else:
-            if 'indoor' in self._classType:
+            if 'EL' in self._classType or 'indoor' in self._classType:
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
             else:
                 if createMode == "rectangle":
                     self.actions.createMode.setEnabled(False)
+                    self.actions.createRectangleMode.setEnabled(
+                        self._classType is None or 'Detection' in self._classType)
                     self.actions.createRectangleMode.setEnabled(
                         self._classType is None or 'detection' in self._classType)
                     self.actions.createCircleMode.setEnabled(False)
@@ -1212,6 +1217,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.actions.createPointMode.setEnabled(False)
                     self.actions.createLineStripMode.setEnabled(False)
                 elif createMode == "polygon":
+                    self.actions.createMode.setEnabled(
+                        self._classType is None or 'Segmentation' in self._classType
+                    )
                     self.actions.createMode.setEnabled(
                         self._classType is None or 'segmentation' in self._classType
                     )
@@ -1780,10 +1788,13 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 self.labelFile = LabelFile(label_file)
                 size_weight = 30
-                if "outdoor" in self.labelFile.classType:
+                # if "outdoor" in self.labelFile.classType:
+                if "EL" not in self.labelFile.classType or "indoor" not in self.labelFile.classType:
                     size_weight = 50
                 Shape.label_font_size = size_weight * self.labelFile.imageHeight / 2160
-                if (self.labelFile.classType == "indoor_detection-ev_state" or
+                if (self.labelFile.classType == "ELStateDetection" or
+                        self.labelFile.classType == "indoor_detection-ev_state" or
+                        self.labelFile.classType == "ELButtonStateClassification" or
                         self.labelFile.classType == "indoor_detection-ev_button"):
                     Shape.point_size = 3
                     self.labelDialog.default_completion_mode()
@@ -1832,15 +1843,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._config["keep_prev"]:
             prev_shapes = self.canvas.shapes
         self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        flags = {k: False for k in self._config["flags"] or []}
         if self.labelFile:
             self._classType = self.labelFile.classType
             self.loadLabels(self.labelFile.shapes)
-            if self.labelFile.flags is not None:
-                flags.update(self.labelFile.flags)
         else:
             self._classType = None
-        self.loadFlags(flags)
+        if 'ELButtonStateClassification' in self.labelFile.classType:
+            if self._config["flags"]:
+                if self.labelFile.flags == {}:
+                    self.loadFlags({k: v for k, v in self._config["flags"].items()})
+                else:
+                    self.loadFlags({k: v for k, v in self.labelFile.flags.items()})
+            self.flag_widget.itemChanged.connect(self.onItemChanged)
+        else:
+            self.flag_widget.clear()
         if self._config["keep_prev"] and self.noShapes():
             self.loadShapes(prev_shapes, replace=False)
             self.setDirty()
@@ -2494,3 +2510,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     target_class = class_type + '/default'
         return target_class
+
+    def onItemChanged(self, item):
+        if item.checkState() == QtCore.Qt.Checked:
+            for i in range(self.flag_widget.count()):
+                list_item = self.flag_widget.item(i)
+                if list_item is not item:
+                    list_item.setCheckState(QtCore.Qt.Unchecked)
+        self.setDirty()
