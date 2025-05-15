@@ -45,13 +45,34 @@ labels_class:
       'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
       '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
+  ELButtonStateClassification:
+    default:
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
+      'alarm', 'call', 'star', '-', 'key', 'etc',
+      'open', 'close', 'on', 'off']
+  outdoor_segmentation:
+    default:
+      ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
+      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
+  outdoor_detection-object_detection:
+    default:
+      ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
+      'robot', 'animal', 'unknown']
+  outdoor_detection-traffic_light_detection:
+    default:
+      ['stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
+  indoor_segmentation:
+    default:
+      ['rect-btn', 'circle-btn', 'robot', 'sticker', 'admin-key', 'handi-symbol', 'screw', 'others']
   indoor_detection-ev_state:
     default:
       ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
       'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
       '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
-  ELButtonStateClassification:
+  indoor_detection-ev_button:
     default:
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
