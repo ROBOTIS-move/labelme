@@ -479,7 +479,8 @@ class Canvas(QtWidgets.QWidget):
                         [x for x in self.selectedShapes if x != self.hShape]
                     )
 
-        if self.hShape and "detection" in self.labelType:
+        if ((self.hShape and "detection" in self.labelType) or
+            (self.hShape and "Detection" in self.labelType)):
             self.hShape.align_points()
         if self.movingShape and self.hShape:
             index = self.shapes.index(self.hShape)
