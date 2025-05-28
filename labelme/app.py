@@ -1316,6 +1316,8 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = item.shape()
         if shape is None:
             return
+        if self._classType == 'ELButtonShapeSegmentation':
+            self.current_edit_shape = self._classifier_shape_type(shape.label)
         text, flags, group_id = self.labelDialog.popUp(
             text=shape.label,
             flags=shape.flags,
@@ -1352,6 +1354,12 @@ class MainWindow(QtWidgets.QMainWindow):
             item = QtWidgets.QListWidgetItem()
             item.setData(Qt.UserRole, shape.label)
             self.uniqLabelList.addItem(item)
+
+    def _classifier_shape_type(self, label):
+        if label in self._config['labels_class'][self._classType]['default']['polygon']:
+            return 'polygon'
+        elif label in self._config['labels_class'][self._classType]['default']['rectangle']:
+            return 'rectangle'
 
     def fileSearchChanged(self):
         self.importDirImages(
