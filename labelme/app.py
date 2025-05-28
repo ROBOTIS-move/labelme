@@ -207,6 +207,9 @@ class MainWindow(QtWidgets.QMainWindow):
         }
         self.canvas.scrollRequest.connect(self.scrollRequest)
 
+        # save edit state
+        self.current_edit_shape = None
+
         self.canvas.newShape.connect(self.newShape)
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
@@ -1062,6 +1065,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.createMode.setEnabled('Segmentation' in self._classType)
             self.actions.createRectangleMode.setEnabled('detection' in self._classType)
             self.actions.createMode.setEnabled('segmentation' in self._classType)
+            if self._classType == 'ELButtonShapeSegmentation':
+                self.actions.createRectangleMode.setEnabled(True)
+                self.actions.createMode.setEnabled(True)
         self.actions.createCircleMode.setEnabled(False)
         self.actions.createLineMode.setEnabled(False)
         self.actions.createPointMode.setEnabled(False)
@@ -1194,7 +1200,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._classType is None or
                 'segmentation' in self._classType or
                 'Segmentation' in self._classType
-                )
+            )
+            if self._classType == 'ELButtonShapeSegmentation':
+                self.actions.createMode.setEnabled(True)
+                self.actions.createRectangleMode.setEnabled(True)
             self.actions.createCircleMode.setEnabled(False)
             self.actions.createLineMode.setEnabled(False)
             self.actions.createPointMode.setEnabled(False)
@@ -1211,6 +1220,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createLineMode.setEnabled(False)
                 self.actions.createPointMode.setEnabled(False)
                 self.actions.createLineStripMode.setEnabled(False)
+                self.current_edit_shape = 'rectangle'
             elif createMode == "polygon":
                 self.actions.createMode.setEnabled(
                     self._classType is None or
@@ -1222,6 +1232,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createLineMode.setEnabled(False)
                 self.actions.createPointMode.setEnabled(False)
                 self.actions.createLineStripMode.setEnabled(False)
+                self.current_edit_shape = 'polygon'
             elif createMode == "line":
                 self.actions.createMode.setEnabled(True)
                 self.actions.createRectangleMode.setEnabled(True)
@@ -1252,6 +1263,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.actions.createLineStripMode.setEnabled(False)
             else:
                 raise ValueError("Unsupported createMode: %s" % createMode)
+            if self._classType == 'ELButtonShapeSegmentation':
+                self.actions.createRectangleMode.setEnabled(True)
+                self.actions.createMode.setEnabled(True)
         self.actions.editMode.setEnabled(not edit)
 
     def setEditMode(self):
@@ -1306,7 +1320,9 @@ class MainWindow(QtWidgets.QMainWindow):
             text=shape.label,
             flags=shape.flags,
             group_id=shape.group_id,
-            widget_size=self.size()
+            widget_size=self.size(),
+            class_type=self._classType,
+            shape_type=self.current_edit_shape
         )
         if text is None:
             return
@@ -1605,7 +1621,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config["single_class"] and self._last_label:
                 text = self._last_label
             else:
-                text, flags, group_id = self.labelDialog.popUp(text, widget_size=self.size())
+                text, flags, group_id = self.labelDialog.popUp(
+                    text,
+                    widget_size=self.size(),
+                    class_type=self._classType,
+                    shape_type=self.current_edit_shape
+                )
             if not text:
                 self.labelDialog.edit.setText(previous_text)
 
@@ -2483,6 +2504,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.labelDialog.update_prev_label_history()
                 self.labelDialog.removeDuplicatedLabelHistory(self._last_label_names)
                 for label_name in current_label_names:
+                    if self._classType == 'ELButtonShapeSegmentation':
+                        self.labelDialog.ELButtonShapeSegmentation_label = current_label_names
+                        break
                     self.labelDialog.addLabelHistory(label_name)
                 self._last_label_names = current_label_names
 
@@ -2505,11 +2529,3 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     target_class = class_type + '/default'
         return target_class
-
-    # def onItemChanged(self, item):
-    #     if item.checkState() == QtCore.Qt.Checked:
-    #         for i in range(self.flag_widget.count()):
-    #             list_item = self.flag_widget.item(i)
-    #             if list_item is not item:
-    #                 list_item.setCheckState(QtCore.Qt.Unchecked)
-    #     self.setDirty()
