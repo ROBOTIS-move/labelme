@@ -40,12 +40,10 @@ labels_class:
     default:
         polygon: ['rect-btn_on', 'rect-btn_off', 'circle-btn_on', 'circle-btn_off',
                   'ellipse-btn_on', 'ellipse-btn_off', 'rect-circle-btn_on', 'rect-circle-btn_off',
-                  'rect-rect-btn_on', 'rect-rect-btn_off', 'robot', 'sticker', 'admin-key',
-                  'handi-symbol', 'screw', 'others']
+                  'rect-rect-btn_on', 'rect-rect-btn_off', 'robot']
         rectangle: [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
                     'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
-                    'alarm', 'call', 'star', 'key', 'etc',
-                    'open', 'close', 'on', 'off']
+                    'up', 'down', 'unknown', 'open', 'close']
   ELStateDetection:
     default:
       ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',

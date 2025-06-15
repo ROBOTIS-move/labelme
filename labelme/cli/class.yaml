@@ -52,8 +52,6 @@ TrafficLightDetection:
    'countdown-walk',
    'countdown-light-out']
 ELButtonShapeSegmentation:
-  in_panel : [128, 128, 128]
-  out_panel : [192, 192, 192]
   rect-btn_on : [255, 0, 0]
   rect-btn_off : [255, 145, 0]
   circle-btn_on : [0, 255, 125]
@@ -65,12 +63,6 @@ ELButtonShapeSegmentation:
   rect-rect-btn_on : [0, 255, 255]
   rect-rect-btn_off : [100, 255, 50]
   special-btn : [255, 0, 255]
-  sticker : [128, 0, 0]
-  admin-key : [128, 128, 0]
-  indicator : [0, 128, 0]
-  handi-symbol : [128, 0, 128]
-  screw : [0, 128, 128]
-  others : [100, 200, 150]
   '1' : [0, 128, 128]
   '2' : [150, 150, 100]
   '3' : [100, 200, 255]
@@ -97,6 +89,8 @@ ELButtonShapeSegmentation:
   U : [51, 204, 204]
   open: [124, 252, 0]
   close: [0, 255, 255]
+  up : [204, 51, 204]
+  down : [255, 165, 0]
 ELStateDetection:
   Door_open : [0, 102, 0]
   Door_close : [102, 102, 255]
