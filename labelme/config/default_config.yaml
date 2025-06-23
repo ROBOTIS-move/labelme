@@ -23,8 +23,8 @@ labels_class:
   DrivingAreaSegmentation:
     default:
       ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
-      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
-      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'poll',
+      'pedestrian', 'tree', 'vehicle', 'dynamic', 'static', 'void']
   PanoramicViewDetection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -53,8 +53,8 @@ labels_class:
   outdoor_segmentation:
     default:
       ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
-      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
-      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'poll',
+      'pedestrian', 'tree', 'vehicle', 'dynamic', 'static', 'void']
   outdoor_detection-object_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -92,11 +92,9 @@ label_colors:
   manhole: [255, 200, 255]
   terrain: [152, 251, 152]
   vegetation: [107, 142, 35]
-  sky: [70, 130, 180]
-  building: [150, 150, 100]
   poll: [250, 0, 150]
   pedestrian: [220, 20, 60]
-  animal: [200, 100, 100]
+  tree: [155, 50, 0]
   vehicle: [250, 200, 100]
   dynamic: [150, 100, 255]
   static: [0, 128, 128]
