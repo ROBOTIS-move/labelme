@@ -43,7 +43,7 @@ labels_class:
                   'rect-rect-btn_on', 'rect-rect-btn_off', 'robot']
         rectangle: [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
                     'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
-                    'up', 'down', 'unknown', 'open', 'close']
+                    'up', 'down', 'unknown', 'open', 'close', 'unknown']
   ELStateDetection:
     default:
       ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
@@ -127,8 +127,8 @@ label_colors:
   ellipse-btn_off : [200, 100, 150]
   rect-circle-btn_on : [255, 255, 0]
   rect-circle-btn_off : [255, 120, 230]
-  rect-rect-btn_on : [0, 255, 255]
-  rect-rect-btn_off : [100, 255, 50]
+  rect-rect-btn_on : [123, 55, 25]
+  rect-rect-btn_off : [0, 155, 75]
   special-btn : [255, 0, 255]
   open: [124, 252, 0]
   close: [0, 255, 255]
@@ -149,14 +149,14 @@ label_colors:
   Hall_LED_off : [102, 0, 153]
   up : [204, 51, 204]
   down : [255, 165, 0]
-  '1' : [0, 128, 128]
+  '1' : [152, 36, 102]
   '2' : [150, 150, 100]
   '3' : [100, 200, 255]
   '4' : [255, 200, 255]
   '5' : [107, 142, 35]
   '6' : [220, 20, 60]
   '7' : [150, 100, 255]
-  '8' : [0, 0, 0]
+  '8' : [0, 255, 255]
   '9' : [150, 50, 0]
   '0' : [250, 0, 150]
   A : [0, 100, 150]
