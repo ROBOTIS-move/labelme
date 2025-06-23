@@ -2020,8 +2020,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         if self.canvas.drawing() and self.canvas.current:
             return
-        self.hide_polygon_flag = False
-        self.hide_rectangle_flag = False
+        self.resetHideFlags()
         self.canvas.measureWorkingTime.measure_time()
         self.canvas.measureWorkingTime.working_count += 1
         self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
@@ -2053,8 +2052,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
-        self.hide_polygon_flag = False
-        self.hide_rectangle_flag = False
+        self.resetHideFlags()
         if self.imagePath:
             self.canvas.measureWorkingTime.measure_time()
             self.canvas.measureWorkingTime.working_count += 1
@@ -2549,3 +2547,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if list_item is not item:
                     list_item.setCheckState(QtCore.Qt.Unchecked)
         self.setDirty()
+
+    def resetHideFlags(self):
+        self.hide_polygon_flag = False
+        self.hide_rectangle_flag = False
