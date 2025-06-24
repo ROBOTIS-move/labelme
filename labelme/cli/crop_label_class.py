@@ -68,6 +68,7 @@ class CropLabelClass:
                 image = cv2.imread(image_path)
                 if image is None:
                     print(f"Error: Could not read image {image_name}")
+                    continue
 
                 points = shape['points']
                 x1, y1 = int(points[0][0]), int(points[0][1])
@@ -85,9 +86,10 @@ class CropLabelClass:
                 cropped_image = image[y1:y2, x1:x2]
 
                 class_dir = os.path.join(root_path, label)
-
-                output_path = os.path.join(class_dir, f'{os.path.basename(image_name)}_{index}')
+                base_name, ext = os.path.splitext(os.path.basename(image_name))
+                output_path = os.path.join(class_dir, f'{base_name}_{index}{ext}')
                 cv2.imwrite(output_path, cropped_image)
+
             else:
                 print(f"Warning: Unsupported shape type '{shape['shape_type']}' in {json_file}. Only 'rectangle' is supported.")
 
