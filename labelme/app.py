@@ -2571,3 +2571,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     target_class = class_type + '/default'
         return target_class
+
+    def resetHideFlags(self):
+        self.hide_polygon_flag = False
+        self.hide_rectangle_flag = False
