@@ -544,7 +544,22 @@ class MainWindow(QtWidgets.QMainWindow):
             tip=self.tr("Show all polygons"),
             enabled=False,
         )
-
+        self.hide_polygon_flag = False
+        hidePolygons = action(
+            self.tr("&Hide\nPolygons"),
+            lambda: self.toggleHideFlagAndToggleShapes('polygon'),
+            shortcuts['hide_and_show_polygons'],
+            tip=self.tr("Hide polygons"),
+            enabled=False,
+        )
+        self.hide_rectangle_flag = False
+        hideRectangles = action(
+            self.tr("&Hide\nRectangles"),
+            lambda: self.toggleHideFlagAndToggleShapes('rectangle'),
+            shortcuts['hide_and_show_rectangles'],
+            tip=self.tr("Hide rectangles"),
+            enabled=False,
+        )
         help = action(
             self.tr("&Tutorial"),
             self.tutorial,
@@ -817,7 +832,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 editMode,
                 convert_objects,
             ),
-            onShapesPresent=(saveAs, hideAll, showAll),
+            onShapesPresent=(saveAs, hideAll, showAll, #),
+                             hidePolygons, hideRectangles),
             onAdministrator=(administrator,),
         )
 
@@ -876,6 +892,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 None,
                 hideAll,
                 showAll,
+                hidePolygons,
+                hideRectangles,
                 None,
                 zoomIn,
                 zoomOut,
@@ -1776,6 +1794,20 @@ class MainWindow(QtWidgets.QMainWindow):
         for item in self.labelList:
             item.setCheckState(Qt.Checked if value else Qt.Unchecked)
 
+    def toggleHideFlagAndToggleShapes(self, shape_type):
+        if shape_type == 'polygon':
+            self.hide_polygon_flag = not self.hide_polygon_flag
+            self.toggleByShapeType(self.hide_polygon_flag, 'polygon')
+        elif shape_type == 'rectangle':
+            self.hide_rectangle_flag = not self.hide_rectangle_flag
+            self.toggleByShapeType(self.hide_rectangle_flag, 'rectangle')
+
+    def toggleByShapeType(self, hide_flag, shape_type):
+        for item in self.labelList:
+            shape = item.shape()
+            if shape.shape_type == shape_type:
+                item.setCheckState(Qt.Unchecked if hide_flag else Qt.Checked)
+
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
         # changing fileListWidget loads file
@@ -2017,6 +2049,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openPrevImg(self, _value=False):
         if self.canvas.drawing() and self.canvas.current:
             return
+        self.resetHideFlags()
         self.canvas.measureWorkingTime.measure_time()
         self.canvas.measureWorkingTime.working_count += 1
         self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
@@ -2048,6 +2081,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openNextImg(self, _value=False, load=True):
         if self.canvas.drawing() and self.canvas.current:
             return
+        self.resetHideFlags()
         if self.imagePath:
             self.canvas.measureWorkingTime.measure_time()
             self.canvas.measureWorkingTime.working_count += 1
