@@ -22,6 +22,7 @@ from . import utils
 from labelme.config import get_config
 from labelme.cli import draw_object_label
 from labelme.cli import draw_segment_label
+from labelme.cli import crop_label_class
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
 from labelme.logger import logger
@@ -558,6 +559,15 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        crop_classes = action(
+            self.tr("Crop Classes"),
+            self.crop_classes,
+            shortcuts["crop_classes"],
+            icon="eye",
+            tip=self.tr("Crop classes"),
+            enabled=False,
+        )
+
         convert_segmentation = action(
             self.tr("Convert\nSegmentation"),
             self.convert_segments,
@@ -815,7 +825,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator,),
+            onAdministrator=(administrator, crop_classes),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -856,7 +866,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 administrator,
                 None,
                 convert_segmentation,
-                convert_objects
+                convert_objects,
+                crop_classes,
             )
         )
         utils.addActions(
@@ -1158,6 +1169,11 @@ class MainWindow(QtWidgets.QMainWindow):
               'Detection' in self._classType):
             self.ImagePopup.object_widget_state = True
         self.ImagePopup.popUp(self.filename, True)
+
+    def crop_classes(self):
+        folder_path = os.path.split(self.filename)[0]
+        wait_popup = ConvertLabelPopup()
+        crop_label_class.crop_labels(folder_path, wait_popup)
 
     def convert_segments(self):
         folder_path = os.path.split(self.filename)[0]
