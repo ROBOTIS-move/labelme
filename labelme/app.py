@@ -568,6 +568,13 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        delete_label_folder = action(
+            self.tr("Delete Label Folder"),
+            self.delete_label_dir,
+            tip=self.tr("Delete label folder"),
+            enabled=False,
+        )
+
         convert_segmentation = action(
             self.tr("Convert\nSegmentation"),
             self.convert_segments,
@@ -825,7 +832,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
-            onAdministrator=(administrator, crop_classes),
+            onAdministrator=(administrator, crop_classes, delete_label_folder),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -868,6 +875,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 convert_segmentation,
                 convert_objects,
                 crop_classes,
+                delete_label_folder
             )
         )
         utils.addActions(
@@ -1174,6 +1182,10 @@ class MainWindow(QtWidgets.QMainWindow):
         folder_path = os.path.split(self.filename)[0]
         wait_popup = ConvertLabelPopup()
         crop_label_class.crop_labels(folder_path, wait_popup)
+
+    def delete_label_dir(self):
+        folder_path = os.path.split(self.filename)[0]
+        crop_label_class.delete_class_dir(folder_path)
 
     def convert_segments(self):
         folder_path = os.path.split(self.filename)[0]

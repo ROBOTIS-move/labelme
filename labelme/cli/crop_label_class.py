@@ -122,6 +122,15 @@ def crop_labels(input_dir, popup=None):
 
     CropLabelClass(CONFIG, input_dir, popup)
 
+def delete_class_dir(input_dir):
+    folder_list = os.listdir(input_dir)
+    for folder in folder_list:
+        folder_path = os.path.join(input_dir, folder)
+        if os.path.isdir(folder_path):
+            shutil.rmtree(folder_path)
+
+    folder_name = os.path.basename(input_dir)
+    print(f"Deleted all class directories in {folder_name}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
