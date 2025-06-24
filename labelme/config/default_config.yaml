@@ -12,7 +12,7 @@ display_label_option: true
 display_probability_option: true
 logger_level: info
 
-flags: {'on': false, 'off': true, 'none': false}
+flags: null
 label_flags: null
 labels: null
 file_search: null
@@ -23,8 +23,8 @@ labels_class:
   DrivingAreaSegmentation:
     default:
       ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
-      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
-      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'poll',
+      'pedestrian', 'tree', 'vehicle', 'dynamic', 'static', 'void']
   PanoramicViewDetection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -38,24 +38,23 @@ labels_class:
       ['stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   ELButtonShapeSegmentation:
     default:
-      ['rect-btn', 'circle-btn', 'robot', 'sticker', 'admin-key', 'handi-symbol', 'screw', 'others']
+        polygon: ['rect-btn_on', 'rect-btn_off', 'circle-btn_on', 'circle-btn_off',
+                  'ellipse-btn_on', 'ellipse-btn_off', 'rect-circle-btn_on', 'rect-circle-btn_off',
+                  'rect-rect-btn_on', 'rect-rect-btn_off', 'robot']
+        rectangle: [ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+                    'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
+                    'up', 'down', 'unknown', 'open', 'close', 'unknown']
   ELStateDetection:
     default:
       ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
       'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
       '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
-  ELButtonStateClassification:
-    default:
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
-      'alarm', 'call', 'star', '-', 'key', 'etc',
-      'open', 'close', 'on', 'off']
   outdoor_segmentation:
     default:
       ['runway', 'road', 'curb', 'mat', 'braille-block', 'cross-walk', 'bicycle-road',
-      'speed-bump', 'manhole', 'terrain', 'vegetation', 'sky', 'building', 'poll',
-      'pedestrian', 'animal', 'vehicle', 'dynamic', 'static', 'void']
+      'speed-bump', 'manhole', 'terrain', 'vegetation', 'poll',
+      'pedestrian', 'tree', 'vehicle', 'dynamic', 'static', 'void']
   outdoor_detection-object_detection:
     default:
       ['person', 'car', 'truck', 'bus', 'motorcycle', 'bicycle', 'kickboard',
@@ -65,19 +64,19 @@ labels_class:
       ['stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out']
   indoor_segmentation:
     default:
-      ['rect-btn', 'circle-btn', 'robot', 'sticker', 'admin-key', 'handi-symbol', 'screw', 'others']
+      ['rect-btn_on', 'rect-btn_off', 'circle-btn_on', 'circle-btn_off',
+      'ellipse-btn_on', 'ellipse-btn_off', 'rect-circle-btn_on', 'rect-circle-btn_off',
+      'rect-rect-btn_on', 'rect-rect-btn_off', 'robot', 'sticker', 'admin-key',
+      'handi-symbol', 'screw', 'others', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
+      'alarm', 'call', 'star', 'key', 'etc',
+      'open', 'close', 'on', 'off']
   indoor_detection-ev_state:
     default:
       ['Door_open', 'Door_close', 'Door_moving', 'Door_sticker',
       'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown',
       '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
       'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U']
-  indoor_detection-ev_button:
-    default:
-      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-      'A', 'B', 'C', 'E', 'F', 'G', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'U',
-      'alarm', 'call', 'star', '-', 'key', 'etc',
-      'open', 'close', 'on', 'off']
 default_shape_color: [0, 0, 255]
 shape_color: manual  # null, 'auto', 'manual'
 shift_auto_shape_color: 0
@@ -93,11 +92,9 @@ label_colors:
   manhole: [255, 200, 255]
   terrain: [152, 251, 152]
   vegetation: [107, 142, 35]
-  sky: [70, 130, 180]
-  building: [150, 150, 100]
   poll: [250, 0, 150]
   pedestrian: [220, 20, 60]
-  animal: [200, 100, 100]
+  tree: [155, 50, 0]
   vehicle: [250, 200, 100]
   dynamic: [150, 100, 255]
   static: [0, 128, 128]
@@ -120,12 +117,19 @@ label_colors:
   unknown : [204, 255, 204]
   in_panel : [128, 128, 128]
   out_panel : [192, 192, 192]
-  rect-btn : [255, 0, 0]
-  circle-btn : [0, 255, 125]
-  ellipse-btn : [200, 100, 50]
-  rect-circle-btn : [255, 255, 0]
-  rect-rect-btn : [0, 255, 255]
+  rect-btn_on : [255, 0, 0]
+  rect-btn_off : [255, 145, 0]
+  circle-btn_on : [0, 255, 125]
+  circle-btn_off : [0, 123, 125]
+  ellipse-btn_on : [200, 100, 50]
+  ellipse-btn_off : [200, 100, 150]
+  rect-circle-btn_on : [255, 255, 0]
+  rect-circle-btn_off : [255, 120, 230]
+  rect-rect-btn_on : [123, 55, 25]
+  rect-rect-btn_off : [0, 155, 75]
   special-btn : [255, 0, 255]
+  open: [124, 252, 0]
+  close: [0, 255, 255]
   sticker : [128, 0, 0]
   admin-key : [128, 128, 0]
   indicator : [0, 128, 0]
@@ -143,14 +147,14 @@ label_colors:
   Hall_LED_off : [102, 0, 153]
   up : [204, 51, 204]
   down : [255, 165, 0]
-  '1' : [0, 128, 128]
+  '1' : [152, 36, 102]
   '2' : [150, 150, 100]
   '3' : [100, 200, 255]
   '4' : [255, 200, 255]
   '5' : [107, 142, 35]
   '6' : [220, 20, 60]
   '7' : [150, 100, 255]
-  '8' : [0, 0, 0]
+  '8' : [0, 255, 255]
   '9' : [150, 50, 0]
   '0' : [250, 0, 150]
   A : [0, 100, 150]
