@@ -124,6 +124,7 @@ class LabelDialog(QtWidgets.QDialog):
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
         self._prev_labels = []
+        self.ELButtonShapeSegmentation_label = []
 
     def addLabelHistory(self, label):
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
@@ -230,7 +231,10 @@ class LabelDialog(QtWidgets.QDialog):
         return None
 
     def popUp(self, text=None, move=True, flags=None,
-              group_id=None, widget_size=QtCore.QSize(0, 0)):
+              group_id=None, widget_size=QtCore.QSize(0, 0),
+              class_type=None, shape_type=None):
+        if class_type == 'ELButtonShapeSegmentation':
+            self._reinsert_label_list(shape_type)
         if self._fit_to_content["row"]:
             self.labelList.setMinimumHeight(
                 self.labelList.sizeHintForRow(0) * self.labelList.count() + 2
@@ -284,3 +288,15 @@ class LabelDialog(QtWidgets.QDialog):
             return self.edit.text(), self.getFlags(), self.getGroupId()
         else:
             return None, None, None
+
+    def _reinsert_label_list(self, shape_type):
+        if shape_type == 'polygon':
+            self.labelList.clear()
+            self.labelList.addItems(
+                self.ELButtonShapeSegmentation_label['polygon']
+            )
+        elif shape_type == 'rectangle':
+            self.labelList.clear()
+            self.labelList.addItems(
+                self.ELButtonShapeSegmentation_label['rectangle']
+            )
