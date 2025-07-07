@@ -33,7 +33,8 @@ def get_install_requires():
         "termcolor",
         "cryptography",
         "lxml",
-        "requests"
+        "requests",
+        "opencv-python>=4.6.0"
     ]
 
     # Find python binding for qt with priority:
