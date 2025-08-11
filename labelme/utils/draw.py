@@ -1,4 +1,5 @@
 import io
+import cv2
 import math
 import os.path as osp
 
@@ -38,10 +39,27 @@ def shape_to_mask(img_shape, points, shape_type=None,
     else:
         # assert len(xy) > 2, 'Polygon must have points more than 2'
         if len(xy) > 2:
-            draw.polygon(xy=xy, outline=1, fill=1)
+            # draw.polygon(xy=xy, outline=1, fill=1)
+            H, W = int(img_shape[0]), int(img_shape[1])
+            mask = np.zeros((H, W), dtype=np.uint8)
+
+            pts_i = _to_int_pts(points, W, H)
+            cv2.fillPoly(mask, [pts_i], color=1, lineType=cv2.LINE_8, shift=0)
+            return mask.astype(bool)
 
     mask = np.array(mask, dtype=bool)
     return mask
+
+
+def _to_int_pts(points, width, height):
+    pts = np.asarray(points, dtype=np.float32)
+    if pts.ndim != 2 or pts.shape[1] != 2:
+        raise ValueError(f"points shape must be (N,2), got {pts.shape}")
+    # (x, y) 각각 클립 → 반올림 → int
+    xs = np.clip(pts[:, 0], 0, width  - 1)
+    ys = np.clip(pts[:, 1], 0, height - 1)
+    pts_i = np.stack([np.rint(xs), np.rint(ys)], axis=1).astype(np.int32)
+    return pts_i
 
 
 def getClsId(label, names, seg_class, file_name=''):
