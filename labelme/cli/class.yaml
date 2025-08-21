@@ -229,6 +229,7 @@ FrontViewSegmentation:
   speed-bump: [153, 102, 0]
   terrain: [152, 251, 152]
   vegetation: [107, 142, 35]
+  sky: [70, 130, 180]
   poll: [250, 0, 150]
   poll-group: [239, 89, 179]
   pedestrian: [220, 20, 60]
