@@ -34,7 +34,7 @@ labels_class:
         "manhole",
         "terrain",
         "vegetation",
-        "pole",
+        "poll",
         "pedestrian",
         "tree",
         "vehicle",
@@ -334,7 +334,7 @@ label_colors:
   manhole: [255, 200, 255]
   terrain: [152, 251, 152]
   vegetation: [107, 142, 35]
-  pole: [250, 0, 150]
+  poll: [250, 0, 150]
   pedestrian: [220, 20, 60]
   tree: [155, 50, 0]
   vehicle: [250, 200, 100]
@@ -413,6 +413,7 @@ label_colors:
   R: [192, 0, 0]
   S: [64, 128, 0]
   U: [51, 204, 204]
+  pole: [250, 0, 150]
   pole-group: [239, 89, 179]
   traffic-sign-front: [220, 220, 0]
   traffic-sign-back: [220, 220, 150]
