@@ -175,7 +175,7 @@ labels_class:
         "manhole",
         "terrain",
         "vegetation",
-        "pole",
+        "poll",
         "pedestrian",
         "tree",
         "vehicle",
