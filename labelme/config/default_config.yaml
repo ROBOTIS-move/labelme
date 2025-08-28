@@ -308,7 +308,7 @@ labels_class:
         "pole",
         "pole-group",
         "pedestrian",
-        "traffic-sign-front",
+        "traffic-sign",
         "traffic-light-front",
         "traffic-light-back",
         "ceiling",
@@ -414,7 +414,6 @@ label_colors:
   U: [51, 204, 204]
   pole: [250, 0, 150]
   pole-group: [116, 27, 71]
-  traffic-sign-front: [220, 220, 0]
   traffic-light-front: [250, 170, 30]
   traffic-light-back: [153, 0, 255]
   ceiling: [135, 206, 235]

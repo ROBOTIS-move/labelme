@@ -235,7 +235,7 @@ FrontViewSegmentation:
   pole: [250, 0, 150]
   pole-group: [116, 27, 71]
   pedestrian: [220, 20, 60]
-  traffic-sign-front: [220, 220, 0]
+  traffic-sign: [64, 0, 128]
   traffic-light-front: [250, 170, 30]
   traffic-light-back: [153, 0, 255]
   ceiling: [135, 206, 235]
