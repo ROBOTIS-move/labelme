@@ -309,7 +309,6 @@ labels_class:
         "pole-group",
         "pedestrian",
         "traffic-sign-front",
-        "traffic-sign-back",
         "traffic-light-front",
         "traffic-light-back",
         "ceiling",
@@ -414,11 +413,10 @@ label_colors:
   S: [64, 128, 0]
   U: [51, 204, 204]
   pole: [250, 0, 150]
-  pole-group: [239, 89, 179]
+  pole-group: [116, 27, 71]
   traffic-sign-front: [220, 220, 0]
-  traffic-sign-back: [220, 220, 150]
   traffic-light-front: [250, 170, 30]
-  traffic-light-back: [255, 190, 77]
+  traffic-light-back: [153, 0, 255]
   ceiling: [135, 206, 235]
   fence: [190, 153, 153]
   sky: [70, 130, 180]
