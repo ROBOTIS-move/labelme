@@ -317,6 +317,7 @@ labels_class:
         'dynamic',
         'static',
         'void',
+        'forbidden-area',
       ]
 default_shape_color: [0, 0, 255]
 shape_color: manual # null, 'auto', 'manual'
@@ -419,6 +420,7 @@ label_colors:
   ceiling: [135, 206, 235]
   fence: [190, 153, 153]
   sky: [70, 130, 180]
+  forbidden-area: [255, 0, 0]
 
 shape:
   # drawing

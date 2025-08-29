@@ -244,3 +244,4 @@ FrontViewSegmentation:
   dynamic: [150, 100, 255]
   static: [0, 128, 128]
   void: [63, 63, 63]
+  forbidden-area: [255, 0, 0]
