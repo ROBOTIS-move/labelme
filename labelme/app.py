@@ -610,6 +610,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.measure_cursor_flag = False
+        self.cross_cursor = self.make_cross_cursor()
+        self.canvas.cross_cursor = self.cross_cursor
         measure_cursor = action(
             self.tr("Measure Cursor"),
             self.measure_cursor,
@@ -1238,23 +1240,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def measure_cursor(self):
         if self.measure_cursor_flag is False:
+            if self.canvas.mode == self.canvas.CREATE:
+                return
             self.measure_cursor_flag = True
-            width = 25
-            height = 25
-            thickness = 3
-
-            pixmap = QtGui.QPixmap(width, height)
-            pixmap.fill(QtCore.Qt.transparent)
-            painter = QtGui.QPainter(pixmap)
-            pen = QtGui.QPen(QtCore.Qt.black)
-            pen.setWidth(thickness)
-            painter.setPen(pen)
-            painter.drawLine(width // 2, 0, width // 2, height)
-            painter.drawLine(0, height // 2, width, height // 2)
-            painter.end()
-            self.setCursor(QtGui.QCursor(pixmap))
+            self.setCursor(QtGui.QCursor(self.cross_cursor))
+            self.canvas.setEditing(True, self.measure_cursor_flag)
         else:
             self.resetCursorFlag()
+            self.canvas.setEditing(True, self.measure_cursor_flag)
+
+    def make_cross_cursor(self):
+        width = 25
+        height = 25
+        thickness = 3
+
+        pixmap = QtGui.QPixmap(width, height)
+        pixmap.fill(QtCore.Qt.transparent)
+        painter = QtGui.QPainter(pixmap)
+        pen = QtGui.QPen(QtCore.Qt.black)
+        pen.setWidth(thickness)
+        painter.setPen(pen)
+        painter.drawLine(width // 2, 0, width // 2, height)
+        painter.drawLine(0, height // 2, width, height // 2)
+        painter.end()
+        return pixmap
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -1269,7 +1278,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.delete.setEnabled(not drawing)
 
     def toggleDrawMode(self, edit=True, createMode="polygon"):
-        self.canvas.setEditing(edit)
+        self.canvas.setEditing(edit, self.measure_cursor_flag)
         self.canvas.createMode = createMode
         if edit:
             self.actions.createRectangleMode.setEnabled(
