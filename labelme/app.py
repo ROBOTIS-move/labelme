@@ -609,6 +609,16 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=False,
         )
 
+        self.measure_cursor_flag = False
+        measure_cursor = action(
+            self.tr("Measure Cursor"),
+            self.measure_cursor,
+            shortcuts["measure_cursor"],
+            icon="measure",
+            tip=self.tr("Measure distance with cursor"),
+            enabled=True,
+        )
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -850,7 +860,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 convert_objects,
             ),
             onShapesPresent=(saveAs, hideAll, showAll, hidePolygons, hideRectangles),
-            onAdministrator=(administrator, crop_classes, delete_label_folder),
+            onAdministrator=(
+                administrator,
+                crop_classes,
+                delete_label_folder,
+                measure_cursor,
+            ),
         )
 
         self.canvas.vertexSelected.connect(self.actions.removePoint.setEnabled)
@@ -893,7 +908,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 convert_segmentation,
                 convert_objects,
                 crop_classes,
-                delete_label_folder
+                delete_label_folder,
+                measure_cursor,
             )
         )
         utils.addActions(
@@ -1219,6 +1235,26 @@ class MainWindow(QtWidgets.QMainWindow):
         folder_path = os.path.split(self.filename)[0]
         wait_popup = ConvertLabelPopup()
         draw_object_label.convert_objects(folder_path, wait_popup)
+
+    def measure_cursor(self):
+        if self.measure_cursor_flag is False:
+            self.measure_cursor_flag = True
+            width = 25
+            height = 25
+            thickness = 3
+
+            pixmap = QtGui.QPixmap(width, height)
+            pixmap.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(pixmap)
+            pen = QtGui.QPen(QtCore.Qt.black)
+            pen.setWidth(thickness)
+            painter.setPen(pen)
+            painter.drawLine(width // 2, 0, width // 2, height)
+            painter.drawLine(0, height // 2, width, height // 2)
+            painter.end()
+            self.setCursor(QtGui.QCursor(pixmap))
+        else:
+            self.resetCursorFlag()
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
@@ -2602,3 +2638,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def resetHideFlags(self):
         self.hide_polygon_flag = False
         self.hide_rectangle_flag = False
+
+    def resetCursorFlag(self):
+        self.measure_cursor_flag = False
+        self.setCursor(Qt.ArrowCursor)
