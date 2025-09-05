@@ -94,6 +94,8 @@ class Canvas(QtWidgets.QWidget):
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
         self.measureWorkingTime = MeasureTime()
         self.labelType = 'PanoramicViewDetection'
+        self.measure_cursor_flag = False
+        self.cross_cursor = None
 
     def updateType(self, label_type):
         self.labelType = label_type
@@ -204,8 +206,9 @@ class Canvas(QtWidgets.QWidget):
     def editing(self):
         return self.mode == self.EDIT
 
-    def setEditing(self, value=True):
+    def setEditing(self, value=True, measure_flag=False):
         self.mode = self.EDIT if value else self.CREATE
+        self.measure_cursor_flag = measure_flag
         if not value:  # Create
             self.unHighlight()
             self.deSelectShape()
@@ -356,7 +359,10 @@ class Canvas(QtWidgets.QWidget):
                     self.tr("Click & drag to move shape '%s'") % shape.label
                 )
                 self.setStatusTip(self.toolTip())
-                self.overrideCursor(CURSOR_DEFAULT)
+                if self.measure_cursor_flag:
+                    self.overrideCursor(QtGui.QCursor(self.cross_cursor))
+                else:
+                    self.overrideCursor(CURSOR_DEFAULT)
                 self.update()
                 break
         else:  # Nothing found, clear highlights, reset state.
