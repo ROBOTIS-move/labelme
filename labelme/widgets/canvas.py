@@ -605,7 +605,8 @@ class Canvas(QtWidgets.QWidget):
                 else:
                     point = shape.points[shape_index]
         else:
-            if "DrivingAreaSegmentation" in self.labelType or "segmentation" in self.labelType:
+            if 'DrivingAreaSegmentation' in self.labelType or 'segmentation' in self.labelType \
+                or 'FrontViewSegmentation' in self.labelType:
                 point = shape.points[shape_index]
             else:
                 if shape_index > 1:
