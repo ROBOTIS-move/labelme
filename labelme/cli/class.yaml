@@ -238,7 +238,6 @@ FrontViewSegmentation:
   traffic-sign: [64, 0, 128]
   traffic-light-front: [250, 170, 30]
   traffic-light-back: [153, 0, 255]
-  ceiling: [135, 206, 235]
   fence: [190, 153, 153]
   vehicle: [250, 200, 100]
   dynamic: [150, 100, 255]
