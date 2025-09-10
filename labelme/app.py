@@ -40,6 +40,7 @@ from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from labelme.widgets import WorkerNameWindow
 from labelme.widgets import InvalidVersionWindow
+from labelme.utils.encrypt_cache import EncryptCache
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -234,6 +235,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
+
+        # Encrypt Cache
+        self.encrypt = EncryptCache()
 
         # Actions
         action = functools.partial(utils.newAction, self)
@@ -1394,6 +1398,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return False
 
     def editLabel(self, item=None):
+        # print("Edit label")
         if item and not isinstance(item, LabelListWidgetItem):
             raise TypeError("item must be LabelListWidgetItem type")
 
@@ -1657,6 +1662,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 items[0].setCheckState(Qt.Checked)
             # disable allows next and previous image to proceed
             # self.filename = filename
+            self.encrypt.run(self.imagePath, shapes)
             return True
         except LabelFileError as e:
             self.errorMessage(
@@ -1697,6 +1703,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def labelOrderChanged(self):
         self.setDirty()
+        # print("Label order changed")
         self.canvas.loadShapes([item.shape() for item in self.labelList])
         for shape in self.canvas.shapes:
             shape.selected = False
@@ -2078,9 +2085,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
-        self.canvas.measureWorkingTime.measure_time()
-        self.canvas.measureWorkingTime.working_count += 1
-        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
+        # self.canvas.measureWorkingTime.measure_time()
+        # self.canvas.measureWorkingTime.working_count += 1
+        # self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         if not self.mayContinue():
             event.ignore()
         self.settings.setValue(
@@ -2122,9 +2129,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.drawing() and self.canvas.current:
             return
         self.resetHideFlags()
-        self.canvas.measureWorkingTime.measure_time()
-        self.canvas.measureWorkingTime.working_count += 1
-        self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
+        # self.canvas.measureWorkingTime.measure_time()
+        # self.canvas.measureWorkingTime.working_count += 1
+        # self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
         keep_prev = self._config["keep_prev"]
         if QtWidgets.QApplication.keyboardModifiers() == (
             Qt.ControlModifier | Qt.ShiftModifier
@@ -2155,9 +2162,9 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.resetHideFlags()
         if self.imagePath:
-            self.canvas.measureWorkingTime.measure_time()
-            self.canvas.measureWorkingTime.working_count += 1
-            self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
+            # self.canvas.measureWorkingTime.measure_time()
+            # self.canvas.measureWorkingTime.working_count += 1
+            # self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
             if self._config["auto_save"] or self.actions.saveAuto.isChecked():
                 label_file = osp.splitext(self.imagePath)[0] + ".json"
                 if self.output_dir:
@@ -2479,6 +2486,8 @@ class MainWindow(QtWidgets.QMainWindow):
             popwin = WorkerNameWindow()
             popwin.setModal(True)
             popwin.exec_()
+            if not self.canvas.measureWorkingTime.read_worker_name():
+                return
 
         defaultOpenDirPath = dirpath if dirpath else "."
         if self.lastOpenDir and osp.exists(self.lastOpenDir):
