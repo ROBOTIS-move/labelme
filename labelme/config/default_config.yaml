@@ -311,7 +311,6 @@ labels_class:
         'traffic-sign',
         'traffic-light-front',
         'traffic-light-back',
-        'ceiling',
         'fence',
         'vehicle',
         'dynamic',
@@ -417,7 +416,6 @@ label_colors:
   pole-group: [116, 27, 71]
   traffic-light-front: [250, 170, 30]
   traffic-light-back: [153, 0, 255]
-  ceiling: [135, 206, 235]
   fence: [190, 153, 153]
   sky: [70, 130, 180]
   forbidden-area: [255, 0, 0]
