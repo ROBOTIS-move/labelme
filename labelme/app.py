@@ -1662,7 +1662,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 items[0].setCheckState(Qt.Checked)
             # disable allows next and previous image to proceed
             # self.filename = filename
-            self.encrypt.run(self.imagePath, shapes)
             return True
         except LabelFileError as e:
             self.errorMessage(
@@ -2513,6 +2512,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.choose_labels_class(self._target_class)
         except BaseException:  # noqa: B902
             pass
+        self.encrypt.run(targetDirPath)
 
     @property
     def imageList(self):
