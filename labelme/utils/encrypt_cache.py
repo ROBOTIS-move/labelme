@@ -1,6 +1,7 @@
 import os
 import sys
 import yaml
+import json
 
 from cryptography.fernet import Fernet
 
@@ -8,14 +9,16 @@ from cryptography.fernet import Fernet
 class EncryptCache():
 
     def __init__(self):
-        self.worker_name = self._extract_worker_name()
         crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
         self.fernet = Fernet(crypto_key)
+
+        self.worker_name = self._extract_worker_name()
+        self.prev_worker_name = None
+
         self.cache_path = None
         self.encrypt_path = None
 
-    def run(self, img_file_path, shape_list):
-        dir_path, img_name = os.path.split(img_file_path)
+    def run(self, dir_path):
         self.cache_path = f'{dir_path}/cache.yaml'
         self.encrypt_path = f'{dir_path}/encrypt.bin'
 
@@ -23,9 +26,11 @@ class EncryptCache():
             self._decrypt_file()
         else:
             self._create_yaml_file()
-        edited_shape_list = self._edit_shape_list(shape_list)
-        self._update_yaml_contents(img_name, edited_shape_list)
-        self._encrypt_file()
+            self._encrypt_file()
+            return
+        if not self._check_same_worker():
+            self._update_yaml_contents(dir_path)
+            self._encrypt_file()
 
     def _extract_worker_name(self):
         name_file_path = os.path.join(sys.path[0], 'worker_name.txt')
@@ -43,29 +48,52 @@ class EncryptCache():
 
     def _create_yaml_file(self):
         if not os.path.exists(self.cache_path):
-            self._write_yaml({})
+            self._write_yaml({'prev_worker': self.worker_name})
 
-    def _update_yaml_contents(self, img_name, shape_list):
+    def _check_same_worker(self):
         yaml_contents = self._read_yaml()
-        img_data = yaml_contents.get(img_name, None)
-        if img_data is None:
-            yaml_contents[img_name] = [{
-                'worker': self.worker_name,
-                'shapes': shape_list
-            }]
-        else:
-            save_flag = False
-            for working_data in yaml_contents[img_name]:
-                if working_data['worker'] == self.worker_name:
-                    working_data['shapes'] = shape_list
-                    save_flag = True
-                    break
-            if not save_flag:
-                yaml_contents[img_name].append({
-                    'worker': self.worker_name,
-                    'shapes': shape_list
-                })
+        prev_worker = yaml_contents.get('prev_worker', None)
+        if prev_worker == self.worker_name:
+            return True
+        self.prev_worker_name = prev_worker
+        return False
+
+    def _update_yaml_contents(self, dir_path):
+        yaml_contents = self._read_yaml()
+        for file in os.listdir(dir_path):
+            if file.endswith('.json'):
+                json_path = os.path.join(dir_path, file)
+                json_data = self.read_json(json_path)
+                shape_list = self._extract_shape_list(json_data)
+                if shape_list is not None:
+                    img_name = json_data.get('imagePath', None)
+                img_data = yaml_contents.get(img_name, None)
+                if img_data is None:
+                    yaml_contents[img_name] = [{
+                        'worker': self.prev_worker_name,
+                        'shapes': shape_list
+                    }]
+                else:
+                    save_flag = False
+                    for working_data in yaml_contents[img_name]:
+                        if working_data['worker'] == self.prev_worker_name:
+                            working_data['shapes'] = shape_list
+                            save_flag = True
+                            break
+                    if not save_flag:
+                        yaml_contents[img_name].append({
+                            'worker': self.prev_worker_name,
+                            'shapes': shape_list
+                        })
+        yaml_contents['prev_worker'] = self.worker_name
         self._write_yaml(yaml_contents)
+
+    def _extract_shape_list(self, json_data):
+        if json_data is not None:
+            shape_list = json_data.get('shapes', [])
+            edited_shape_list = self._edit_shape_list(shape_list)
+            return edited_shape_list
+        return None
 
     def _encrypt_file(self):
         cache_file = open(self.cache_path, 'r')
@@ -113,3 +141,18 @@ class EncryptCache():
         with open(self.cache_path, 'r', encoding='utf-8') as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         return data
+
+    def read_json(self, json_path):
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data
+        return None
+
+if __name__ == '__main__':
+    encrypt_cache = EncryptCache()
+    test_dir = '/home/hun/GT_manager/GT_ALGO/review/ODAS_286_original'
+    encrypt_cache.encrypt_path = f'{test_dir}/encrypt.bin'
+    encrypt_cache.cache_path = f'{test_dir}/cache.yaml'
+    encrypt_cache._decrypt_file()
+    # print(encrypt_cache._read_yaml())
