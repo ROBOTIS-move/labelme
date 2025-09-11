@@ -63,7 +63,7 @@ class EncryptCache():
         for file in os.listdir(dir_path):
             if file.endswith('.json'):
                 json_path = os.path.join(dir_path, file)
-                json_data = self.read_json(json_path)
+                json_data = self._read_json(json_path)
                 shape_list = self._extract_shape_list(json_data)
                 if shape_list is not None:
                     img_name = json_data.get('imagePath', None)
@@ -142,7 +142,7 @@ class EncryptCache():
             data = yaml.load(f, Loader=yaml.FullLoader)
         return data
 
-    def read_json(self, json_path):
+    def _read_json(self, json_path):
         if os.path.exists(json_path):
             with open(json_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
