@@ -30,21 +30,18 @@ class EncryptCache():
             return
         if not self._check_same_worker():
             self._update_yaml_contents(dir_path)
-            self._encrypt_file()
+        self._encrypt_file()
 
     def _extract_worker_name(self):
         name_file_path = os.path.join(sys.path[0], 'worker_name.txt')
         if os.path.exists(name_file_path):
             with open(name_file_path, "r") as f:
-                for line in f:
-                    content = line
+                    content = f.read()
             worker_name = content.split(':')[-1].strip()
             return worker_name
 
     def _check_bin_file(self):
-        if os.path.exists(self.encrypt_path):
-            return True
-        return False
+        return os.path.exists(self.encrypt_path)
 
     def _create_yaml_file(self):
         if not os.path.exists(self.cache_path):
@@ -151,7 +148,9 @@ class EncryptCache():
 
 if __name__ == '__main__':
     encrypt_cache = EncryptCache()
-    test_dir = '/home/hun/GT_manager/GT_ALGO/review/ODAS_286_original'
+    dir_name = 'ODAS_285'
+    # dir_name = 'ODAS_242'
+    test_dir = f'/home/hun/GT_manager/GT_ALGO/review/{dir_name}'
     encrypt_cache.encrypt_path = f'{test_dir}/encrypt.bin'
     encrypt_cache.cache_path = f'{test_dir}/cache.yaml'
     encrypt_cache._decrypt_file()
