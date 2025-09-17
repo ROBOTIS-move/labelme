@@ -111,7 +111,7 @@ class EncryptCache():
 
         cache_contents = encrypt_file.read()
         encrypt_contents = self.fernet.decrypt(cache_contents)
-        cache_file.write(encrypt_contents.decode())
+        cache_file.write(encrypt_contents.decode('utf-8'))
 
         cache_file.close()
         encrypt_file.close()
