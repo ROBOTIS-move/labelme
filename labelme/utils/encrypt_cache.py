@@ -9,7 +9,8 @@ from cryptography.fernet import Fernet
 class EncryptCache():
 
     def __init__(self):
-        crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
+        crypto_key_str = 'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
+        crypto_key = crypto_key_str.encode('utf-8')
         self.fernet = Fernet(crypto_key)
 
         self.worker_name = self._extract_worker_name()
@@ -93,7 +94,7 @@ class EncryptCache():
         return None
 
     def _encrypt_file(self):
-        cache_file = open(self.cache_path, 'r')
+        cache_file = open(self.cache_path, 'r', encoding='utf-8')
         encrypt_file = open(self.encrypt_path, 'wb')
 
         contents = cache_file.read()
@@ -111,7 +112,7 @@ class EncryptCache():
 
         cache_contents = encrypt_file.read()
         encrypt_contents = self.fernet.decrypt(cache_contents)
-        cache_file.write(encrypt_contents.decode())
+        cache_file.write(encrypt_contents.decode('utf-8'))
 
         cache_file.close()
         encrypt_file.close()
