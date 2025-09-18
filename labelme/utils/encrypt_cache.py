@@ -10,7 +10,7 @@ class EncryptCache():
 
     def __init__(self):
         crypto_key_str = 'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
-        crypto_key = crypto_key_str.encode()
+        crypto_key = crypto_key_str.encode('utf-8')
         self.fernet = Fernet(crypto_key)
 
         self.worker_name = self._extract_worker_name()
