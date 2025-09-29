@@ -2512,7 +2512,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.choose_labels_class(self._target_class)
         except BaseException:  # noqa: B902
             pass
-        self.encrypt.run(targetDirPath)
+
+        if targetDirPath != '':
+            self.encrypt.run(targetDirPath)
 
     @property
     def imageList(self):
