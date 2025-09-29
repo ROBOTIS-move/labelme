@@ -355,6 +355,12 @@ class LabelmeWindowsBuilder:
         
         # PyInstaller 실행
         self.print_colored("🚀 PyInstaller 실행...", 'GREEN')
+        
+        # SSL 라이브러리 추가
+        ssl_dlls = self.find_openssl_dlls()
+        for dll_path in ssl_dlls:
+            pyinstaller_cmd.extend(["--add-binary", f"{dll_path};."])
+
         result = subprocess.run(pyinstaller_cmd, cwd=str(self.app_dir))
         
         if result.returncode != 0:
@@ -362,6 +368,28 @@ class LabelmeWindowsBuilder:
             sys.exit(1)
             
         return result.returncode == 0
+
+    def find_openssl_dlls(self):
+        """Find OpenSSL DLLs in the Python environment"""
+        python_dir = Path(self.python_exe).parent.parent
+        dll_dir = python_dir / "DLLs"
+        
+        if not dll_dir.exists():
+            self.print_colored(f"⚠️ DLLs directory not found at {dll_dir}", 'YELLOW')
+            return []
+
+        dll_files = []
+        for dll in dll_dir.glob("libcrypto-*.dll"):
+            dll_files.append(dll)
+        for dll in dll_dir.glob("libssl-*.dll"):
+            dll_files.append(dll)
+            
+        if dll_files:
+            self.print_colored(f"✅ Found OpenSSL DLLs: {[f.name for f in dll_files]}", 'GREEN')
+        else:
+            self.print_colored("⚠️ Could not find OpenSSL DLLs (libcrypto-*.dll, libssl-*.dll)", 'YELLOW')
+            
+        return dll_files
 
     def verify_build_result(self):
         """빌드 결과 확인"""
