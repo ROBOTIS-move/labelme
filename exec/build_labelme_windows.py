@@ -118,9 +118,8 @@ class LabelmeWindowsBuilder:
             "colorama"
         ]
 
-        for dep in dependencies:
-            self.print_colored(f"  📦 Installing {dep}...", 'BLUE')
-            self.run_pip_command(["install", dep])
+        self.print_colored(f"  📦 Installing {len(dependencies)}...", 'BLUE')
+        self.run_pip_command(["install"] + dependencies)
 
         # Install labelme in development mode
         self.print_colored("🏷️ Installing labelme package...", 'YELLOW')
