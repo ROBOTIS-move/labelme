@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Windows용 labelme 실행 파일 빌드 스크립트
-Windows 환경에서 직접 실행하여 labelme.exe 파일을 생성합니다.
-"""
-
 import os
 import sys
 import subprocess
@@ -12,7 +5,6 @@ import shutil
 import platform
 from pathlib import Path
 import venv
-import site
 
 class LabelmeWindowsBuilder:
     def __init__(self):
@@ -20,8 +12,8 @@ class LabelmeWindowsBuilder:
         self.root_dir = self.script_dir.parent
         self.app_dir = self.root_dir / "labelme"
         self.venv_path = Path.home() / ".venvs" / "labelme-build-windows"
-        
-        # 색상 출력을 위한 ANSI 코드 (Windows Terminal에서 지원)
+
+        # ANSI codes for color output (supported in Windows Terminal)
         self.colors = {
             'RED': '\033[0;31m',
             'GREEN': '\033[0;32m',
@@ -29,86 +21,86 @@ class LabelmeWindowsBuilder:
             'BLUE': '\033[0;34m',
             'NC': '\033[0m'  # No Color
         }
-        
-        # Windows에서 colorama 사용하여 색상 지원
+
+        # Use colorama for color support on Windows
         try:
             import colorama
             colorama.init(autoreset=True)
         except ImportError:
-            # colorama가 없으면 색상 비활성화
+            # If colorama is not available, disable colors
             self.colors = {k: '' for k in self.colors.keys()}
 
     def print_colored(self, message, color='NC'):
-        """색상이 있는 메시지 출력"""
+        """Print a colored message"""
         print(f"{self.colors[color]}{message}{self.colors['NC']}")
 
     def check_requirements(self):
-        """시스템 요구사항 확인"""
-        self.print_colored("🔍 시스템 요구사항 확인 중...", 'YELLOW')
-        
-        # Windows 확인
+        """Check system requirements"""
+        self.print_colored("🔍 Checking system requirements...", 'YELLOW')
+
+        # Check for Windows
         if platform.system() != 'Windows':
-            self.print_colored("❌ 이 스크립트는 Windows 환경에서만 실행됩니다.", 'RED')
+            self.print_colored("❌ This script only runs on Windows.", 'RED')
             sys.exit(1)
-            
-        # Python 버전 확인
+
+        # Check Python version
         if sys.version_info < (3, 6):
-            self.print_colored("❌ Python 3.6 이상이 필요합니다.", 'RED')
+            self.print_colored("❌ Python 3.6 or higher is required.", 'RED')
             sys.exit(1)
-            
-        self.print_colored(f"✅ Python {sys.version.split()[0]} 확인됨", 'GREEN')
-        self.print_colored(f"✅ Windows {platform.release()} 확인됨", 'GREEN')
+
+        self.print_colored(f"✅ Python {sys.version.split()[0]} confirmed", 'GREEN')
+        self.print_colored(f"✅ Windows {platform.release()} confirmed", 'GREEN')
 
     def setup_virtual_environment(self):
-        """가상환경 설정"""
-        self.print_colored("📦 가상환경 설정 중...", 'YELLOW')
-        
+        """Set up virtual environment"""
+        self.print_colored("📦 Setting up virtual environment...", 'YELLOW')
+
         if self.venv_path.exists():
-            self.print_colored(f"🔄 기존 가상환경 제거: {self.venv_path}", 'YELLOW')
+            self.print_colored(f"🔄 Removing existing virtual environment: {self.venv_path}", 'YELLOW')
             shutil.rmtree(self.venv_path)
-        
-        # 가상환경 생성
-        self.print_colored(f"📦 가상환경 생성: {self.venv_path}", 'YELLOW')
+
+        # Create virtual environment
+        self.print_colored(f"📦 Creating virtual environment: {self.venv_path}", 'YELLOW')
         venv.create(self.venv_path, with_pip=True, clear=True)
-        
-        # 가상환경 활성화를 위한 경로 설정
+
+        # Set paths for virtual environment activation
         if platform.system() == 'Windows':
             self.python_exe = self.venv_path / "Scripts" / "python.exe"
             self.pip_exe = self.venv_path / "Scripts" / "pip.exe"
         else:
             self.python_exe = self.venv_path / "bin" / "python"
             self.pip_exe = self.venv_path / "bin" / "pip"
-            
+
         if not self.python_exe.exists():
-            self.print_colored("❌ 가상환경 생성 실패", 'RED')
+            self.print_colored("❌ Failed to create virtual environment", 'RED')
             sys.exit(1)
-            
-        self.print_colored("✅ 가상환경 생성 완료", 'GREEN')
+
+        self.print_colored("✅ Virtual environment created successfully", 'GREEN')
 
     def run_pip_command(self, args):
-        """pip 명령어 실행"""
+        """Run pip command"""
         cmd = [str(self.python_exe), "-m", "pip"] + args
         result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
         if result.returncode != 0:
-            self.print_colored(f"❌ pip 명령어 실행 실패: {' '.join(args)}", 'RED')
-            self.print_colored(f"오류: {result.stderr}", 'RED')
+            self.print_colored(f"❌ Failed to run pip command: {' '.join(args)}", 'RED')
+            self.print_colored(f"Error: {result.stderr}", 'RED')
             sys.exit(1)
         return result
 
     def install_packages(self):
-        """필요한 패키지 설치"""
-        self.print_colored("📦 필수 패키지 설치 중...", 'YELLOW')
-        
-        # pip 업그레이드
-        self.print_colored("⬆️ pip 업그레이드...", 'YELLOW')
+        """Install required packages"""
+        self.print_colored("📦 Installing required packages...", 'YELLOW')
+
+        # Upgrade pip
+        self.print_colored("⬆️ Upgrading pip...", 'YELLOW')
         self.run_pip_command(["install", "--upgrade", "pip", "setuptools", "wheel"])
-        
-        # PyInstaller 설치
-        self.print_colored("🔨 PyInstaller 설치...", 'YELLOW')
+
+        # Install PyInstaller
+        self.print_colored("🔨 Installing PyInstaller...", 'YELLOW')
         self.run_pip_command(["install", "pyinstaller"])
-        
-        # labelme 의존성 패키지들 설치
-        self.print_colored("📚 labelme 의존성 패키지 설치...", 'YELLOW')
+
+        # Install labelme dependencies
+        self.print_colored("📚 Installing labelme dependencies...", 'YELLOW')
         dependencies = [
             "imgviz>=0.11",
             "matplotlib>=3.3",
@@ -119,70 +111,70 @@ class LabelmeWindowsBuilder:
             "qtpy!=1.11.2",
             "termcolor",
             "cryptography",
-            "lxml", 
+            "lxml",
             "requests",
-            "opencv-python-headless>=4.6.0",  # headless 버전으로 Qt 충돌 방지
+            "opencv-python-headless>=4.6.0",  # headless version to prevent Qt conflicts
             "PyQt5!=5.15.3,!=5.15.4",
             "colorama"
         ]
-        
+
         for dep in dependencies:
-            self.print_colored(f"  📦 {dep} 설치 중...", 'BLUE')
+            self.print_colored(f"  📦 Installing {dep}...", 'BLUE')
             self.run_pip_command(["install", dep])
-        
-        # labelme 개발 모드로 설치
-        self.print_colored("🏷️ labelme 패키지 설치...", 'YELLOW')
+
+        # Install labelme in development mode
+        self.print_colored("🏷️ Installing labelme package...", 'YELLOW')
         os.chdir(str(self.root_dir))
         self.run_pip_command(["install", "-e", "."])
-        
-        self.print_colored("✅ 모든 패키지 설치 완료", 'GREEN')
+
+        self.print_colored("✅ All packages installed successfully", 'GREEN')
 
     def prepare_build_files(self):
-        """빌드에 필요한 파일들 준비"""
-        self.print_colored("📋 빌드 파일 준비 중...", 'YELLOW')
-        
-        # 필수 파일들 존재 확인
+        """Prepare files required for build"""
+        self.print_colored("📋 Preparing build files...", 'YELLOW')
+
+        # Check for existence of required files
         version_xml = self.root_dir / "version.xml"
         package_xml = self.root_dir / "package.xml"
-        
+
         if version_xml.exists():
             shutil.copy2(version_xml, self.app_dir / "version.xml")
-            self.print_colored("✅ version.xml 복사 완료", 'GREEN')
+            self.print_colored("✅ version.xml copied successfully", 'GREEN')
         else:
-            self.print_colored("⚠️ version.xml을 찾을 수 없습니다", 'YELLOW')
-            
+            self.print_colored("⚠️ version.xml not found", 'YELLOW')
+
         if package_xml.exists():
             shutil.copy2(package_xml, self.app_dir / "package.xml")  
-            self.print_colored("✅ package.xml 복사 완료", 'GREEN')
+            self.print_colored("✅ package.xml copied successfully", 'GREEN')
         else:
-            self.print_colored("⚠️ package.xml을 찾을 수 없습니다", 'YELLOW')
+            self.print_colored("⚠️ package.xml not found", 'YELLOW')
 
     def clean_build_directories(self):
-        """빌드 디렉토리 정리"""
-        self.print_colored("🧹 이전 빌드 파일 정리 중...", 'YELLOW')
-        
+        """Clean build directories"""
+        self.print_colored("🧹 Cleaning up previous build files...", 'YELLOW')
+
         os.chdir(str(self.app_dir))
-        
+
         dirs_to_clean = ["build", "dist"]
         files_to_clean = ["*.spec"]
-        
+
         for dir_name in dirs_to_clean:
             dir_path = Path(dir_name)
             if dir_path.exists():
                 try:
                     shutil.rmtree(dir_path)
-                    self.print_colored(f"  🗑️ {dir_name} 디렉토리 제거", 'BLUE')
+                    self.print_colored(f"  🗑️ Removed directory {dir_name}", 'BLUE')
                 except PermissionError as e:
-                    self.print_colored(f"  ⚠️ {dir_name} 디렉토리 제거 실패 (권한 문제): {e}", 'YELLOW')
-                    # 개별 파일 삭제 시도
+                    self.print_colored(f"  ⚠️ Failed to remove directory {dir_name} (Permission issue): {e}", 'YELLOW')
+                    # Attempt to delete individual files
                     try:
                         import time
-                        time.sleep(1)  # 잠시 대기
+                        time.sleep(1)  # Wait a moment
                         for root, dirs, files in os.walk(dir_path, topdown=False):
                             for file in files:
                                 try:
                                     file_path = os.path.join(root, file)
-                                    os.chmod(file_path, 0o777)  # 권한 변경
+                                    os.chmod(file_path, 0o777)  # Change permissions
                                     os.remove(file_path)
                                 except:
                                     pass
@@ -193,79 +185,79 @@ class LabelmeWindowsBuilder:
                                     pass
                         try:
                             os.rmdir(dir_path)
-                            self.print_colored(f"  🗑️ {dir_name} 디렉토리 강제 제거 성공", 'BLUE')
+                            self.print_colored(f"  🗑️ Force removed directory {dir_name} successfully", 'BLUE')
                         except:
-                            self.print_colored(f"  ⚠️ {dir_name} 디렉토리 일부 파일 제거 불가 (계속 진행)", 'YELLOW')
+                            self.print_colored(f"  ⚠️ Some files in {dir_name} could not be removed (continuing)", 'YELLOW')
                     except Exception as cleanup_error:
-                        self.print_colored(f"  ⚠️ {dir_name} 정리 중 오류: {cleanup_error} (무시하고 계속)", 'YELLOW')
+                        self.print_colored(f"  ⚠️ Error during cleanup of {dir_name}: {cleanup_error} (ignoring and continuing)", 'YELLOW')
                 except Exception as e:
-                    self.print_colored(f"  ⚠️ {dir_name} 디렉토리 제거 중 오류: {e} (무시하고 계속)", 'YELLOW')
-                
+                    self.print_colored(f"  ⚠️ Error while removing directory {dir_name}: {e} (ignoring and continuing)", 'YELLOW')
+
         import glob
         for pattern in files_to_clean:
             try:
                 for file_path in glob.glob(pattern):
                     os.remove(file_path)
-                    self.print_colored(f"  🗑️ {file_path} 파일 제거", 'BLUE')
+                    self.print_colored(f"  🗑️ Removed file {file_path}", 'BLUE')
             except Exception as e:
-                self.print_colored(f"  ⚠️ {pattern} 패턴 파일 제거 중 오류: {e} (무시하고 계속)", 'YELLOW')
+                self.print_colored(f"  ⚠️ Error while removing files with pattern {pattern}: {e} (ignoring and continuing)", 'YELLOW')
 
     def get_qt_plugins_path(self):
-        """Windows PyQt5 플러그인 경로 찾기"""
+        """Find Windows PyQt5 plugin path"""
         try:
-            # 가상환경에서 PyQt5 경로 찾기
+            # Find PyQt5 path in virtual environment
             result = subprocess.run([
                 str(self.python_exe), "-c",
                 "import PyQt5; import os; print(os.path.dirname(PyQt5.__file__))"
             ], capture_output=True, text=True, encoding='utf-8')
-            
+
             if result.returncode == 0:
                 pyqt5_path = Path(result.stdout.strip())
                 plugins_path = pyqt5_path / "Qt5" / "plugins"
                 if plugins_path.exists():
                     return str(plugins_path)
-                    
-                # 다른 가능한 경로들 시도
+
+                # Try other possible paths
                 alt_paths = [
                     pyqt5_path / "Qt" / "plugins",
                     pyqt5_path.parent / "PyQt5" / "Qt5" / "plugins"
                 ]
-                
+
                 for path in alt_paths:
                     if path.exists():
                         return str(path)
-                        
+
         except Exception as e:
-            self.print_colored(f"⚠️ Qt 플러그인 경로 자동 감지 실패: {e}", 'YELLOW')
-            
+            self.print_colored(f"⚠️ Failed to auto-detect Qt plugin path: {e}", 'YELLOW')
+
         return None
 
     def build_executable(self):
-        """PyInstaller로 실행 파일 빌드"""
-        self.print_colored("🔨 PyInstaller로 실행 파일 빌드 중...", 'GREEN')
-        self.print_colored("⏱️ 이 과정은 몇 분이 소요될 수 있습니다...", 'YELLOW')
-        
-        # Qt 플러그인 경로 찾기
+        """Build executable with PyInstaller"""
+        self.print_colored("🔨 Building executable with PyInstaller...", 'GREEN')
+        self.print_colored("⏱️ This process may take a few minutes...", 'YELLOW')
+
+        # Find Qt plugin path
         qt_plugins_path = self.get_qt_plugins_path()
         if qt_plugins_path:
-            self.print_colored(f"🔧 Qt 플러그인 경로: {qt_plugins_path}", 'BLUE')
+            self.print_colored(f"🔧 Qt plugin path: {qt_plugins_path}", 'BLUE')
         else:
-            self.print_colored("⚠️ Qt 플러그인 경로를 찾을 수 없습니다. 기본 설정을 사용합니다.", 'YELLOW')
-        
-        # PyInstaller 명령어 구성
+            self.print_colored("⚠️ Qt plugin path not found. Using default settings.", 'YELLOW')
+
+        # Configure PyInstaller command
         pyinstaller_cmd = [
             str(self.python_exe), "-m", "PyInstaller",
             "--onefile",
-            "--console",  # GUI와 Console 모두 지원하도록 변경
+            "--console",  # Change to support both GUI and Console
             "--name", "labelme",
             "--icon", str(self.app_dir / "icons" / "icon.ico"),
             "--distpath", str(self.app_dir / "dist"),
             "--workpath", str(self.app_dir / "build"),
             "--specpath", str(self.app_dir),
-            
+
             # Hidden imports
             "--hidden-import", "yaml",
-            "--hidden-import", "_yaml", 
+            "--hidden-import", "_yaml",
             "--hidden-import", "qtpy",
             "--hidden-import", "qtpy.QtCore",
             "--hidden-import", "qtpy.QtWidgets",
@@ -281,99 +273,99 @@ class LabelmeWindowsBuilder:
             "--hidden-import", "numpy",
             "--hidden-import", "PIL",
             "--hidden-import", "PIL.Image",
-            "--hidden-import", "PIL.ImageDraw", 
+            "--hidden-import", "PIL.ImageDraw",
             "--hidden-import", "PIL.ImageFilter",
             "--hidden-import", "lxml",
             "--hidden-import", "requests",
             "--hidden-import", "cv2",
-            
-            # 제외할 모듈들
+
+            # Exclude modules
             "--exclude-module", "PySide6",
-            "--exclude-module", "PySide2", 
+            "--exclude-module", "PySide2",
             "--exclude-module", "PyQt6",
             "--exclude-module", "tkinter",
             "--exclude-module", "tornado",
             "--exclude-module", "sphinx",
             "--exclude-module", "IPython",
             "--exclude-module", "jupyter",
-            
-            # 데이터 파일들 추가
+
+            # Add data files
             "--add-data", f"{self.root_dir}/version.xml;.",
             "--add-data", f"{self.root_dir}/package.xml;.",
             "--add-data", f"{self.app_dir}/config;labelme/config",
-            "--add-data", f"{self.app_dir}/icons;labelme/icons", 
+            "--add-data", f"{self.app_dir}/icons;labelme/icons",
             "--add-data", f"{self.app_dir}/translate;labelme/translate",
-            
-            # labelme 전체 패키지 데이터 포함
+
+            # Include all labelme package data
             "--add-data", f"{self.app_dir}/__init__.py;labelme",
-            
-            # 추가 리소스 파일들
+
+            # Additional resource files
             "--add-data", f"{self.root_dir}/README.md;.",
             "--add-data", f"{self.root_dir}/LICENSE;.",
-            
-            # 전체 PyQt5 수집
+
+            # Collect all of PyQt5
             "--collect-all", "PyQt5",
             "--collect-all", "qtpy",
-            
-            # 런타임 훅
+
+            # Runtime hooks
             "--runtime-hook", str(self.script_dir / "pyi_rth_console_fix.py"),
             "--runtime-hook", str(self.script_dir / "pyi_rth_qt_plugins.py"),
             "--runtime-hook", str(self.script_dir / "pyi_rth_labelme_resources.py"),
             "--runtime-hook", str(self.script_dir / "pyi_rth_resource_path_fix.py"),
             "--runtime-hook", str(self.script_dir / "pyi_rth_user_data_fix.py"),
-            
-            # 최적화 옵션
+
+            # Optimization options
             "--strip",
             "--noupx",
-            
+
             str(self.app_dir / "__main__.py")
         ]
-        
-        # Qt 플러그인이 있으면 추가
+
+        # Add Qt plugins if they exist
         if qt_plugins_path:
             qt_path = Path(qt_plugins_path)
             plugin_dirs = ["platforms", "imageformats", "iconengines", "styles"]
-            
+
             for plugin_dir in plugin_dirs:
                 src_path = qt_path / plugin_dir
                 if src_path.exists():
                     pyinstaller_cmd.extend([
                         "--add-binary", f"{src_path};qt5_plugins/{plugin_dir}"
                     ])
-            
-            # Qt5 lib 폴더 추가 (폰트 포함)
+
+            # Add Qt5 lib folder (including fonts)
             qt5_lib_path = qt_path.parent / "Qt5" / "lib"
             if qt5_lib_path.exists():
                 pyinstaller_cmd.extend([
                     "--add-binary", f"{qt5_lib_path};PyQt5/Qt5/lib"
                 ])
-            
-            # Windows 시스템 폰트를 사용하도록 환경 변수 설정 추가
+
+            # Add environment variable setting to use Windows system fonts
             pyinstaller_cmd.extend([
                 "--runtime-hook", str(self.script_dir / "pyi_rth_font_fix.py")
             ])
-        
-        # PyInstaller 실행
-        self.print_colored("🚀 PyInstaller 실행...", 'GREEN')
-        
-        # SSL 라이브러리 추가
+
+        # Run PyInstaller
+        self.print_colored("🚀 Running PyInstaller...", 'GREEN')
+
+        # Add SSL libraries
         ssl_dlls = self.find_openssl_dlls()
         for dll_path in ssl_dlls:
             pyinstaller_cmd.extend(["--add-binary", f"{dll_path};."])
 
         result = subprocess.run(pyinstaller_cmd, cwd=str(self.app_dir))
-        
+
         if result.returncode != 0:
-            self.print_colored("❌ PyInstaller 빌드 실패", 'RED')
+            self.print_colored("❌ PyInstaller build failed", 'RED')
             sys.exit(1)
-            
+
         return result.returncode == 0
 
     def find_openssl_dlls(self):
         """Find OpenSSL DLLs in the Python environment"""
         python_dir = Path(self.python_exe).parent.parent
         dll_dir = python_dir / "DLLs"
-        
+
         if not dll_dir.exists():
             self.print_colored(f"⚠️ DLLs directory not found at {dll_dir}", 'YELLOW')
             return []
@@ -383,120 +375,120 @@ class LabelmeWindowsBuilder:
             dll_files.append(dll)
         for dll in dll_dir.glob("libssl-*.dll"):
             dll_files.append(dll)
-            
+
         if dll_files:
             self.print_colored(f"✅ Found OpenSSL DLLs: {[f.name for f in dll_files]}", 'GREEN')
         else:
             self.print_colored("⚠️ Could not find OpenSSL DLLs (libcrypto-*.dll, libssl-*.dll)", 'YELLOW')
-            
+
         return dll_files
 
     def verify_build_result(self):
-        """빌드 결과 확인"""
+        """Verify build result"""
         executable_path = self.app_dir / "dist" / "labelme.exe"
-        
+
         if executable_path.exists():
             file_size = executable_path.stat().st_size / (1024 * 1024)  # MB
-            self.print_colored("✅ 빌드 성공!", 'GREEN')
-            self.print_colored(f"📍 실행 파일 위치: {executable_path}", 'GREEN')
-            self.print_colored(f"📊 파일 크기: {file_size:.1f} MB", 'YELLOW')
-            
-            # 파일 정보 표시
-            self.print_colored("📋 파일 정보:", 'YELLOW')
-            self.print_colored(f"  - 경로: {executable_path}", 'BLUE')
-            self.print_colored(f"  - 크기: {file_size:.1f} MB", 'BLUE')
-            
+            self.print_colored("✅ Build successful!", 'GREEN')
+            self.print_colored(f"📍 Executable location: {executable_path}", 'GREEN')
+            self.print_colored(f"📊 File size: {file_size:.1f} MB", 'YELLOW')
+
+            # Display file information
+            self.print_colored("📋 File information:", 'YELLOW')
+            self.print_colored(f"  - Path: {executable_path}", 'BLUE')
+            self.print_colored(f"  - Size: {file_size:.1f} MB", 'BLUE')
+
             return True
         else:
-            self.print_colored("❌ 빌드 실패! 실행 파일을 찾을 수 없습니다.", 'RED')
-            
-            # 빌드 로그 확인
+            self.print_colored("❌ Build failed! Executable not found.", 'RED')
+
+            # Check build log
             warn_file = self.app_dir / "build" / "labelme" / "warn-labelme.txt"
             if warn_file.exists():
-                self.print_colored("📋 빌드 경고사항:", 'YELLOW')
+                self.print_colored("📋 Build warnings:", 'YELLOW')
                 with open(warn_file, 'r', encoding='utf-8', errors='ignore') as f:
                     lines = f.readlines()
-                    for line in lines[-20:]:  # 마지막 20줄만 표시
+                    for line in lines[-20:]:  # Display only the last 20 lines
                         print(f"  {line.rstrip()}")
-            
+
             return False
 
     def cleanup_temp_files(self):
-        """임시 파일들 정리"""
-        self.print_colored("🧹 임시 파일 정리 중...", 'YELLOW')
-        
+        """Clean up temporary files"""
+        self.print_colored("🧹 Cleaning up temporary files...", 'YELLOW')
+
         temp_files = [
             self.app_dir / "version.xml",
             self.app_dir / "package.xml"
         ]
-        
+
         for temp_file in temp_files:
             if temp_file.exists():
                 temp_file.unlink()
-                self.print_colored(f"  🗑️ {temp_file.name} 제거", 'BLUE')
+                self.print_colored(f"  🗑️ Removed {temp_file.name}", 'BLUE')
 
     def print_final_instructions(self):
-        """최종 안내 메시지"""
+        """Final instructions"""
         executable_path = self.app_dir / "dist" / "labelme.exe"
-        
+
         self.print_colored("=" * 50, 'GREEN')
-        self.print_colored("✅ 빌드 완료!", 'GREEN')
+        self.print_colored("✅ Build complete!", 'GREEN')
         self.print_colored("=" * 50, 'GREEN')
-        
-        self.print_colored("📋 사용 방법:", 'YELLOW')
-        self.print_colored(f"  1. 실행 파일: {executable_path}", 'BLUE')
-        self.print_colored("  2. 더블클릭하여 실행", 'BLUE')
-        self.print_colored("  3. 또는 명령 프롬프트에서: labelme.exe", 'BLUE')
-        
-        self.print_colored("\n⚠️ 주의사항:", 'YELLOW')
-        self.print_colored("  - Windows Defender에서 차단될 수 있습니다 (허용으로 설정)", 'BLUE')
-        self.print_colored("  - 첫 실행 시 시간이 소요될 수 있습니다", 'BLUE')
-        self.print_colored("  - 실행 파일을 다른 PC에 복사하여 사용할 수 있습니다", 'BLUE')
+
+        self.print_colored("📋 Usage:", 'YELLOW')
+        self.print_colored(f"  1. Executable file: {executable_path}", 'BLUE')
+        self.print_colored("  2. Double-click to run", 'BLUE')
+        self.print_colored("  3. Or from the command prompt: labelme.exe", 'BLUE')
+
+        self.print_colored("\n⚠️ Notes:", 'YELLOW')
+        self.print_colored("  - May be blocked by Windows Defender (set to 'Allow')", 'BLUE')
+        self.print_colored("  - The first run may take some time", 'BLUE')
+        self.print_colored("  - The executable can be copied to another PC for use", 'BLUE')
 
     def run_build(self):
-        """전체 빌드 프로세스 실행"""
+        """Run the entire build process"""
         try:
-            self.print_colored("🚀 labelme Windows 빌드 시작...", 'GREEN')
-            self.print_colored("🪟 대상: Windows (.exe 파일)", 'YELLOW')
-            
-            # 빌드 단계들
+            self.print_colored("🚀 Starting labelme Windows build...", 'GREEN')
+            self.print_colored("🪟 Target: Windows (.exe file)", 'YELLOW')
+
+            # Build steps
             self.check_requirements()
             self.setup_virtual_environment()
             self.install_packages()
             self.prepare_build_files()
             self.clean_build_directories()
-            
+
             if self.build_executable():
                 if self.verify_build_result():
                     self.cleanup_temp_files()
                     self.print_final_instructions()
-                    self.print_colored("🎉 빌드 프로세스 성공적으로 완료!", 'GREEN')
+                    self.print_colored("🎉 Build process completed successfully!", 'GREEN')
                     return True
-            
+
             return False
-            
+
         except KeyboardInterrupt:
-            self.print_colored("\n⏹️ 사용자에 의해 빌드가 중단되었습니다.", 'YELLOW')
+            self.print_colored("\n⏹️ Build interrupted by user.", 'YELLOW')
             return False
         except Exception as e:
-            self.print_colored(f"❌ 예상치 못한 오류 발생: {e}", 'RED')
+            self.print_colored(f"❌ An unexpected error occurred: {e}", 'RED')
             import traceback
             traceback.print_exc()
             return False
 
 
 def main():
-    """메인 실행 함수"""
+    """Main execution function"""
     if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help']:
-        print("labelme Windows 빌드 스크립트")
-        print("사용법: python build_labelme_windows.py")
-        print("\n이 스크립트는 Windows 환경에서 labelme.exe 파일을 생성합니다.")
-        print("빌드에는 몇 분이 소요되며, 인터넷 연결이 필요합니다.")
+        print("labelme Windows Build Script")
+        print("Usage: python build_labelme_windows.py")
+        print("\nThis script generates the labelme.exe file in a Windows environment.")
+        print("The build takes a few minutes and requires an internet connection.")
         return
-    
+
     builder = LabelmeWindowsBuilder()
     success = builder.run_build()
-    
+
     if success:
         sys.exit(0)
     else:
