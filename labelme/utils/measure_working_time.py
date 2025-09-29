@@ -4,6 +4,51 @@ import datetime as dt
 import sys
 
 
+def get_user_data_dir(app_name="labelme"):
+    """
+    사용자 데이터 디렉토리 경로를 반환합니다.
+    """
+    if sys.platform.startswith('win'):
+        base_dir = os.path.expandvars('%APPDATA%')
+    else:
+        # Linux/Mac 대응
+        base_dir = os.path.expanduser('~/.config')
+    
+    user_data_dir = os.path.join(base_dir, app_name)
+    
+    # 디렉토리가 없으면 생성
+    os.makedirs(user_data_dir, exist_ok=True)
+    
+    return user_data_dir
+
+
+def get_worker_name_file_path():
+    """
+    worker_name.txt 파일 경로를 반환합니다.
+    모든 환경(개발/배포)에서 동일한 사용자 데이터 디렉토리를 사용합니다.
+    """
+    # 환경변수에서 먼저 확인 (Runtime Hook에서 설정)
+    env_path = os.environ.get('LABELME_WORKER_NAME_FILE')
+    if env_path:
+        return env_path
+    
+    # 모든 환경에서 사용자 데이터 디렉토리 사용
+    user_data_dir = get_user_data_dir()
+    worker_name_file = os.path.join(user_data_dir, 'worker_name.txt')
+    
+    # 기존 파일이 현재 디렉토리에 있다면 마이그레이션
+    old_file_path = os.path.join(sys.path[0], 'worker_name.txt')
+    if os.path.exists(old_file_path) and not os.path.exists(worker_name_file):
+        try:
+            import shutil
+            shutil.copy2(old_file_path, worker_name_file)
+            print(f"[INFO] Migrated worker_name.txt to: {worker_name_file}")
+        except Exception:
+            pass  # 조용히 실패
+    
+    return worker_name_file
+
+
 class MeasureTime():
     def __init__(self, crypto_mode=True):
         self.crypto_mode = crypto_mode
@@ -19,16 +64,16 @@ class MeasureTime():
         self.working_count = 0
         self.worker_name = ''
         self.init_write_worker_name = True
-        self.name_file_path = os.path.join(sys.path[0], 'worker_name.txt')
+        self.name_file_path = get_worker_name_file_path()
         if self.crypto_mode:
             self.crypto_key = b'lGJqH-91ET5Xv5U48HwmJYxY3VgNXilmqVwuWuOz4BA='
 
     def read_worker_name(self):
         if os.path.exists(self.name_file_path):
-            with open(self.name_file_path, "r") as f:
+            with open(self.name_file_path, "r", encoding='utf-8') as f:
                 for line in f:
                     self.worker_name = line
-            print(self.worker_name)
+            print(f"[INFO] Worker name: {self.worker_name.strip()}", flush=True)
             return True
         else:
             return False
