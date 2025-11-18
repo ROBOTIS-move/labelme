@@ -1,6 +1,7 @@
 import argparse
 import codecs
 import logging
+import multiprocessing
 import os
 import os.path as osp
 import sys
@@ -18,6 +19,9 @@ from labelme.utils import newIcon
 
 
 def main():
+    # Support multiprocessing on Windows
+    multiprocessing.freeze_support()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--version", "-V", action="store_true", help="show version"

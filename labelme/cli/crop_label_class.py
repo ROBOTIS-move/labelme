@@ -12,6 +12,7 @@ import shutil
 import argparse
 
 from colorama import Fore, Style
+from labelme.utils.path_utils import get_class_yaml_path
 
 
 class CropLabelClass:
@@ -112,14 +113,19 @@ class CropLabelClass:
 
 
 def crop_labels(input_dir, popup=None):
-    class_data_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'class.yaml')
-
+    # Get class.yaml path using the utility function
     try:
+        class_data_yaml = get_class_yaml_path()
         print('Opening data file : {0}'.format(class_data_yaml))
-        f = open(class_data_yaml, 'r')
-        CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+
+        with open(class_data_yaml, 'r') as f:
+            CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+    except FileNotFoundError as e:
+        print('Error opening data yaml file! {0}'.format(e))
+        sys.exit()
     except Exception as e:
         print('Error opening data yaml file! {0}'.format(e))
+        print('Searched path: {0}'.format(class_data_yaml))
         sys.exit()
 
     CropLabelClass(CONFIG, input_dir, popup)
