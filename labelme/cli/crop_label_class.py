@@ -114,6 +114,7 @@ class CropLabelClass:
 
 def crop_labels(input_dir, popup=None):
     # Get class.yaml path using the utility function
+    class_data_yaml = None
     try:
         class_data_yaml = get_class_yaml_path()
         print('Opening data file : {0}'.format(class_data_yaml))

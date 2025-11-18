@@ -64,7 +64,7 @@ class Convertor:
             for i, json_file in enumerate(json_list):
                 self.convert_bounding_box(json_file)
                 if popup is not None:
-                    popup.set_progress((i + 1) / len(json_list) * 100)
+                    popup.set_progress(int((i + 1) / len(json_list) * 100))
         else:
             # Multiprocessing mode - faster for large file counts
             process_num, process_remainder = divmod(len(json_list), num_core)
@@ -78,7 +78,7 @@ class Convertor:
                             self.convert_bounding_box,
                             json_list[i * num_core:(i+1) * num_core])
                         if popup is not None:
-                            popup.set_progress(i / process_num * 100)
+                            popup.set_progress(int(i / process_num * 100))
             finally:
                 pool.close()
                 pool.join()
@@ -153,11 +153,12 @@ class Convertor:
 
 
 def convert_objects(input_dir, popup=None):
+    class_data_yaml = None
     # Get class.yaml path using the utility function
     try:
         class_data_yaml = get_class_yaml_path()
         print('Opening data file : {0}'.format(class_data_yaml))
-        
+
         with open(class_data_yaml, 'r') as f:
             CONFIG = yaml.load(f, Loader=yaml.FullLoader)
     except FileNotFoundError as e:

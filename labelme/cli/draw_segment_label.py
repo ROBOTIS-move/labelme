@@ -195,11 +195,12 @@ class Convertor:
 
 
 def convert_segments(input_dir, popup=None):
+    class_data_yaml = None
     # Get class.yaml path using the utility function
     try:
         class_data_yaml = get_class_yaml_path()
         print('Opening data file : {0}'.format(class_data_yaml))
-        
+
         with open(class_data_yaml, 'r') as f:
             CONFIG = yaml.load(f, Loader=yaml.FullLoader)
     except FileNotFoundError as e:
