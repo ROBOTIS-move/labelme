@@ -32,3 +32,6 @@ from .qt import distancetoline
 from .qt import fmtShortcut
 
 from .version_checker import VersionChecker
+
+from .path_utils import get_resource_path
+from .path_utils import get_class_yaml_path

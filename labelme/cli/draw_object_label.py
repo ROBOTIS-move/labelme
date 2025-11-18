@@ -21,6 +21,7 @@ import numpy as np
 import PIL.Image
 
 import labelme
+from labelme.utils.path_utils import get_class_yaml_path
 
 
 class Convertor:
@@ -31,15 +32,23 @@ class Convertor:
         self.output_dir = self.create_folder(input_dir + '/obj')
 
         json_list = glob.glob(os.path.join(input_dir, '*.json'))
-        num_core = multiprocessing.cpu_count()
-        if num_core >= 10:
-            num_core = 10
-        elif num_core >= 5:
-            num_core = 5
-        elif num_core >= 2:
-            num_core = 2
-        else:
+
+        # Check PyInstaller frozen state for multiprocessing safety
+        is_frozen = getattr(sys, 'frozen', False)
+        if is_frozen:
+            # Use single process mode safely in PyInstaller environment
             num_core = 1
+            print('[INFO] Running in PyInstaller mode - using single process')
+        else:
+            num_core = multiprocessing.cpu_count()
+            if num_core >= 10:
+                num_core = 10
+            elif num_core >= 5:
+                num_core = 5
+            elif num_core >= 2:
+                num_core = 2
+            else:
+                num_core = 1
 
         if popup is not None:
             popup.show()
@@ -50,20 +59,29 @@ class Convertor:
         print('{0}The number of the process core : {1}'.format(' '*2, num_core))
         print('===========================================')
 
-        process_num, process_remainder = divmod(len(json_list), num_core)
-        pool = multiprocessing.Pool(processes=num_core)
-        if len(json_list) <= num_core:
-            pool.map(self.convert_bounding_box, json_list)
-        else:
-            for i in range(process_num):
-                pool.map(
-                    self.convert_bounding_box,
-                    json_list[i * num_core:(i+1) * num_core])
+        if num_core == 1:
+            # Single process mode - safe and simple
+            for i, json_file in enumerate(json_list):
+                self.convert_bounding_box(json_file)
                 if popup is not None:
-                    popup.set_progress(i / process_num * 100)
-
-            pool.close()
-            pool.join()
+                    popup.set_progress(int((i + 1) / len(json_list) * 100))
+        else:
+            # Multiprocessing mode - faster for large file counts
+            process_num, process_remainder = divmod(len(json_list), num_core)
+            pool = multiprocessing.Pool(processes=num_core)
+            try:
+                if len(json_list) <= num_core:
+                    pool.map(self.convert_bounding_box, json_list)
+                else:
+                    for i in range(process_num):
+                        pool.map(
+                            self.convert_bounding_box,
+                            json_list[i * num_core:(i+1) * num_core])
+                        if popup is not None:
+                            popup.set_progress(int(i / process_num * 100))
+            finally:
+                pool.close()
+                pool.join()
 
         print('Completed convert [{0}] folder'.format(self.folder_name))
 
@@ -135,13 +153,20 @@ class Convertor:
 
 
 def convert_objects(input_dir, popup=None):
-    class_data_yaml = os.path.dirname(os.path.realpath(__file__)) + '/class.yaml'
+    class_data_yaml = None
+    # Get class.yaml path using the utility function
     try:
+        class_data_yaml = get_class_yaml_path()
         print('Opening data file : {0}'.format(class_data_yaml))
-        f = open(class_data_yaml, 'r')
-        CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+
+        with open(class_data_yaml, 'r') as f:
+            CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+    except FileNotFoundError as e:
+        print('Error opening data yaml file! {0}'.format(e))
+        sys.exit()
     except Exception as e:
         print('Error opening data yaml file! {0}'.format(e))
+        print('Searched path: {0}'.format(class_data_yaml))
         sys.exit()
 
     Convertor(CONFIG, input_dir, popup)
