@@ -1,6 +1,8 @@
-import sys
-from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
 import os
+import sys
+
+from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QDialog
+from labelme.utils.measure_working_time import get_worker_name_file_path
 
 
 class WorkerNameWindow(QDialog):
@@ -31,5 +33,8 @@ class WorkerNameWindow(QDialog):
         self.accept()
 
     def write_worker_name(self, worker_name):
-        with open(os.path.join(sys.path[0], 'worker_name.txt'), "a") as f:
+        worker_name_file = get_worker_name_file_path()
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(worker_name_file), exist_ok=True)
+        with open(worker_name_file, "a") as f:
             f.write(worker_name)
