@@ -776,7 +776,9 @@ class Canvas(QtWidgets.QWidget):
 
     def outOfPixmap(self, p):
         w, h = self.pixmap.width(), self.pixmap.height()
-        return not (0 <= p.x() <= w and 0 <= p.y() <= h)
+        # Allow small tolerance for edge points while maintaining consistency
+        tolerance = 1e-4
+        return not (0 <= p.x() <= w - 1 + tolerance and 0 <= p.y() <= h - 1 + tolerance)
 
     def finalise(self):
         assert self.current
