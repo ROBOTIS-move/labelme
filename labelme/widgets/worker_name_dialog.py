@@ -34,7 +34,5 @@ class WorkerNameWindow(QDialog):
 
     def write_worker_name(self, worker_name):
         worker_name_file = get_worker_name_file_path()
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(worker_name_file), exist_ok=True)
         with open(worker_name_file, "a") as f:
             f.write(worker_name)
