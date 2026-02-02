@@ -3046,8 +3046,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # 세션 정보 삭제
         self._clear_session_info()
 
-        # 상태 초기화 (이미지 언로드)
+        # 상태 초기화 (이미지 언로드) + UI 정리
         self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
 
     def postponeTaskAction(self):
         """Postpone (작업 보류) 액션 핸들러."""
@@ -3105,7 +3109,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if reply == QtWidgets.QMessageBox.Yes:
             # TODO: Firebase 연동 시 status를 'ready'로 원복 및 drop_count 증가
             self._clear_session_info()
+            
+            # 상태 초기화 (이미지 언로드) + UI 정리
             self.resetState()
+            self.setClean()
+            self.toggleActions(False)
+            self.canvas.setEnabled(False)
+            self.actions.saveAs.setEnabled(False)
+            
             QtWidgets.QMessageBox.information(
                 self,
                 "Dropped",
