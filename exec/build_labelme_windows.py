@@ -294,6 +294,7 @@ class LabelmeWindowsBuilder:
             "--add-data", f"{self.app_dir}/config;labelme/config",
             "--add-data", f"{self.app_dir}/icons;labelme/icons",
             "--add-data", f"{self.app_dir}/translate;labelme/translate",
+            "--add-data", f"{self.app_dir}/cli;labelme/cli",
 
             # Include all labelme package data
             "--add-data", f"{self.app_dir}/__init__.py;labelme",
