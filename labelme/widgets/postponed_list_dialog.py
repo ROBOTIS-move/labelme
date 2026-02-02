@@ -1,6 +1,7 @@
 """Postponed Task List Dialog."""
 import os
 from qtpy import QtWidgets
+from qtpy import QtGui
 from qtpy.QtCore import Qt
 
 
@@ -60,8 +61,11 @@ class PostponedListDialog(QtWidgets.QDialog):
             self.list_widget.addItem("(No postponed tasks)")
             return
 
-        # 이미지 파일만 필터링 (jpg, png, jpeg)
-        image_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
+        # 이미지 파일만 필터링 (동적으로 지원되는 형식 가져오기)
+        image_extensions = [
+            f".{fmt.data().decode().lower()}"
+            for fmt in QtGui.QImageReader.supportedImageFormats()
+        ]
         image_files = []
 
         for filename in os.listdir(user_postpone_dir):
