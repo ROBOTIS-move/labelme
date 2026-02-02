@@ -40,6 +40,12 @@ from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from labelme.widgets import WorkerNameWindow
 from labelme.widgets import InvalidVersionWindow
+from labelme.widgets import LoginDialog
+from labelme.widgets import ModeSelectionDialog
+from labelme.widgets import CommentWidget
+from labelme.widgets import DiscardDialog
+from labelme.widgets import TaskInfoWidget
+from labelme.widgets import PostponedListDialog
 from labelme.utils.encrypt_cache import EncryptCache
 
 # FIXME
@@ -219,6 +225,37 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(scrollArea)
 
+        # Cloud-Native Mode: 사용자 및 작업 모드 정보
+        self.current_user_id = None
+        self.current_mode = None  # 'labeling', 'review', 'final_review'
+
+        # Cloud-Native: 작업 경로 설정 (Firebase 연동 전 고정 경로)
+        self.work_base_dir = "/home/hun/GT_manager/GT_ALGO/review/ODAS_571"
+        self.processing_dir = os.path.join(self.work_base_dir, "processing")
+        self.postpone_dir = os.path.join(self.work_base_dir, "postpone")
+
+        # 디렉터리 생성 (없으면)
+        os.makedirs(self.processing_dir, exist_ok=True)
+        os.makedirs(self.postpone_dir, exist_ok=True)
+
+        # Cloud-Native: 타이머 관련 변수
+        self.deadline = None  # datetime 객체
+        self.deadline_timer = QtCore.QTimer(self)
+        self.deadline_timer.timeout.connect(self._updateDeadlineTimer)
+
+        # Comment Dock (Review/Final Review 모드에서만 표시)
+        self.comment_widget = CommentWidget(self)
+        self.comment_dock = QtWidgets.QDockWidget(self.tr("Comments"), self)
+        self.comment_dock.setObjectName("Comments")
+        self.comment_dock.setWidget(self.comment_widget)
+
+        # Task Info Dock (모드 뱃지 + 타이머, 상단 고정)
+        self.task_info_widget = TaskInfoWidget(self)
+        self.task_info_dock = QtWidgets.QDockWidget(self.tr("Task Info"), self)
+        self.task_info_dock.setObjectName("TaskInfo")
+        self.task_info_dock.setWidget(self.task_info_widget)
+        self.task_info_dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
             if self._config[dock]["closable"]:
@@ -231,10 +268,21 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config[dock]["show"] is False:
                 getattr(self, dock).setVisible(False)
 
+        # Dock 배치: TaskInfo를 최상단에, 그 아래 기타 Dock
+        self.addDockWidget(Qt.RightDockWidgetArea, self.task_info_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.comment_dock)
+
+        # Cloud-Native Mode: 불필요한 Dock 기본 숨김 (Flags, Label List, File List)
+        # shape_dock (Polygon Labels)와 comment_dock만 표시, task_info_dock은 항상 표시
+        self.flag_dock.setVisible(False)
+        self.label_dock.setVisible(False)
+        self.file_dock.setVisible(False)
+        self.comment_dock.setVisible(False)  # 초기에는 숨김, 모드에 따라 표시
+        self.task_info_dock.setVisible(True)  # 항상 표시
 
         # Encrypt Cache
         self.encrypt = EncryptCache()
@@ -625,6 +673,62 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
 
+        # ============ Cloud-Native Actions ============
+        loadTask = action(
+            self.tr("Load Task"),
+            self.loadTaskAction,
+            None,
+            "open",
+            self.tr("Load a task from cloud"),
+            enabled=True,
+        )
+
+        loadPostponeTask = action(
+            self.tr("Load Postpone"),
+            self.loadPostponeTaskAction,
+            None,
+            "undo",
+            self.tr("Load a postponed task"),
+            enabled=True,
+        )
+
+        submitTask = action(
+            self.tr("Submit"),
+            self.submitTaskAction,
+            None,
+            "save",
+            self.tr("Submit current task"),
+            enabled=False,
+        )
+
+        postponeTask = action(
+            self.tr("Postpone"),
+            self.postponeTaskAction,
+            None,
+            None,
+            self.tr("Postpone current task"),
+            enabled=False,
+        )
+
+        dropTask = action(
+            self.tr("Drop Task"),
+            self.dropTaskAction,
+            None,
+            None,
+            self.tr("Drop current task and return to pool"),
+            enabled=False,
+        )
+
+        discardTask = action(
+            self.tr("Discard Task"),
+            self.discardTaskAction,
+            None,
+            "cancel",
+            self.tr("Discard current task with reason"),
+            enabled=False,
+        )
+        # ============ End Cloud-Native Actions ============
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -807,6 +911,13 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            # Cloud-Native Actions
+            loadTask=loadTask,
+            loadPostponeTask=loadPostponeTask,
+            submitTask=submitTask,
+            postponeTask=postponeTask,
+            dropTask=dropTask,
+            discardTask=discardTask,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -882,6 +993,7 @@ class MainWindow(QtWidgets.QMainWindow):
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
             administrator=self.menu(self.tr("&Administrator")),
+            mode=self.menu(self.tr("&Mode")),  # Cloud-Native: Mode 메뉴 추가
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -889,11 +1001,20 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(
             self.menus.file,
             (
-                open_,
-                openNextImg,
-                openPrevImg,
-                opendir,
-                self.menus.recentFiles,
+                # Cloud-Native Actions (주요 메뉴)
+                loadTask,
+                loadPostponeTask,
+                submitTask,
+                postponeTask,
+                dropTask,
+                discardTask,
+                None,
+                # 기존 액션 (숨김 처리하지만 단축키용으로 유지)
+                # open_,
+                # openNextImg,
+                # openPrevImg,
+                # opendir,
+                # self.menus.recentFiles,
                 save,
                 saveAs,
                 saveAuto,
@@ -918,6 +1039,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 measure_cursor,
             )
         )
+
+        # Cloud-Native: Mode 메뉴에 Change 액션 추가
+        changeModeAction = action(
+            self.tr("&Change Mode"),
+            self.changeModeAction,
+            None,
+            None,
+            self.tr("Change work mode (only when no image is loaded)"),
+            enabled=True,
+        )
+        utils.addActions(self.menus.mode, (changeModeAction,))
         utils.addActions(
             self.menus.view,
             (
@@ -925,6 +1057,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
+                self.comment_dock.toggleViewAction(),
                 self.display_label_option,
                 self.display_probability_option,
                 None,
@@ -962,14 +1095,11 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.tools = self.toolbar("Tools")
-        # Menu buttons on Left
+        # Menu buttons on Left (Cloud-Native 버전)
         self.actions.tool = (
-            open_,
-            opendir,
-            openNextImg,
-            openPrevImg,
-            save,
-            deleteFile,
+            loadTask,
+            loadPostponeTask,
+            submitTask,
             None,
             createMode,
             createRectangleMode,
@@ -982,12 +1112,17 @@ class MainWindow(QtWidgets.QMainWindow):
             undo,
             brightnessContrast,
             None,
+            postponeTask,
+            discardTask,
+            None,
             hideAll,
             showAll,
             None,
             zoom,
             fitWidth,
         )
+
+        # 상태바 타이머 라벨 제거 - TaskInfoWidget으로 대체됨
 
         self.statusBar().showMessage(str(self.tr("%s started.")) % __appname__)
         self.statusBar().show()
@@ -1050,6 +1185,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.populateModeActions()
 
+        # ============ Cloud-Native Startup Logic ============
+        # 앱 시작 시 로그인 및 모드 선택 다이얼로그 실행
+        # self.show() 이전에 실행되어야 함
+        QtCore.QTimer.singleShot(100, self._showStartupDialogs)
+
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
@@ -1109,7 +1249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.save.setEnabled(True)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}*".format(title, self.filename)
+            title = "{} - {}*".format(title, os.path.basename(self.filename))
         self.setWindowTitle(title)
 
     def setClean(self):
@@ -1132,7 +1272,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.createLineStripMode.setEnabled(False)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}".format(title, self.filename)
+            title = "{} - {}".format(title, os.path.basename(self.filename))
         self.setWindowTitle(title)
 
         # if self.hasLabelFile():
@@ -1152,6 +1292,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.brightnessContrast.setEnabled(value)
         self.actions.prevBrightnessContrast.setEnabled(value)
         self.actions.edit_label_name.setEnabled(value)
+
+        # Cloud-Native: 이미지 로드 시 Cloud-Native 액션들 활성화
+        if hasattr(self.actions, 'submitTask'):
+            self.actions.submitTask.setEnabled(value)
+        if hasattr(self.actions, 'postponeTask'):
+            self.actions.postponeTask.setEnabled(value)
+        if hasattr(self.actions, 'dropTask'):
+            self.actions.dropTask.setEnabled(value)
+        if hasattr(self.actions, 'discardTask'):
+            self.actions.discardTask.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -1177,6 +1327,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
+
+        # Cloud-Native: 타이머 정지 및 초기화
+        self._stopDeadlineTimer()
 
     def currentItem(self):
         items = self.labelList.selectedItems()
@@ -2038,6 +2191,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addRecentFile(self.filename)
         self.toggleActions(True)
         self.canvas.setFocus()
+
+        # Cloud-Native: CommentWidget에 현재 이미지 경로 전달
+        if hasattr(self, 'comment_widget') and self.comment_widget:
+            self.comment_widget.set_image_path(self.filename)
+
+        # Cloud-Native: 타이머 시작 (48시간 카운트다운)
+        self._startDeadlineTimer(self.filename)
+
+        # Cloud-Native: 세션 정보 저장
+        self._save_session_info(self.filename)
+
         self.status(str(self.tr("Loaded %s")) % osp.basename(str(filename)))
         return True
 
@@ -2662,3 +2826,523 @@ class MainWindow(QtWidgets.QMainWindow):
     def resetCursorFlag(self):
         self.measure_cursor_flag = False
         self.setCursor(Qt.ArrowCursor)
+
+    # ============ Cloud-Native Methods ============
+
+    def _showStartupDialogs(self):
+        """앱 시작 시 로그인 및 모드 선택 다이얼로그 표시."""
+        # 로그인 다이얼로그
+        login_dialog = LoginDialog(self)
+        if login_dialog.exec_() != QtWidgets.QDialog.Accepted:
+            # 로그인 취소 시 앱 종료
+            self.close()
+            return
+
+        self.current_user_id = login_dialog.get_user_id()
+        logger.info(f"User logged in: {self.current_user_id}")
+
+        # 세션 복구 확인
+        session_data = self._load_session_info()
+
+        if session_data:
+            # 작업 중인 이미지가 존재하는 경우
+            image_filename = session_data.get("image_filename")
+            saved_mode = session_data.get("mode")
+            saved_user_id = session_data.get("user_id")
+
+            # 사용자 ID 확인 (다른 사용자의 세션이면 무시)
+            if saved_user_id == self.current_user_id:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "작업 복구",
+                    f"작업 중인 이미지가 존재합니다.\n이미지: {image_filename}\n모드: {saved_mode}"
+                )
+
+                # 저장된 모드로 설정
+                self.current_mode = saved_mode
+                logger.info(f"Session restored: mode={saved_mode}, image={image_filename}")
+
+                # 모드 설정 적용
+                self._applyModeSettings()
+
+                # processing 디렉터리에서 이미지 찾아서 로드
+                image_path = os.path.join(self.processing_dir, image_filename)
+                if os.path.exists(image_path):
+                    self.loadFile(image_path)
+                else:
+                    logger.warning(f"Session image not found: {image_path}")
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        "이미지 없음",
+                        f"저장된 이미지를 찾을 수 없습니다: {image_filename}"
+                    )
+                    # 세션 정보 삭제하고 모드 선택으로 진행
+                    self._clear_session_info()
+                    self._selectModeAndApply()
+            else:
+                logger.info(f"Session user mismatch: {saved_user_id} != {self.current_user_id}")
+                self._selectModeAndApply()
+        else:
+            # 세션 정보가 없으면 모드 선택
+            self._selectModeAndApply()
+
+    def _selectModeAndApply(self):
+        """모드 선택 다이얼로그 표시 및 설정 적용."""
+        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        if mode_dialog.exec_() != QtWidgets.QDialog.Accepted:
+            # 모드 선택 취소 시 앱 종료
+            self.close()
+            return
+
+        self.current_mode = mode_dialog.get_selected_mode()
+        logger.info(f"Mode selected: {self.current_mode}")
+
+        # 모드에 따른 UI 설정 적용
+        self._applyModeSettings()
+
+    def _applyModeSettings(self):
+        """선택된 모드에 따라 UI 설정 적용."""
+        if self.current_mode == ModeSelectionDialog.MODE_LABELING:
+            # Labeling 모드: Polygon Labels만 표시, Comment 숨김
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(False)
+            self.setWindowTitle(f"{__appname__} - Labeling")
+
+        elif self.current_mode == ModeSelectionDialog.MODE_REVIEW:
+            # Review 모드: Polygon Labels + Comment 표시
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(True)
+            self.setWindowTitle(f"{__appname__} - Review")
+
+        elif self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW:
+            # Final Review 모드: Polygon Labels + Comment 표시
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(True)
+            self.setWindowTitle(f"{__appname__} - Final Review")
+
+        # 공통: 불필요한 Dock 숨김 유지
+        self.flag_dock.setVisible(False)
+        self.label_dock.setVisible(False)
+        self.file_dock.setVisible(False)
+
+        # TaskInfoWidget 모드 설정
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.set_mode(self.current_mode)
+
+        # CommentWidget에 사용자 ID 설정
+        if hasattr(self, 'comment_widget') and self.comment_widget:
+            self.comment_widget.set_user_id(self.current_user_id)
+
+    def changeModeAction(self):
+        """Mode 메뉴에서 Change 클릭 시 호출. 이미지가 로드되어 있지 않을 때만 가능."""
+        # 현재 로드된 이미지가 있는지 확인
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "모드 변경 불가",
+                "현재 작업 중인 이미지가 있습니다.\n"
+                "이미지 작업을 완료한 후 모드를 변경해주세요."
+            )
+            return
+
+        logger.info("Change Mode action triggered")
+
+        # 모드 선택 다이얼로그 표시
+        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        if mode_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            new_mode = mode_dialog.get_selected_mode()
+            if new_mode != self.current_mode:
+                self.current_mode = new_mode
+                logger.info(f"Mode changed to: {self.current_mode}")
+                self._applyModeSettings()
+
+    def loadTaskAction(self):
+        """Load Task 액션 핸들러."""
+        logger.info("Load Task action triggered")
+        # TODO: Firebase 연동 시 실제 작업 로드 로직 구현
+        # 현재는 기존 openDirDialog 호출로 대체
+        self.openDirDialog()
+
+    def loadPostponeTaskAction(self):
+        """Load Postpone 액션 핸들러: 보류된 작업을 불러와서 복구."""
+        logger.info("Load Postpone action triggered")
+
+        # PostponedListDialog 표시
+        dialog = PostponedListDialog(
+            self.postpone_dir,
+            self.current_user_id,
+            self
+        )
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        selected_image = dialog.get_selected_image()
+        if not selected_image:
+            return
+
+        # 사용자별 postpone 디렉터리에서 파일 복구
+        self._restore_postponed_files(selected_image)
+
+    def submitTaskAction(self):
+        """Submit 액션 핸들러. Firebase 연동 전까지 임시로 save 기능 사용."""
+        logger.info("Submit Task action triggered")
+
+        # 이미지가 로드되어 있는지 확인
+        if self.filename is None:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "제출 불가",
+                "로드된 이미지가 없습니다."
+            )
+            return
+
+        # 조건부 팝업: 데이터 유무에 따라 다른 메시지 표시
+        if not len(self.labelList):
+            # Case 1: 빈 데이터
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "작업 확인",
+                "현재 이미지는 아무런 작업이 되지 않았습니다.\n그래도 제출하시겠습니까?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+        else:
+            # Case 2: 작업 데이터 존재
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "작업 확인",
+                "작업물을 제출하시겠습니까?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+
+        if reply == QtWidgets.QMessageBox.No:
+            return
+
+        # 현재 파일 저장 (Firebase 연동 전까지 임시로 사용)
+        self.saveFile()
+
+        # 로드 시간 파일 삭제
+        if self.filename:
+            load_time_file = self._get_load_time_file_path(self.filename)
+            if os.path.exists(load_time_file):
+                try:
+                    os.remove(load_time_file)
+                except Exception as e:
+                    logger.warning(f"Failed to delete load time file: {e}")
+
+        # TODO: Firebase 연동 시 실제 업로드 로직으로 대체
+        QtWidgets.QMessageBox.information(
+            self,
+            "제출 완료",
+            "작업이 제출되었습니다.\n(Firebase 연동 후 실제 업로드됩니다)"
+        )
+
+        # 세션 정보 삭제
+        self._clear_session_info()
+
+        # 상태 초기화 (이미지 언로드)
+        self.resetState()
+
+    def postponeTaskAction(self):
+        """Postpone (작업 보류) 액션 핸들러."""
+        logger.info("Postpone Task action triggered")
+
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "작업 보류",
+            "현재 작업을 보류하시겠습니까?\n작업 내용은 추후 다시 불러올 수 있습니다.",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            # 현재 파일 저장
+            self.saveFile()
+
+            # 동일 basename 파일들을 postpone 디렉터리로 이동
+            if self.filename:
+                self._move_files_to_postpone(self.filename)
+
+            # TODO: Firebase 연동 시 status를 'postponed'로 변경
+
+            self._clear_session_info()
+            self.resetState()
+
+            QtWidgets.QMessageBox.information(
+                self,
+                "작업 보류",
+                "작업이 보류되었습니다.\n(Firebase 연동 후 상태가 업데이트됩니다)"
+            )
+
+    def dropTaskAction(self):
+        """Drop Task (작업 포기) 액션 핸들러."""
+        logger.info("Drop Task action triggered")
+
+        reply = QtWidgets.QMessageBox.warning(
+            self,
+            "작업 포기",
+            "현재 작업을 포기하시겠습니까?\n작업 내용은 저장되지 않고, 작업 풀로 반환됩니다.",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            # TODO: Firebase 연동 시 status를 'ready'로 원복
+            self._clear_session_info()
+            self.resetState()
+            QtWidgets.QMessageBox.information(
+                self,
+                "작업 포기",
+                "작업이 포기되었습니다.\n(Firebase 연동 후 작업 풀로 반환됩니다)"
+            )
+
+    def discardTaskAction(self):
+        """Discard Task (작업 폐기) 액션 핸들러."""
+        logger.info("Discard Task action triggered")
+
+        discard_dialog = DiscardDialog(self)
+        if discard_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            reason = discard_dialog.get_discard_reason()
+            logger.info(f"Discard reason: {reason}")
+
+            # TODO: Firebase 연동 시 status를 'discarded'로 변경하고 reason 저장
+            self._clear_session_info()
+            self.resetState()
+            QtWidgets.QMessageBox.information(
+                self,
+                "작업 폐기",
+                f"작업이 폐기되었습니다.\n사유: {reason}\n(Firebase 연동 후 DB에 기록됩니다)"
+            )
+
+    # ============ Timer Methods ============
+
+    def _get_load_time_file_path(self, image_path: str) -> str:
+        """이미지 경로에서 로드 시간 파일 경로 생성."""
+        if not image_path:
+            return ""
+        base_path = os.path.splitext(image_path)[0]
+        return base_path + "_load_time.txt"
+
+    def _startDeadlineTimer(self, image_path: str):
+        """48시간 카운트다운 타이머 시작."""
+        import datetime
+
+        load_time_file = self._get_load_time_file_path(image_path)
+
+        # 기존 로드 시간 파일이 있으면 읽기 (프로그램 재시작 후에도 유지)
+        if os.path.exists(load_time_file):
+            try:
+                with open(load_time_file, "r", encoding="utf-8") as f:
+                    load_time_str = f.read().strip()
+                    load_time = datetime.datetime.fromisoformat(load_time_str)
+                    logger.info(f"Loaded existing load time: {load_time}")
+            except Exception as e:
+                logger.warning(f"Failed to read load time file: {e}")
+                load_time = datetime.datetime.now()
+        else:
+            # 새로 로드한 경우 현재 시간을 파일에 기록
+            load_time = datetime.datetime.now()
+            try:
+                with open(load_time_file, "w", encoding="utf-8") as f:
+                    f.write(load_time.isoformat())
+                logger.info(f"Saved load time: {load_time}")
+            except Exception as e:
+                logger.warning(f"Failed to write load time file: {e}")
+
+        # 마감 시간 = 로드 시간 + 48시간
+        self.deadline = load_time + datetime.timedelta(hours=48)
+
+        # 타이머 시작 (1초마다 업데이트)
+        self.deadline_timer.start(1000)
+        self._updateDeadlineTimer()  # 즉시 한번 업데이트
+
+    def _updateDeadlineTimer(self):
+        """타이머 라벨 업데이트 (1초마다 호출됨)."""
+        import datetime
+
+        if not self.deadline:
+            return
+
+        remaining = self.deadline - datetime.datetime.now()
+        remaining_seconds = int(remaining.total_seconds())
+
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.set_remaining_time(remaining_seconds)
+
+    def _stopDeadlineTimer(self):
+        """타이머 정지 및 초기화."""
+        self.deadline_timer.stop()
+        self.deadline = None
+
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.reset()
+
+    # ============ Session Management Methods ============
+
+    def _get_session_file_path(self, image_filename: str) -> str:
+        """이미지 파일명에서 세션 파일 경로 생성."""
+        if not image_filename:
+            return ""
+        basename = os.path.splitext(os.path.basename(image_filename))[0]
+        return os.path.join(self.processing_dir, f"{basename}_session.json")
+
+    def _save_session_info(self, image_filename: str):
+        """현재 작업 세션 정보를 JSON 파일로 저장."""
+        import datetime
+        import json
+
+        session_file = self._get_session_file_path(image_filename)
+        if not session_file:
+            return
+
+        session_data = {
+            "image_filename": os.path.basename(image_filename),  # 파일명만 저장
+            "load_time": datetime.datetime.now().isoformat(),
+            "mode": self.current_mode,
+            "user_id": self.current_user_id
+        }
+
+        try:
+            with open(session_file, "w", encoding="utf-8") as f:
+                json.dump(session_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Session info saved: {session_data}")
+        except Exception as e:
+            logger.warning(f"Failed to save session info: {e}")
+
+    def _load_session_info(self):
+        """저장된 세션 정보를 로드. processing 디렉터리에서 모든 세션 파일 검색."""
+        import json
+        import glob
+
+        # processing 디렉터리에서 모든 *_session.json 파일 찾기
+        session_pattern = os.path.join(self.processing_dir, "*_session.json")
+        session_files = glob.glob(session_pattern)
+
+        if not session_files:
+            return None
+
+        # 가장 최근 세션 파일 선택 (수정 시간 기준)
+        latest_session_file = max(session_files, key=os.path.getmtime)
+
+        try:
+            with open(latest_session_file, "r", encoding="utf-8") as f:
+                session_data = json.load(f)
+            logger.info(f"Session info loaded from {latest_session_file}: {session_data}")
+            return session_data
+        except Exception as e:
+            logger.warning(f"Failed to load session info: {e}")
+            return None
+
+    def _clear_session_info(self, image_filename=None):
+        """세션 정보 파일 삭제. image_filename이 없으면 현재 로드된 이미지 기준."""
+        if image_filename is None:
+            image_filename = self.filename
+
+        if not image_filename:
+            return
+
+        session_file = self._get_session_file_path(image_filename)
+        if os.path.exists(session_file):
+            try:
+                os.remove(session_file)
+                logger.info(f"Session info cleared: {session_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clear session info: {e}")
+
+    def _move_files_to_postpone(self, image_filename: str):
+        """동일 basename을 가진 모든 파일을 사용자별 postpone 디렉터리로 이동."""
+        import glob
+        import shutil
+
+        if not image_filename:
+            return
+
+        # 사용자별 postpone 디렉터리 생성
+        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
+        os.makedirs(user_postpone_dir, exist_ok=True)
+
+        # basename 추출
+        basename = os.path.splitext(os.path.basename(image_filename))[0]
+
+        # processing 디렉터리에서 동일 basename을 가진 모든 파일 찾기
+        pattern = os.path.join(self.processing_dir, f"{basename}.*")
+        files_to_move = glob.glob(pattern)
+
+        # 세션 파일도 포함
+        session_file = self._get_session_file_path(image_filename)
+        if os.path.exists(session_file) and session_file not in files_to_move:
+            files_to_move.append(session_file)
+
+        moved_count = 0
+        for file_path in files_to_move:
+            try:
+                filename = os.path.basename(file_path)
+                dest_path = os.path.join(user_postpone_dir, filename)
+
+                # 파일 이동
+                shutil.move(file_path, dest_path)
+                logger.info(f"Moved to postpone/{self.current_user_id}: {filename}")
+                moved_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to move file {file_path}: {e}")
+
+        logger.info(f"Postpone completed: {moved_count} files moved to user directory")
+    def _restore_postponed_files(self, image_filename: str):
+        """보류된 작업을 processing 디렉터리로 복구."""
+        import glob
+        import shutil
+
+        if not image_filename:
+            return
+
+        # 사용자별 postpone 디렉터리
+        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
+
+        # basename 추출
+        basename = os.path.splitext(image_filename)[0]
+
+        # postpone 디렉터리에서 동일 basename을 가진 모든 파일 찾기
+        pattern = os.path.join(user_postpone_dir, f"{basename}.*")
+        files_to_restore = glob.glob(pattern)
+
+        if not files_to_restore:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "파일 없음",
+                f"보류된 파일을 찾을 수 없습니다: {image_filename}"
+            )
+            return
+
+        restored_count = 0
+        restored_image_path = None
+
+        for file_path in files_to_restore:
+            try:
+                filename = os.path.basename(file_path)
+                dest_path = os.path.join(self.processing_dir, filename)
+
+                # 파일 이동 (복구)
+                shutil.move(file_path, dest_path)
+                logger.info(f"Restored from postpone: {filename}")
+                restored_count += 1
+
+                # 이미지 파일 경로 저장
+                if filename == image_filename:
+                    restored_image_path = dest_path
+
+            except Exception as e:
+                logger.warning(f"Failed to restore file {file_path}: {e}")
+
+        logger.info(f"Restore completed: {restored_count} files restored")
+
+        # 복구된 이미지 로드
+        if restored_image_path and os.path.exists(restored_image_path):
+            self.loadFile(restored_image_path)
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "로드 실패",
+                "이미지 파일을 찾을 수 없습니다."
+            )
