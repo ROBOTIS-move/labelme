@@ -22,7 +22,7 @@ class LoginDialog(QtWidgets.QDialog):
         self._init_ui()
 
     def _init_ui(self):
-        self.setWindowTitle("로그인")
+        self.setWindowTitle("Login")
         self.setFixedSize(350, 180)
         self.setModal(True)
 
@@ -31,25 +31,27 @@ class LoginDialog(QtWidgets.QDialog):
         layout.setContentsMargins(24, 24, 24, 24)
 
         # Title label
-        title_label = QtWidgets.QLabel("작업자 ID를 입력해주세요:")
+        title_label = QtWidgets.QLabel("Please enter your Worker ID:")
         title_label.setStyleSheet("font-size: 14px; font-weight: bold;")
         layout.addWidget(title_label)
 
         # ID Input field
         self.id_input = QtWidgets.QLineEdit(self)
-        self.id_input.setPlaceholderText("ID 입력")
+        self.id_input.setPlaceholderText("Enter ID")
+        self.id_input.setToolTip("작업자 ID를 입력하세요")
         self.id_input.setMinimumHeight(32)
         self.id_input.returnPressed.connect(self._on_confirm)
         layout.addWidget(self.id_input)
 
         # Error message label (initially hidden)
-        self.error_label = QtWidgets.QLabel("승인되지 않은 ID입니다. 다시 확인해주세요.")
+        self.error_label = QtWidgets.QLabel("Unauthorized ID. Please check again.")
         self.error_label.setStyleSheet("color: red; font-size: 12px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Confirm button
-        self.confirm_button = QtWidgets.QPushButton("확인", self)
+        self.confirm_button = QtWidgets.QPushButton("Confirm", self)
+        self.confirm_button.setToolTip("ID를 확인하고 로그인합니다")
         self.confirm_button.setMinimumHeight(36)
         self.confirm_button.clicked.connect(self._on_confirm)
         layout.addWidget(self.confirm_button)
@@ -61,7 +63,7 @@ class LoginDialog(QtWidgets.QDialog):
         entered_id = self.id_input.text().strip()
 
         if not entered_id:
-            self.error_label.setText("ID를 입력해주세요.")
+            self.error_label.setText("Please enter your ID.")
             self.error_label.setVisible(True)
             return
 
@@ -71,7 +73,7 @@ class LoginDialog(QtWidgets.QDialog):
             self.error_label.setVisible(False)
             self.accept()
         else:
-            self.error_label.setText("승인되지 않은 ID입니다. 다시 확인해주세요.")
+            self.error_label.setText("Unauthorized ID. Please check again.")
             self.error_label.setVisible(True)
 
     def _validate_id(self, user_id: str) -> bool:

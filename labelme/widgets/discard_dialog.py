@@ -19,7 +19,7 @@ class DiscardDialog(QtWidgets.QDialog):
         self._init_ui()
 
     def _init_ui(self):
-        self.setWindowTitle("작업 폐기")
+        self.setWindowTitle("Discard Task")
         self.setFixedSize(400, 250)
         self.setModal(True)
 
@@ -31,7 +31,7 @@ class DiscardDialog(QtWidgets.QDialog):
         warning_layout = QtWidgets.QHBoxLayout()
         warning_icon = QtWidgets.QLabel("⚠️")
         warning_icon.setStyleSheet("font-size: 24px;")
-        warning_label = QtWidgets.QLabel("이 작업을 폐기하시겠습니까?")
+        warning_label = QtWidgets.QLabel("Do you want to discard this task?")
         warning_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #d32f2f;")
         warning_layout.addWidget(warning_icon)
         warning_layout.addWidget(warning_label)
@@ -39,16 +39,17 @@ class DiscardDialog(QtWidgets.QDialog):
         layout.addLayout(warning_layout)
 
         # Instruction
-        instruction_label = QtWidgets.QLabel("폐기 사유를 입력해주세요:")
+        instruction_label = QtWidgets.QLabel("Please enter the reason for discarding:")
         layout.addWidget(instruction_label)
 
         # Reason input (TextEdit for multi-line input)
         self.reason_input = QtWidgets.QTextEdit(self)
         self.reason_input.setPlaceholderText(
-            "예: 이미지가 너무 어두워서 라벨링이 불가능합니다.\n"
-            "예: 렌즈가 가려져 있습니다.\n"
-            "예: 이미지 품질이 낮아 객체 식별이 어렵습니다."
+            "e.g. Image is too dark for labeling.\n"
+            "e.g. Lens is obstructed.\n"
+            "e.g. Low image quality, difficult to identify objects."
         )
+        self.reason_input.setToolTip("폐기 사유를 입력하세요")
         self.reason_input.setMinimumHeight(80)
         layout.addWidget(self.reason_input)
 
@@ -57,13 +58,14 @@ class DiscardDialog(QtWidgets.QDialog):
         button_layout.setSpacing(12)
 
         # Cancel button
-        self.cancel_button = QtWidgets.QPushButton("취소", self)
+        self.cancel_button = QtWidgets.QPushButton("Cancel", self)
         self.cancel_button.setMinimumHeight(36)
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
 
         # Confirm button
-        self.confirm_button = QtWidgets.QPushButton("폐기 확인", self)
+        self.confirm_button = QtWidgets.QPushButton("Confirm Discard", self)
+        self.confirm_button.setToolTip("폐기를 확정합니다")
         self.confirm_button.setMinimumHeight(36)
         self.confirm_button.setStyleSheet("""
             QPushButton {
@@ -88,8 +90,8 @@ class DiscardDialog(QtWidgets.QDialog):
         if not reason:
             QtWidgets.QMessageBox.warning(
                 self,
-                "입력 필요",
-                "폐기 사유를 입력해주세요."
+                "Input Required",
+                "Please enter the reason for discarding."
             )
             return
 

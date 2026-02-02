@@ -13,7 +13,7 @@ class PostponedListDialog(QtWidgets.QDialog):
         self.user_id = user_id
         self.selected_image = None
 
-        self.setWindowTitle("보류된 작업 불러오기")
+        self.setWindowTitle("Load Postponed Task")
         self.setMinimumWidth(500)
         self.setMinimumHeight(400)
 
@@ -26,8 +26,9 @@ class PostponedListDialog(QtWidgets.QDialog):
 
         # 안내 레이블
         info_label = QtWidgets.QLabel(
-            f"사용자 '{self.user_id}'의 보류된 작업 목록:"
+            f"Postponed tasks for user '{self.user_id}':"
         )
+        info_label.setToolTip(f"{self.user_id} 사용자의 보류된 작업 목록")
         layout.addWidget(info_label)
 
         # 리스트 위젯
@@ -39,11 +40,12 @@ class PostponedListDialog(QtWidgets.QDialog):
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch()
 
-        load_button = QtWidgets.QPushButton("불러오기")
+        load_button = QtWidgets.QPushButton("Load")
+        load_button.setToolTip("선택한 작업을 불러옵니다")
         load_button.clicked.connect(self.accept)
         button_layout.addWidget(load_button)
 
-        cancel_button = QtWidgets.QPushButton("취소")
+        cancel_button = QtWidgets.QPushButton("Cancel")
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
 
@@ -55,7 +57,7 @@ class PostponedListDialog(QtWidgets.QDialog):
         user_postpone_dir = os.path.join(self.postpone_dir, self.user_id)
 
         if not os.path.exists(user_postpone_dir):
-            self.list_widget.addItem("(보류된 작업이 없습니다)")
+            self.list_widget.addItem("(No postponed tasks)")
             return
 
         # 이미지 파일만 필터링 (jpg, png, jpeg)
@@ -68,7 +70,7 @@ class PostponedListDialog(QtWidgets.QDialog):
                 image_files.append(filename)
 
         if not image_files:
-            self.list_widget.addItem("(보류된 작업이 없습니다)")
+            self.list_widget.addItem("(No postponed tasks)")
             return
 
         # 리스트에 추가
@@ -78,7 +80,7 @@ class PostponedListDialog(QtWidgets.QDialog):
     def accept(self):
         """선택된 항목 확인."""
         current_item = self.list_widget.currentItem()
-        if current_item and current_item.text() != "(보류된 작업이 없습니다)":
+        if current_item and current_item.text() != "(No postponed tasks)":
             self.selected_image = current_item.text()
             super(PostponedListDialog, self).accept()
 

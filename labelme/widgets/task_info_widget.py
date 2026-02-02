@@ -91,7 +91,8 @@ class TaskInfoWidget(QtWidgets.QWidget):
         self.remaining_seconds = seconds
 
         if seconds <= 0:
-            self.timer_label.setText("만료됨")
+            self.timer_label.setText("Expired")
+            self.timer_label.setToolTip("작업 시간이 만료되었습니다")
             color = "#F44336"  # 빨간색
         else:
             hours = seconds // 3600

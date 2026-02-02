@@ -29,7 +29,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         self._init_ui()
 
     def _init_ui(self):
-        self.setWindowTitle("작업 모드 선택")
+        self.setWindowTitle("Select Working Mode")
         self.setFixedSize(400, 280)
         self.setModal(True)
 
@@ -38,13 +38,13 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         layout.setContentsMargins(32, 32, 32, 32)
 
         # Welcome message
-        welcome_label = QtWidgets.QLabel(f"환영합니다, {self.user_id}님!")
+        welcome_label = QtWidgets.QLabel(f"Welcome, {self.user_id}!")
         welcome_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         welcome_label.setAlignment(QtCore.Qt.AlignCenter)
         layout.addWidget(welcome_label)
 
         # Instruction
-        instruction_label = QtWidgets.QLabel("작업 모드를 선택해주세요:")
+        instruction_label = QtWidgets.QLabel("Please select your working mode:")
         instruction_label.setAlignment(QtCore.Qt.AlignCenter)
         layout.addWidget(instruction_label)
 
@@ -55,7 +55,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         button_layout.setSpacing(12)
 
         # Labeling button
-        self.labeling_btn = QtWidgets.QPushButton("Labeling (일반 작업)")
+        self.labeling_btn = QtWidgets.QPushButton("Labeling (General)")
+        self.labeling_btn.setToolTip("일반 작업 모드입니다")
         self.labeling_btn.setMinimumHeight(40)
         self.labeling_btn.setStyleSheet("""
             QPushButton {
@@ -73,7 +74,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.labeling_btn)
 
         # Review button
-        self.review_btn = QtWidgets.QPushButton("Review (1차 검토)")
+        self.review_btn = QtWidgets.QPushButton("Review (1st Review)")
+        self.review_btn.setToolTip("1차 검토 모드입니다")
         self.review_btn.setMinimumHeight(40)
         self.review_btn.setStyleSheet("""
             QPushButton {
@@ -91,7 +93,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.review_btn)
 
         # Final Review button
-        self.final_review_btn = QtWidgets.QPushButton("Final Review (최종 검토)")
+        self.final_review_btn = QtWidgets.QPushButton("Final Review")
+        self.final_review_btn.setToolTip("최종 검토 모드입니다 (관리자 전용)")
         self.final_review_btn.setMinimumHeight(40)
         self.final_review_btn.setStyleSheet("""
             QPushButton {
@@ -125,8 +128,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         """Final Review 모드 선택 (관리자 코드 필요)."""
         admin_code, ok = QtWidgets.QInputDialog.getText(
             self,
-            "관리자 인증",
-            "관리자 코드를 입력해주세요:",
+            "Admin Authentication",
+            "Please enter admin code:",
             QtWidgets.QLineEdit.Password
         )
 
@@ -138,8 +141,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
             else:
                 QtWidgets.QMessageBox.warning(
                     self,
-                    "인증 실패",
-                    "관리자 코드가 올바르지 않습니다."
+                    "Authentication Failed",
+                    "Invalid admin code."
                 )
 
     def _validate_admin_code(self, code: str) -> bool:

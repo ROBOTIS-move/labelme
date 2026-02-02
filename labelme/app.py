@@ -2939,9 +2939,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.filename is not None:
             QtWidgets.QMessageBox.warning(
                 self,
-                "모드 변경 불가",
-                "현재 작업 중인 이미지가 있습니다.\n"
-                "이미지 작업을 완료한 후 모드를 변경해주세요."
+                "Cannot Change Mode",
+                "You have an image currently loaded.\n"
+                "Please complete or submit the current task before changing modes."
             )
             return
 
@@ -2992,8 +2992,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.filename is None:
             QtWidgets.QMessageBox.warning(
                 self,
-                "제출 불가",
-                "로드된 이미지가 없습니다."
+                "Cannot Submit",
+                "No image loaded."
             )
             return
 
@@ -3002,8 +3002,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # Case 1: 빈 데이터
             reply = QtWidgets.QMessageBox.question(
                 self,
-                "작업 확인",
-                "현재 이미지는 아무런 작업이 되지 않았습니다.\n그래도 제출하시겠습니까?",
+                "Confirm Submission",
+                "No annotations have been made on this image.\nDo you still want to submit?",
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                 QtWidgets.QMessageBox.No
             )
@@ -3011,11 +3011,12 @@ class MainWindow(QtWidgets.QMainWindow):
             # Case 2: 작업 데이터 존재
             reply = QtWidgets.QMessageBox.question(
                 self,
-                "작업 확인",
-                "작업물을 제출하시겠습니까?",
+                "Confirm Submission",
+                "Do you want to submit this task?",
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                 QtWidgets.QMessageBox.No
             )
+
 
         if reply == QtWidgets.QMessageBox.No:
             return
@@ -3035,8 +3036,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # TODO: Firebase 연동 시 실제 업로드 로직으로 대체
         QtWidgets.QMessageBox.information(
             self,
-            "제출 완료",
-            "작업이 제출되었습니다.\n(Firebase 연동 후 실제 업로드됩니다)"
+            "Submitted",
+            "Task submitted successfully.\n(Will be uploaded to cloud after Firebase integration)"
         )
 
         # 세션 정보 삭제
@@ -3051,8 +3052,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         reply = QtWidgets.QMessageBox.question(
             self,
-            "작업 보류",
-            "현재 작업을 보류하시겠습니까?\n작업 내용은 추후 다시 불러올 수 있습니다.",
+            "Postpone Task",
+            "Do you want to postpone this task?\nYou can resume it later.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
@@ -3072,8 +3073,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             QtWidgets.QMessageBox.information(
                 self,
-                "작업 보류",
-                "작업이 보류되었습니다.\n(Firebase 연동 후 상태가 업데이트됩니다)"
+                "Postponed",
+                "Task postponed.\n(Status will be updated after Firebase integration)"
             )
 
     def dropTaskAction(self):
@@ -3085,15 +3086,15 @@ class MainWindow(QtWidgets.QMainWindow):
         if drop_count >= 3:
             QtWidgets.QMessageBox.warning(
                 self,
-                "작업 포기 불가",
-                "Drop 할 수 있는 횟수가 초과되었습니다."
+                "Cannot Drop Task",
+                "You have exceeded the daily drop limit."
             )
             return
 
         reply = QtWidgets.QMessageBox.warning(
             self,
-            "작업 포기",
-            "현재 작업을 포기하시겠습니까?\n작업 내용은 저장되지 않고, 작업 풀로 반환됩니다.",
+            "Drop Task",
+            "Do you want to drop this task?\nYour work will not be saved and the task will be returned to the pool.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
@@ -3104,8 +3105,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.resetState()
             QtWidgets.QMessageBox.information(
                 self,
-                "작업 포기",
-                "작업이 포기되었습니다.\n(Firebase 연동 후 작업 풀로 반환됩니다)"
+                "Dropped",
+                "Task dropped.\n(Will be returned to task pool after Firebase integration)"
             )
 
 
@@ -3123,8 +3124,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.resetState()
             QtWidgets.QMessageBox.information(
                 self,
-                "작업 폐기",
-                f"작업이 폐기되었습니다.\n사유: {reason}\n(Firebase 연동 후 DB에 기록됩니다)"
+                "Discarded",
+                "Task discarded.\n(Discard reason will be recorded after Firebase integration)"
             )
 
     # ============ Timer Methods ============
