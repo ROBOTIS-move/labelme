@@ -7,6 +7,9 @@ import os
 import os.path as osp
 import re
 import webbrowser
+import datetime
+import glob
+import shutil
 
 import imgviz
 import natsort
@@ -3139,7 +3142,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _startDeadlineTimer(self, image_path: str):
         """48시간 카운트다운 타이머 시작."""
-        import datetime
 
         load_time_file = self._get_load_time_file_path(image_path)
 
@@ -3172,8 +3174,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _updateDeadlineTimer(self):
         """타이머 라벨 업데이트 (1초마다 호출됨)."""
-        import datetime
-
         if not self.deadline:
             return
 
@@ -3202,9 +3202,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _save_session_info(self, image_filename: str):
         """현재 작업 세션 정보를 JSON 파일로 저장."""
-        import datetime
-        import json
-
         session_file = self._get_session_file_path(image_filename)
         if not session_file:
             return
@@ -3225,9 +3222,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _load_session_info(self):
         """저장된 세션 정보를 로드. processing 디렉터리에서 모든 세션 파일 검색."""
-        import json
-        import glob
-
         # processing 디렉터리에서 모든 *_session.json 파일 찾기
         session_pattern = os.path.join(self.processing_dir, "*_session.json")
         session_files = glob.glob(session_pattern)
@@ -3265,9 +3259,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _move_files_to_postpone(self, image_filename: str):
         """동일 basename을 가진 모든 파일을 사용자별 postpone 디렉터리로 이동."""
-        import glob
-        import shutil
-
         if not image_filename:
             return
 
@@ -3303,9 +3294,6 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info(f"Postpone completed: {moved_count} files moved to user directory")
     def _restore_postponed_files(self, image_filename: str):
         """보류된 작업을 processing 디렉터리로 복구."""
-        import glob
-        import shutil
-
         if not image_filename:
             return
 
