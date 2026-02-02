@@ -3080,6 +3080,16 @@ class MainWindow(QtWidgets.QMainWindow):
         """Drop Task (작업 포기) 액션 핸들러."""
         logger.info("Drop Task action triggered")
 
+        # Drop 횟수 제한 확인
+        drop_count = self._check_drop_count()
+        if drop_count >= 3:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "작업 포기 불가",
+                "Drop 할 수 있는 횟수가 초과되었습니다."
+            )
+            return
+
         reply = QtWidgets.QMessageBox.warning(
             self,
             "작업 포기",
@@ -3089,7 +3099,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         if reply == QtWidgets.QMessageBox.Yes:
-            # TODO: Firebase 연동 시 status를 'ready'로 원복
+            # TODO: Firebase 연동 시 status를 'ready'로 원복 및 drop_count 증가
             self._clear_session_info()
             self.resetState()
             QtWidgets.QMessageBox.information(
@@ -3097,6 +3107,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 "작업 포기",
                 "작업이 포기되었습니다.\n(Firebase 연동 후 작업 풀로 반환됩니다)"
             )
+
 
     def discardTaskAction(self):
         """Discard Task (작업 폐기) 액션 핸들러."""
@@ -3346,3 +3357,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 "로드 실패",
                 "이미지 파일을 찾을 수 없습니다."
             )
+
+    def _check_drop_count(self) -> int:
+        """
+        Firebase에서 현재 사용자의 오늘 Drop 카운트 조회.
+        TODO: Firebase 연동 시 실제 Firestore에서 users/{user_id}/drop_count 조회.
+        현재는 Mock 구현 (항상 0 반환).
+        """
+        # Mock 구현: 항상 0 반환 (테스트 시 값 변경 가능)
+        # TODO: Firebase 연동 후 아래 코드로 대체
+        # from firebase_admin import firestore
+        # db = firestore.client()
+        # user_ref = db.collection('users').document(self.current_user_id)
+        # user_doc = user_ref.get()
+        # if user_doc.exists:
+        #     return user_doc.to_dict().get('drop_count', 0)
+        # return 0
+        
+        logger.info(f"Checking drop count for user: {self.current_user_id}")
+        return 0  # Mock: 실제 Firebase 연동 전까지 0 반환
