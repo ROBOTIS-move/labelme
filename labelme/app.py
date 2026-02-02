@@ -228,18 +228,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(scrollArea)
 
-        # Cloud-Native Mode: 사용자 및 작업 모드 정보
+        # Cloud-Native Mode: 플래그 및 사용자 정보
+        self.is_cloud_native_mode = False  # 로그인 성공 시 True로 변경
         self.current_user_id = None
         self.current_mode = None  # 'labeling', 'review', 'final_review'
 
-        # Cloud-Native: 작업 경로 설정 (Firebase 연동 전 고정 경로)
-        self.work_base_dir = "/home/hun/GT_manager/GT_ALGO/review/ODAS_571"
+        # Cloud-Native: 작업 경로 설정 (설정 가능하게 개선)
+        # TODO: QSettings를 통해 사용자가 경로를 설정할 수 있도록 개선
+        default_work_dir = os.path.join(os.path.expanduser("~"), ".labelme", "cloud_tasks")
+        self.work_base_dir = os.environ.get("LABELME_WORK_DIR", default_work_dir)
         self.processing_dir = os.path.join(self.work_base_dir, "processing")
         self.postpone_dir = os.path.join(self.work_base_dir, "postpone")
 
-        # 디렉터리 생성 (없으면)
-        os.makedirs(self.processing_dir, exist_ok=True)
-        os.makedirs(self.postpone_dir, exist_ok=True)
+        # 디렉터리 생성 (실패 시 경고)
+        try:
+            os.makedirs(self.processing_dir, exist_ok=True)
+            os.makedirs(self.postpone_dir, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Failed to create work directories: {e}")
+
 
         # Cloud-Native: 타이머 관련 변수
         self.deadline = None  # datetime 객체
@@ -2195,15 +2202,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toggleActions(True)
         self.canvas.setFocus()
 
-        # Cloud-Native: CommentWidget에 현재 이미지 경로 전달
-        if hasattr(self, 'comment_widget') and self.comment_widget:
-            self.comment_widget.set_image_path(self.filename)
+        # Cloud-Native: CommentWidget에 현재 이미지 경로 전달 (cloud-native 모드에서만)
+        if self.is_cloud_native_mode:
+            if hasattr(self, 'comment_widget') and self.comment_widget:
+                self.comment_widget.set_image_path(self.filename)
 
-        # Cloud-Native: 타이머 시작 (48시간 카운트다운)
-        self._startDeadlineTimer(self.filename)
+            # Cloud-Native: 타이머 시작 (48시간 카운트다운)
+            self._startDeadlineTimer(self.filename)
 
-        # Cloud-Native: 세션 정보 저장
-        self._save_session_info(self.filename)
+            # Cloud-Native: 세션 정보 저장
+            self._save_session_info(self.filename)
 
         self.status(str(self.tr("Loaded %s")) % osp.basename(str(filename)))
         return True
@@ -2842,7 +2850,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.current_user_id = login_dialog.get_user_id()
-        logger.info(f"User logged in: {self.current_user_id}")
+        self.is_cloud_native_mode = True  # Cloud-native 모드 활성화
+        logger.info(f"User logged in: {self.current_user_id}, Cloud-native mode enabled")
 
         # 세션 복구 확인
         session_data = self._load_session_info()
@@ -2963,8 +2972,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """Load Task 액션 핸들러."""
         logger.info("Load Task action triggered")
         # TODO: Firebase 연동 시 실제 작업 로드 로직 구현
-        # 현재는 기존 openDirDialog 호출로 대체
-        self.openDirDialog()
+        # Firebase 연동 전까지 processing_dir로 제한하여 세션 복구와 일관성 유지
+        self.openDirDialog(dirpath=self.processing_dir)
 
     def loadPostponeTaskAction(self):
         """Load Postpone 액션 핸들러: 보류된 작업을 불러와서 복구."""
@@ -3135,7 +3144,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # TODO: Firebase 연동 시 status를 'discarded'로 변경하고 reason 저장
             self._clear_session_info()
+            
+            # 상태 초기화 (이미지 언로드) + UI 정리
             self.resetState()
+            self.setClean()
+            self.toggleActions(False)
+            self.canvas.setEnabled(False)
+            self.actions.saveAs.setEnabled(False)
             QtWidgets.QMessageBox.information(
                 self,
                 "Discarded",
@@ -3199,8 +3214,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.deadline_timer.stop()
         self.deadline = None
 
+        # TaskInfoWidget에서 타이머만 리셋 (모드 배지는 유지)
         if hasattr(self, 'task_info_widget') and self.task_info_widget:
-            self.task_info_widget.reset()
+            # 타이머만 "--:--:--"로 리셋
+            self.task_info_widget.timer_label.setText("--:--:--")
+            self.task_info_widget.timer_label.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #4CAF50;
+                    padding: 4px 8px;
+                }
+            """)
 
     # ============ Session Management Methods ============
 

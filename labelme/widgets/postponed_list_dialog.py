@@ -2,7 +2,6 @@
 import os
 from qtpy import QtWidgets
 from qtpy import QtGui
-from qtpy.QtCore import Qt
 
 
 class PostponedListDialog(QtWidgets.QDialog):
