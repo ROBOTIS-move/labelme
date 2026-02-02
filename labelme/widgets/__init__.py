@@ -26,3 +26,10 @@ from .convert_label_popup import ConvertLabelPopup
 from .worker_name_dialog import WorkerNameWindow
 
 from .invalid_version_popup import InvalidVersionWindow
+
+from .login_dialog import LoginDialog
+from .mode_selection_dialog import ModeSelectionDialog
+from .comment_widget import CommentWidget
+from .discard_dialog import DiscardDialog
+from .task_info_widget import TaskInfoWidget
+from .postponed_list_dialog import PostponedListDialog
