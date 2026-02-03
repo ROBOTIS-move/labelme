@@ -60,13 +60,13 @@ class CommentWidget(QtWidgets.QWidget):
 
         # Comment input area
         self.comment_input = QtWidgets.QLineEdit(self)
-        self.comment_input.setPlaceholderText("코멘트를 입력하세요...")
+        self.comment_input.setPlaceholderText("Enter your comment...")
         self.comment_input.setMinimumHeight(32)
         self.comment_input.returnPressed.connect(self._on_confirm)
         layout.addWidget(self.comment_input)
 
         # Confirm button
-        self.confirm_button = QtWidgets.QPushButton("확인", self)
+        self.confirm_button = QtWidgets.QPushButton("Submit", self)
         self.confirm_button.setMinimumHeight(32)
         self.confirm_button.setStyleSheet("""
             QPushButton {
@@ -155,12 +155,12 @@ class CommentWidget(QtWidgets.QWidget):
 
         # 본인이 작성한 댓글만 삭제 가능
         if user == self.current_user_id:
-            delete_action = menu.addAction("삭제")
+            delete_action = menu.addAction("Delete")
             action = menu.exec_(self.comments_list.mapToGlobal(position))
             if action == delete_action:
                 self._delete_comment(idx)
         else:
-            info_action = menu.addAction("삭제 권한 없음")
+            info_action = menu.addAction("No permission to delete")
             info_action.setEnabled(False)
             menu.exec_(self.comments_list.mapToGlobal(position))
 
@@ -181,16 +181,16 @@ class CommentWidget(QtWidgets.QWidget):
         if not self.current_image_path:
             QtWidgets.QMessageBox.warning(
                 self,
-                "경고",
-                "이미지가 로드되지 않았습니다."
+                "Warning",
+                "No image loaded."
             )
             return
 
         if not self.current_user_id:
             QtWidgets.QMessageBox.warning(
                 self,
-                "경고",
-                "사용자 ID가 설정되지 않았습니다."
+                "Warning",
+                "User ID not set."
             )
             return
 
@@ -222,8 +222,8 @@ class CommentWidget(QtWidgets.QWidget):
         except Exception as e:
             QtWidgets.QMessageBox.warning(
                 self,
-                "저장 오류",
-                f"코멘트 저장 중 오류가 발생했습니다: {str(e)}"
+                "Save Error",
+                f"Failed to save comments: {str(e)}"
             )
 
     def clear_comments(self):

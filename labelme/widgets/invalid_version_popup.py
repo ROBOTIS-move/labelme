@@ -12,15 +12,15 @@ class InvalidVersionWindow(QDialog):
             0: [
                 'Internet Checker',
                 (
-                    '!!! 버전 정보를 확인할 수 없습니다. !!!\n'
-                    '네트워크 상태를 확인해주세요. !!!'
+                    '!!! Cannot verify version information !!!\n'
+                    'Please check your network connection !!!'
                 )],
             1: [
                 'Version Checker',
                 (
-                    f'!!! 버전 정보가 맞지 않습니다. !!!\n'
-                    '최신 버전을 다운로드 해주세요.\n'
-                    f'현재 버전 : {local_version}, 최신 버전 : {github_version}'
+                    f'!!! Version mismatch !!!\n'
+                    'Please download the latest version.\n'
+                    f'Current version: {local_version}, Latest version: {github_version}'
                 )]}
         self.initUI()
 
@@ -37,7 +37,7 @@ class InvalidVersionWindow(QDialog):
         label.setAlignment(Qt.AlignCenter)  # 중앙 정렬
         label.setStyleSheet("color: red;")
 
-        confirm_button = QPushButton('확인', self)
+        confirm_button = QPushButton('OK', self)
         confirm_button.clicked.connect(self.onConfirm)
 
         layout.addWidget(label)
