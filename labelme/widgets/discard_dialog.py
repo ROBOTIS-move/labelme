@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Discard Dialog for Cloud-Native Labelme.
-작업 폐기 사유를 입력받는 다이얼로그.
-"""
 
 from qtpy import QtWidgets
 
 
 class DiscardDialog(QtWidgets.QDialog):
-    """
-    작업 폐기 사유 입력 다이얼로그.
-    작업자가 직접 사유를 기입.
-    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -49,7 +41,7 @@ class DiscardDialog(QtWidgets.QDialog):
             "e.g. Lens is obstructed.\n"
             "e.g. Low image quality, difficult to identify objects."
         )
-        self.reason_input.setToolTip("폐기 사유를 입력하세요")
+        self.reason_input.setToolTip("Enter reason for discarding")
         self.reason_input.setMinimumHeight(80)
         layout.addWidget(self.reason_input)
 
@@ -65,7 +57,7 @@ class DiscardDialog(QtWidgets.QDialog):
 
         # Confirm button
         self.confirm_button = QtWidgets.QPushButton("Confirm Discard", self)
-        self.confirm_button.setToolTip("폐기를 확정합니다")
+        self.confirm_button.setToolTip("Confirm discard")
         self.confirm_button.setMinimumHeight(36)
         self.confirm_button.setStyleSheet("""
             QPushButton {
@@ -84,7 +76,6 @@ class DiscardDialog(QtWidgets.QDialog):
         layout.addLayout(button_layout)
 
     def _on_confirm(self):
-        """폐기 확인 버튼 클릭."""
         reason = self.reason_input.toPlainText().strip()
 
         if not reason:
@@ -99,5 +90,4 @@ class DiscardDialog(QtWidgets.QDialog):
         self.accept()
 
     def get_discard_reason(self) -> str:
-        """입력된 폐기 사유 반환."""
         return self.discard_reason

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Comment Widget for Cloud-Native Labelme.
-Review 모드에서 사용하는 코멘트(댓글) 위젯.
-JSON 기반 저장 및 삭제 기능 지원.
-"""
 
 import os
 import json
@@ -13,16 +8,11 @@ from qtpy import QtCore
 
 
 class CommentWidget(QtWidgets.QWidget):
-    """
-    코멘트(댓글) 위젯.
-    Review 및 Final Review 모드에서만 표시.
-    JSON 파일로 저장하며, 본인이 작성한 댓글만 삭제 가능.
-    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_image_path = None
-        self.current_user_id = None  # 현재 로그인한 사용자 ID
+        self.current_user_id = None  # Currently logged in user ID
         self.comments = []  # [{"user": "id", "text": "msg"}, ...]
         self._init_ui()
 
@@ -83,33 +73,26 @@ class CommentWidget(QtWidgets.QWidget):
         layout.addWidget(self.confirm_button)
 
     def set_user_id(self, user_id: str):
-        """현재 로그인한 사용자 ID 설정."""
         self.current_user_id = user_id
 
     def set_image_path(self, image_path: str):
-        """
-        현재 작업 중인 이미지 경로 설정.
-        이 경로를 기반으로 JSON 파일을 저장.
-        """
         self.current_image_path = image_path
         self.comments = []
         self.comments_list.clear()
 
-        # 기존 코멘트 파일이 있으면 로드
+        # Load existing comment file if it exists
         if image_path:
             comment_file = self._get_comment_file_path(image_path)
             if os.path.exists(comment_file):
                 self._load_comments(comment_file)
 
     def _get_comment_file_path(self, image_path: str) -> str:
-        """이미지 경로에서 코멘트 파일 경로 생성."""
         if not image_path:
             return ""
         base_path = os.path.splitext(image_path)[0]
         return base_path + "_comments.json"
 
     def _load_comments(self, comment_file: str):
-        """기존 코멘트 JSON 파일 로드."""
         try:
             with open(comment_file, "r", encoding="utf-8") as f:
                 self.comments = json.load(f)
@@ -118,11 +101,10 @@ class CommentWidget(QtWidgets.QWidget):
         except (json.JSONDecodeError, Exception):
             self.comments = []
 
-        # UI에 댓글 표시
+        # Display comments in UI
         self._refresh_comments_display()
 
     def _refresh_comments_display(self):
-        """댓글 리스트 UI 갱신."""
         self.comments_list.clear()
         for idx, comment in enumerate(self.comments):
             user = comment.get("user", "unknown")
@@ -130,16 +112,15 @@ class CommentWidget(QtWidgets.QWidget):
             display_text = f"[{user}] {text}"
 
             item = QtWidgets.QListWidgetItem(display_text)
-            item.setData(QtCore.Qt.UserRole, idx)  # 인덱스 저장
+            item.setData(QtCore.Qt.UserRole, idx)  # Save index
 
-            # 본인이 작성한 댓글은 스타일 다르게
+            # Style differently for comments written by self
             if user == self.current_user_id:
                 item.setForeground(QtCore.Qt.darkBlue)
 
             self.comments_list.addItem(item)
 
     def _show_context_menu(self, position):
-        """우클릭 컨텍스트 메뉴 표시."""
         item = self.comments_list.itemAt(position)
         if not item:
             return
@@ -153,7 +134,7 @@ class CommentWidget(QtWidgets.QWidget):
 
         menu = QtWidgets.QMenu(self)
 
-        # 본인이 작성한 댓글만 삭제 가능
+        # Only allow deletion of own comments
         if user == self.current_user_id:
             delete_action = menu.addAction("Delete")
             action = menu.exec_(self.comments_list.mapToGlobal(position))
@@ -165,14 +146,12 @@ class CommentWidget(QtWidgets.QWidget):
             menu.exec_(self.comments_list.mapToGlobal(position))
 
     def _delete_comment(self, idx: int):
-        """댓글 삭제 및 파일 업데이트."""
         if 0 <= idx < len(self.comments):
             del self.comments[idx]
             self._save_comments()
             self._refresh_comments_display()
 
     def _on_confirm(self):
-        """확인 버튼 클릭 시 코멘트를 JSON 파일로 저장."""
         comment_text = self.comment_input.text().strip()
 
         if not comment_text:
@@ -194,24 +173,23 @@ class CommentWidget(QtWidgets.QWidget):
             )
             return
 
-        # 코멘트 추가
+        # Add comment
         new_comment = {
             "user": self.current_user_id,
             "text": comment_text
         }
         self.comments.append(new_comment)
 
-        # 파일로 저장
+        # Save to file
         self._save_comments()
 
-        # UI 갱신
+        # Refresh UI
         self._refresh_comments_display()
 
-        # 입력창 초기화
+        # Clear input
         self.comment_input.clear()
 
     def _save_comments(self):
-        """코멘트를 JSON 파일로 저장."""
         if not self.current_image_path:
             return
 
@@ -227,13 +205,11 @@ class CommentWidget(QtWidgets.QWidget):
             )
 
     def clear_comments(self):
-        """코멘트 초기화."""
         self.comments = []
         self.comments_list.clear()
         self.comment_input.clear()
 
     def get_comment_file_path(self) -> str:
-        """현재 이미지의 코멘트 파일 경로 반환."""
         if self.current_image_path:
             return self._get_comment_file_path(self.current_image_path)
         return ""

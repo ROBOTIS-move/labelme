@@ -1,28 +1,20 @@
 # -*- coding: utf-8 -*-
-"""
-Task Info Widget for Cloud-Native Labelme.
-작업 모드 및 잔여 시간을 표시하는 위젯.
-"""
 
 from qtpy import QtWidgets
 from qtpy import QtCore
 
 
 class TaskInfoWidget(QtWidgets.QWidget):
-    """
-    작업 정보 위젯.
-    현재 모드와 잔여 시간을 표시.
-    """
 
-    # 타이머 색상 기준 (초 단위)
-    WARNING_THRESHOLD_SECONDS = 6 * 60 * 60  # 6시간
-    CRITICAL_THRESHOLD_SECONDS = 2 * 60 * 60  # 2시간
+    # Timer color thresholds (seconds)
+    WARNING_THRESHOLD_SECONDS = 6 * 60 * 60  # 6 hours
+    CRITICAL_THRESHOLD_SECONDS = 2 * 60 * 60  # 2 hours
 
-    # 모드별 표시 정보
+    # Display info per mode
     MODE_INFO = {
-        "labeling": {"text": "Labeling", "color": "#4CAF50"},  # 초록
-        "review": {"text": "Review", "color": "#2196F3"},  # 파랑
-        "final_review": {"text": "Final Review", "color": "#FF9800"},  # 주황
+        "labeling": {"text": "Labeling", "color": "#4CAF50"},  # Green
+        "review": {"text": "Review", "color": "#2196F3"},  # Blue
+        "final_review": {"text": "Final Review", "color": "#FF9800"},  # Orange
     }
 
     def __init__(self, parent=None):
@@ -68,7 +60,6 @@ class TaskInfoWidget(QtWidgets.QWidget):
         layout.addStretch()
 
     def set_mode(self, mode: str):
-        """현재 모드 설정."""
         self.current_mode = mode
         info = self.MODE_INFO.get(mode, {"text": "Unknown", "color": "#9E9E9E"})
         self.mode_label.setText(info["text"])
@@ -84,29 +75,25 @@ class TaskInfoWidget(QtWidgets.QWidget):
         """)
 
     def set_remaining_time(self, seconds: int):
-        """
-        잔여 시간 설정 (초 단위).
-        색상 자동 변경: 정상(초록), 6시간 이내(노란색), 2시간 이내(빨간색).
-        """
         self.remaining_seconds = seconds
 
         if seconds <= 0:
             self.timer_label.setText("Expired")
-            self.timer_label.setToolTip("작업 시간이 만료되었습니다")
-            color = "#F44336"  # 빨간색
+            self.timer_label.setToolTip("Task time has expired")
+            color = "#F44336"  # Red
         else:
             hours = seconds // 3600
             minutes = (seconds % 3600) // 60
             secs = seconds % 60
             self.timer_label.setText(f"{hours:02d}:{minutes:02d}:{secs:02d}")
 
-            # 색상 결정
+            # Determine color
             if seconds <= self.CRITICAL_THRESHOLD_SECONDS:
-                color = "#F44336"  # 빨간색
+                color = "#F44336"  # Red
             elif seconds <= self.WARNING_THRESHOLD_SECONDS:
-                color = "#FFC107"  # 노란색
+                color = "#FFC107"  # Yellow
             else:
-                color = "#4CAF50"  # 초록색
+                color = "#4CAF50"  # Green
 
         self.timer_label.setStyleSheet(f"""
             QLabel {{
@@ -118,7 +105,6 @@ class TaskInfoWidget(QtWidgets.QWidget):
         """)
 
     def reset(self):
-        """위젯 초기화."""
         self.current_mode = None
         self.remaining_seconds = None
         self.mode_label.setText("--")

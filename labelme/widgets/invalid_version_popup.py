@@ -32,9 +32,9 @@ class InvalidVersionWindow(QDialog):
 
         label = QLabel(self.alarm_text[self.mode][1])
         font = QFont()
-        font.setPointSize(20)  # 원하는 폰트 크기로 설정
+        font.setPointSize(20)  # Set desired font size
         label.setFont(font)
-        label.setAlignment(Qt.AlignCenter)  # 중앙 정렬
+        label.setAlignment(Qt.AlignCenter)  # Center align
         label.setStyleSheet("color: red;")
 
         confirm_button = QPushButton('OK', self)

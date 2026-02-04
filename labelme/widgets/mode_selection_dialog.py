@@ -1,25 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-Mode Selection Dialog for Cloud-Native Labelme.
-작업 모드(Labeling, Review, Final Review)를 선택하는 다이얼로그.
-"""
 
 from qtpy import QtWidgets
 from qtpy import QtCore
 
 
 class ModeSelectionDialog(QtWidgets.QDialog):
-    """
-    작업 모드 선택 다이얼로그.
-    Labeling, Review, Final Review 중 선택.
-    """
 
-    # 작업 모드 상수
+    # Working mode constants
     MODE_LABELING = "labeling"
     MODE_REVIEW = "review"
     MODE_FINAL_REVIEW = "final_review"
 
-    # 관리자 코드 (추후 Firebase에서 가져올 예정)
+    # Admin code (To be fetched from Firebase later)
     ADMIN_CODE = "admin123"
 
     def __init__(self, user_id: str, parent=None):
@@ -56,7 +48,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
 
         # Labeling button
         self.labeling_btn = QtWidgets.QPushButton("Labeling (General)")
-        self.labeling_btn.setToolTip("일반 작업 모드입니다")
+        self.labeling_btn.setToolTip("General working mode")
         self.labeling_btn.setMinimumHeight(40)
         self.labeling_btn.setStyleSheet("""
             QPushButton {
@@ -75,7 +67,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
 
         # Review button
         self.review_btn = QtWidgets.QPushButton("Review (1st Review)")
-        self.review_btn.setToolTip("1차 검토 모드입니다")
+        self.review_btn.setToolTip("1st review mode")
         self.review_btn.setMinimumHeight(40)
         self.review_btn.setStyleSheet("""
             QPushButton {
@@ -94,7 +86,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
 
         # Final Review button
         self.final_review_btn = QtWidgets.QPushButton("Final Review")
-        self.final_review_btn.setToolTip("최종 검토 모드입니다 (관리자 전용)")
+        self.final_review_btn.setToolTip("Final review mode (Admin only)")
         self.final_review_btn.setMinimumHeight(40)
         self.final_review_btn.setStyleSheet("""
             QPushButton {
@@ -115,17 +107,14 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         layout.addStretch()
 
     def _on_labeling(self):
-        """Labeling 모드 선택."""
         self.selected_mode = self.MODE_LABELING
         self.accept()
 
     def _on_review(self):
-        """Review 모드 선택."""
         self.selected_mode = self.MODE_REVIEW
         self.accept()
 
     def _on_final_review(self):
-        """Final Review 모드 선택 (관리자 코드 필요)."""
         admin_code, ok = QtWidgets.QInputDialog.getText(
             self,
             "Admin Authentication",
@@ -134,7 +123,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         )
 
         if ok and admin_code:
-            # Mock 관리자 코드 검증 (추후 Firebase 연동으로 대체)
+            # Mock admin code validation (Replace with Firebase integration later)
             if self._validate_admin_code(admin_code):
                 self.selected_mode = self.MODE_FINAL_REVIEW
                 self.accept()
@@ -146,13 +135,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
                 )
 
     def _validate_admin_code(self, code: str) -> bool:
-        """
-        관리자 코드 검증 (Mock 구현).
-        추후 Firebase system_config에서 가져올 예정.
-        """
-        # TODO: Firebase 연동 시 실제 검증 로직으로 교체
+        # TODO: Replace with actual validation logic upon Firebase integration
         return code == self.ADMIN_CODE
 
     def get_selected_mode(self) -> str:
-        """선택된 모드 반환."""
         return self.selected_mode

@@ -55,7 +55,7 @@ def _to_int_pts(points, width, height):
     pts = np.asarray(points, dtype=np.float32)
     if pts.ndim != 2 or pts.shape[1] != 2:
         raise ValueError(f"points shape must be (N,2), got {pts.shape}")
-    # (x, y) 각각 클립 → 반올림 → int
+    # (x, y) Clip -> Round -> Int
     xs = np.clip(pts[:, 0], 0, width  - 1)
     ys = np.clip(pts[:, 1], 0, height - 1)
     pts_i = np.stack([np.rint(xs), np.rint(ys)], axis=1).astype(np.int32)
@@ -189,15 +189,7 @@ def draw_label(
         segmentation_class=None,
         colormap=None,
         **kwargs):
-    """Draw pixel-wise label with colorization and label names.
 
-    label: ndarray, (H, W)
-        Pixel-wise labels to colorize.
-    img: ndarray, (H, W, 3), optional
-        Image on which the colorized label will be drawn.
-    label_names: iterable
-        List of label names.
-    """
     import matplotlib.pyplot as plt
 
     if label_names is None:

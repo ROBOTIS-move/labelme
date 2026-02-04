@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Login Dialog for Cloud-Native Labelme.
-사용자 ID를 입력받아 인증하는 다이얼로그.
-"""
 
 from qtpy import QtWidgets
 
 
 class LoginDialog(QtWidgets.QDialog):
-    """
-    사용자 ID 입력 다이얼로그.
-    Firebase 연동 전까지는 Mock 인증 사용.
-    """
 
-    # 임시 허용 ID 목록 (추후 Firebase 연동으로 대체)
+    # Temporary allowed ID list (Replace with Firebase integration later)
     ALLOWED_IDS = ["jsh@robotis.com", ""]
 
     def __init__(self, parent=None):
@@ -38,7 +30,7 @@ class LoginDialog(QtWidgets.QDialog):
         # ID Input field
         self.id_input = QtWidgets.QLineEdit(self)
         self.id_input.setPlaceholderText("Enter ID")
-        self.id_input.setToolTip("작업자 ID를 입력하세요")
+        self.id_input.setToolTip("Enter Worker ID")
         self.id_input.setMinimumHeight(32)
         self.id_input.returnPressed.connect(self._on_confirm)
         layout.addWidget(self.id_input)
@@ -51,7 +43,7 @@ class LoginDialog(QtWidgets.QDialog):
 
         # Confirm button
         self.confirm_button = QtWidgets.QPushButton("Confirm", self)
-        self.confirm_button.setToolTip("ID를 확인하고 로그인합니다")
+        self.confirm_button.setToolTip("Verify ID and login")
         self.confirm_button.setMinimumHeight(36)
         self.confirm_button.clicked.connect(self._on_confirm)
         layout.addWidget(self.confirm_button)
@@ -59,7 +51,6 @@ class LoginDialog(QtWidgets.QDialog):
         layout.addStretch()
 
     def _on_confirm(self):
-        """확인 버튼 클릭 시 ID 검증."""
         entered_id = self.id_input.text().strip()
 
         if not entered_id:
@@ -67,7 +58,7 @@ class LoginDialog(QtWidgets.QDialog):
             self.error_label.setVisible(True)
             return
 
-        # Mock 인증: 허용된 ID인지 확인 (추후 Firebase 연동으로 대체)
+        # Mock checking: Check if ID is allowed (Replace with Firebase integration later)
         if self._validate_id(entered_id):
             self.user_id = entered_id
             self.error_label.setVisible(False)
@@ -77,13 +68,8 @@ class LoginDialog(QtWidgets.QDialog):
             self.error_label.setVisible(True)
 
     def _validate_id(self, user_id: str) -> bool:
-        """
-        ID 유효성 검사 (Mock 구현).
-        추후 Firebase Auth 또는 Firestore 연동으로 대체 예정.
-        """
-        # TODO: Firebase 연동 시 실제 인증 로직으로 교체
+        # TODO: Replace with actual authentication logic upon Firebase integration
         return user_id.lower() in [aid.lower() for aid in self.ALLOWED_IDS]
 
     def get_user_id(self) -> str:
-        """인증된 사용자 ID 반환."""
         return self.user_id

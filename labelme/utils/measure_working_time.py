@@ -6,17 +6,17 @@ import sys
 
 def get_user_data_dir(app_name="labelme"):
     """
-    사용자 데이터 디렉토리 경로를 반환합니다.
+    Returns user data directory path.
     """
     if sys.platform.startswith('win'):
         base_dir = os.path.expandvars('%APPDATA%')
     else:
-        # Linux/Mac 대응
+        # Linux/Mac support
         base_dir = os.path.expanduser('~/.config')
     
     user_data_dir = os.path.join(base_dir, app_name)
     
-    # 디렉토리가 없으면 생성
+    # Create directory if it doesn't exist
     os.makedirs(user_data_dir, exist_ok=True)
     
     return user_data_dir
@@ -24,19 +24,19 @@ def get_user_data_dir(app_name="labelme"):
 
 def get_worker_name_file_path():
     """
-    worker_name.txt 파일 경로를 반환합니다.
-    모든 환경(개발/배포)에서 동일한 사용자 데이터 디렉토리를 사용합니다.
+    Returns worker_name.txt file path.
+    Uses user data directory in all environments (dev/dist).
     """
-    # 환경변수에서 먼저 확인 (Runtime Hook에서 설정)
+    # Check environment variable first (Set in Runtime Hook)
     env_path = os.environ.get('LABELME_WORKER_NAME_FILE')
     if env_path:
         return env_path
     
-    # 모든 환경에서 사용자 데이터 디렉토리 사용
+    # Use user data directory in all environments
     user_data_dir = get_user_data_dir()
     worker_name_file = os.path.join(user_data_dir, 'worker_name.txt')
     
-    # 기존 파일이 현재 디렉토리에 있다면 마이그레이션
+    # Migrate if existing file is in current directory
     old_file_path = os.path.join(sys.path[0], 'worker_name.txt')
     if os.path.exists(old_file_path) and not os.path.exists(worker_name_file):
         try:
@@ -44,7 +44,7 @@ def get_worker_name_file_path():
             shutil.copy2(old_file_path, worker_name_file)
             print(f"[INFO] Migrated worker_name.txt to: {worker_name_file}")
         except Exception:
-            pass  # 조용히 실패
+            pass  # Fail silently
     
     return worker_name_file
 
@@ -60,7 +60,7 @@ class MeasureTime():
             dt.datetime.now().second +
             dt.datetime.now().microsecond * 0.000001)
         self.break_standard_time = 10
-        self.limit_time = 3600 * 24  # 24시 이후 diff time이 - 값이 나오는 현상 방지
+        self.limit_time = 3600 * 24  # Prevent negative diff time after midnight
         self.working_count = 0
         self.worker_name = ''
         self.init_write_worker_name = True
@@ -83,7 +83,7 @@ class MeasureTime():
         with open(file_path, "r") as file:
             for i, line in enumerate(file):
                 bytes_str = line.strip().replace("b'", "").replace("'", "").encode()
-                # bytes를 일반 문자열로 변환
+                # Convert bytes to normal string
                 result_str = bytes_str.decode()
                 decode_text.append(result_str)
         return decode_text
