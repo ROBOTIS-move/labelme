@@ -244,3 +244,7 @@ FrontViewSegmentation:
   static: [0, 128, 128]
   void: [63, 63, 63]
   forbidden-area: [255, 0, 0]
+GateDeviceDetection:
+  tag: [0, 255, 0]
+  door: [0, 0, 255]
+  finger: [255, 255, 0]

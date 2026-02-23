@@ -318,6 +318,14 @@ labels_class:
         'void',
         'forbidden-area',
       ]
+  GateDeviceDetection:
+    default:
+      [
+        'tag',
+        'door',
+        'finger'
+      ]
+
 default_shape_color: [0, 0, 255]
 shape_color: manual # null, 'auto', 'manual'
 shift_auto_shape_color: 0
@@ -419,6 +427,9 @@ label_colors:
   fence: [190, 153, 153]
   sky: [70, 130, 180]
   forbidden-area: [255, 0, 0]
+  tag: [0, 255, 0]
+  door: [0, 0, 255]
+  finger: [255, 255, 0]
 
 shape:
   # drawing
