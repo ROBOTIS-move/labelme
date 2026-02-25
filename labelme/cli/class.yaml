@@ -90,6 +90,7 @@ ELButtonShapeSegmentation:
   up: [204, 51, 204]
   down: [255, 165, 0]
   unknown: [204, 255, 204]
+  no_text: [178, 61, 255]
 ELStateDetection:
   Door_open: [0, 102, 0]
   Door_close: [102, 102, 255]
