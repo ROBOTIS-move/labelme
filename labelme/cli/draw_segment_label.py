@@ -137,7 +137,7 @@ class Convertor:
     def load_json_file(self, json_file):
         with open(json_file, encoding='ISO-8859-1') as file_:
             json_data = json.load(file_)
-        if json_data['imageData']:
+        if json_data.get('imageData'):
             imageData = json_data['imageData']
         else:
             imagePath = os.path.join(os.path.dirname(json_file), json_data['imagePath'])

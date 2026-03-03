@@ -21,21 +21,21 @@ class DatabaseManager:
         body = {
             'id': image_name,
             'data': {
-                'image_name': image_name,
+                'imageName': image_name,
                 'status': 'ready',
-                'worker_id': '',
-                'reviewer_id': '',
-                'final_reviewer_id': '',
-                'created_at': str_now,
-                'assigned_at': '',
-                'updated_at': '',
-                'storage_image_path': '',
-                'storage_json_path': '',
-                'storage_encrypt_path': '',
-                'storage_comment_path': '',
-                'class_type': '',
-                'discard_reason': '',
-                'is_gt': '',
+                'workerId': '',
+                'reviewerId': '',
+                'finalReviewerId': '',
+                'createdAt': str_now,
+                'assignedAt': '',
+                'updatedAt': '',
+                'storageImagePath': '',
+                'storageJsonPath': '',
+                'storageEncryptPath': '',
+                'storageCommentPath': '',
+                'classType': '',
+                'discardReason': '',
+                'isGt': '',
             }
         }
         response = requests.post(url, json=body)
@@ -71,7 +71,7 @@ class DatabaseManager:
                 f"{response.text}"
             )
 
-    def update_document(self, doc_id, data):
+    def update_document(self, doc_id, data, existing_doc=None):
         # --- Original PATCH implementation (server not ready) ---
         # url = f"{self.common_url}/annotation"
         # body = {'id': doc_id, 'data': data}
@@ -85,12 +85,13 @@ class DatabaseManager:
         #     )
 
         # Workaround: GET all → merge → POST (overwrite)
-        all_docs = self.get_all_document()
-        existing = None
-        for d in all_docs:
-            if d.get('image_name') == doc_id:
-                existing = d
-                break
+        existing = existing_doc
+        if existing is None:
+            all_docs = self.get_all_document()
+            for d in all_docs:
+                if d.get('imageName') == doc_id:
+                    existing = d
+                    break
 
         if existing is None:
             raise RuntimeError(f"Document not found: {doc_id}")
@@ -118,7 +119,7 @@ class DatabaseManager:
             d for d in all_docs if d.get('status') == status_val
         ]
         # FIFO sort by created_at ASC
-        filtered.sort(key=lambda d: d.get('created_at', ''))
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
         return filtered
 
     def get_oldest_by_status(self, status):
@@ -137,7 +138,26 @@ class DatabaseManager:
         ]
         if not filtered:
             return None
-        filtered.sort(key=lambda d: d.get('created_at', ''))
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
+        return filtered[0]
+
+    def get_oldest_by_statuses_excluding_user(
+        self, statuses, exclude_field, exclude_user_id,
+    ):
+        all_docs = self.get_all_document()
+        if not all_docs:
+            return None
+        status_vals = [
+            s.value if hasattr(s, 'value') else s for s in statuses
+        ]
+        filtered = [
+            d for d in all_docs
+            if d.get('status') in status_vals
+            and d.get(exclude_field) != exclude_user_id
+        ]
+        if not filtered:
+            return None
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
         return filtered[0]
 
     def get_documents_by_status_and_user(self, status, field, user_id):
@@ -149,7 +169,7 @@ class DatabaseManager:
             d for d in all_docs
             if d.get('status') == status_val and d.get(field) == user_id
         ]
-        filtered.sort(key=lambda d: d.get('created_at', ''))
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
         return filtered
 
 if __name__ == '__main__':

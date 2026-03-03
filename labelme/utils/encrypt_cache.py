@@ -4,6 +4,7 @@ import yaml
 import json
 
 from cryptography.fernet import Fernet
+from labelme.utils.measure_working_time import get_worker_name_file_path
 
 
 class EncryptCache():
@@ -34,7 +35,7 @@ class EncryptCache():
         self._encrypt_file()
 
     def _extract_worker_name(self):
-        name_file_path = os.path.join(sys.path[0], 'worker_name.txt')
+        name_file_path = get_worker_name_file_path()
         if os.path.exists(name_file_path):
             with open(name_file_path, "r") as f:
                     content = f.read()

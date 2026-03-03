@@ -257,7 +257,7 @@ class Canvas(QtWidgets.QWidget):
                 pos = self.intersectionPoint(self.current[-1], pos)
             elif (
                 self.snapping
-                and len(self.current) > 1
+                and len(self.current.points) > 1
                 and self.createMode == "polygon"
                 and self.closeEnough(pos, self.current[0])
             ):
@@ -526,7 +526,7 @@ class Canvas(QtWidgets.QWidget):
         self._hideBackround = self.hideBackround if enable else False
 
     def canCloseShape(self):
-        return self.drawing() and self.current and len(self.current) > 2
+        return self.drawing() and self.current and len(self.current.points) > 2
 
     def mouseDoubleClickEvent(self, ev):
         # We need at least 4 points here, since the mousePress handler
@@ -535,7 +535,7 @@ class Canvas(QtWidgets.QWidget):
         if (
             self.double_click == "close"
             and self.canCloseShape()
-            and len(self.current) > 3
+            and len(self.current.points) > 3
         ):
             self.current.popPoint()
             self.finalise()
@@ -1003,7 +1003,7 @@ class Canvas(QtWidgets.QWidget):
         if not self.current or self.current.isClosed():
             return
         self.current.popPoint()
-        if len(self.current) > 0:
+        if len(self.current.points) > 0:
             self.line[0] = self.current[-1]
         else:
             self.current = None

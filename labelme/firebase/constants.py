@@ -18,6 +18,7 @@ class TaskStatus(str, Enum):
     REQUEST_FINAL_REVIEW = 'request_final_review'
     FINAL_REVIEWING = 'final_reviewing'
     READY_GT = 'ready_gt'
+    DISCARD = 'discard'
 
 
 # Status transition map: current_status -> next_status on submit
@@ -43,6 +44,7 @@ LOAD_SOURCE_STATUSES = {
 LOAD_NEXT_STATUS = {
     'labeling': {
         TaskStatus.READY: TaskStatus.PROCESSING,
+        TaskStatus.MODIFY: TaskStatus.MODIFYING,
     },
     'review': {
         TaskStatus.REQUEST_REVIEW: TaskStatus.REVIEWING,
@@ -55,9 +57,9 @@ LOAD_NEXT_STATUS = {
 
 # User ID field name per mode
 USER_FIELD_MAP = {
-    'labeling': 'worker_id',
-    'review': 'reviewer_id',
-    'final_review': 'final_reviewer_id',
+    'labeling': 'workerId',
+    'review': 'reviewerId',
+    'final_review': 'finalReviewerId',
 }
 
 

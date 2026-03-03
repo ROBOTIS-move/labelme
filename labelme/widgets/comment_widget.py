@@ -72,6 +72,10 @@ class CommentWidget(QtWidgets.QWidget):
         self.confirm_button.clicked.connect(self._on_confirm)
         layout.addWidget(self.confirm_button)
 
+    def set_read_only(self, read_only: bool):
+        self.comment_input.setVisible(not read_only)
+        self.confirm_button.setVisible(not read_only)
+
     def set_user_id(self, user_id: str):
         self.current_user_id = user_id
 

@@ -1363,6 +1363,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.dropTask.setEnabled(value)
         if hasattr(self.actions, 'discardTask'):
             self.actions.discardTask.setEnabled(value)
+        if hasattr(self.actions, 'loadTask'):
+            self.actions.loadTask.setEnabled(not value)
+        if hasattr(self.actions, 'loadModifyTask'):
+            self.actions.loadModifyTask.setEnabled(not value)
+        if hasattr(self.actions, 'loadPostponeTask'):
+            self.actions.loadPostponeTask.setEnabled(not value)
+        if hasattr(self.actions, 'loadReadyGtTask'):
+            self.actions.loadReadyGtTask.setEnabled(not value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -1426,6 +1434,18 @@ class MainWindow(QtWidgets.QMainWindow):
         webbrowser.open(url)
 
     def check_labels(self):
+        if self.filename is None:
+            QtWidgets.QMessageBox.warning(
+                self, "Check Labels",
+                "No image loaded."
+            )
+            return
+        if not hasattr(self, 'ImagePopup'):
+            folder_path = os.path.dirname(self.filename)
+            self.ImagePopup = ImagePopup(
+                parent=self,
+                folder_path=folder_path,
+            )
         if (self._classType is None or
             'segmentation' in self._classType or
             'Segmentation' in self._classType):
@@ -2967,21 +2987,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _applyModeSettings(self):
         if self.current_mode == ModeSelectionDialog.MODE_LABELING:
-            # Labeling Mode: Show only Polygon Labels, hide Comment
+            # Labeling Mode: Show Polygon Labels + Comment (read-only)
             self.shape_dock.setVisible(True)
-            self.comment_dock.setVisible(False)
+            self.comment_dock.setVisible(True)
+            self.comment_widget.set_read_only(True)
             self.setWindowTitle(f"{__appname__} - Labeling")
 
         elif self.current_mode == ModeSelectionDialog.MODE_REVIEW:
             # Review Mode: Show Polygon Labels + Comment
             self.shape_dock.setVisible(True)
             self.comment_dock.setVisible(True)
+            self.comment_widget.set_read_only(False)
             self.setWindowTitle(f"{__appname__} - Review")
 
         elif self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW:
             # Final Review Mode: Show Polygon Labels + Comment
             self.shape_dock.setVisible(True)
             self.comment_dock.setVisible(True)
+            self.comment_widget.set_read_only(False)
             self.setWindowTitle(f"{__appname__} - Final Review")
 
         # Common: Keep unnecessary Docks hidden
@@ -3024,8 +3047,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.postponeTask.setVisible(is_worker)
         # Drop: worker only
         self.actions.dropTask.setVisible(is_worker)
-        # Discard: reviewer + supervisor
-        self.actions.discardTask.setVisible(is_reviewer or is_supervisor)
+        # Discard: all modes
+        self.actions.discardTask.setVisible(True)
 
     def changeModeAction(self):
         # Check if an image is currently loaded
@@ -3069,6 +3092,7 @@ class MainWindow(QtWidgets.QMainWindow):
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
+        # worker.execute()
 
     def loadModifyTaskAction(self):
         logger.info("Load Modify action triggered")
@@ -3085,7 +3109,7 @@ class MainWindow(QtWidgets.QMainWindow):
             user_id=self.current_user_id,
             processing_dir=self.processing_dir,
             source_statuses=[TaskStatus.MODIFY],
-            user_filter_field='worker_id',
+            user_filter_field='workerId',
             parent=self,
         )
         worker.finished.connect(self._on_load_task_finished)
@@ -3194,6 +3218,7 @@ class MainWindow(QtWidgets.QMainWindow):
             processing_dir=self.processing_dir,
             basename=basename,
             mode=self.current_mode,
+            user_id=self.current_user_id or '',
             parent=self,
         )
         worker.finished.connect(self._on_submit_finished)
@@ -3330,6 +3355,11 @@ class MainWindow(QtWidgets.QMainWindow):
         local_image_path = result.get('local_image_path', '')
         if local_image_path and os.path.exists(local_image_path):
             self.loadFile(local_image_path)
+            # Set labels for this classType
+            json_path = os.path.splitext(local_image_path)[0] + '.json'
+            target_class = self.get_target_class(json_path)
+            if target_class:
+                self.choose_labels_class(target_class)
             logger.info(
                 f"Task loaded: doc_id={self.current_doc_id}, "
                 f"status={self.current_task_status}"
@@ -3352,21 +3382,46 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         documents = result.get('documents', [])
-        image_names = [d.get('image_name', '') for d in documents]
+        image_names = [d.get('imageName', '') for d in documents]
 
-        # Show selection dialog
-        item, ok = QtWidgets.QInputDialog.getItem(
-            self, "Select Postponed Task",
-            "Select a task to restore:",
-            image_names, 0, False
-        )
-        if not ok or not item:
+        # Show selection dialog with QListWidget
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Select Postponed Task")
+        dialog.setMinimumWidth(400)
+        dialog.setMinimumHeight(300)
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        label = QtWidgets.QLabel("Select a task to restore:")
+        layout.addWidget(label)
+
+        list_widget = QtWidgets.QListWidget()
+        for name in image_names:
+            list_widget.addItem(name)
+        list_widget.setCurrentRow(0)
+        list_widget.itemDoubleClicked.connect(dialog.accept)
+        layout.addWidget(list_widget)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        ok_btn = QtWidgets.QPushButton("Load")
+        ok_btn.clicked.connect(dialog.accept)
+        btn_layout.addWidget(ok_btn)
+        cancel_btn = QtWidgets.QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
             return
+        current = list_widget.currentItem()
+        if not current:
+            return
+        item = current.text()
 
         # Find matching document
         selected_doc = None
         for d in documents:
-            if d.get('image_name') == item:
+            if d.get('imageName') == item:
                 selected_doc = d
                 break
 
@@ -3403,6 +3458,11 @@ class MainWindow(QtWidgets.QMainWindow):
         local_image_path = result.get('local_image_path', '')
         if local_image_path and os.path.exists(local_image_path):
             self.loadFile(local_image_path)
+            # Set labels for this classType
+            json_path = os.path.splitext(local_image_path)[0] + '.json'
+            target_class = self.get_target_class(json_path)
+            if target_class:
+                self.choose_labels_class(target_class)
             logger.info(f"Postponed task restored: {self.current_doc_id}")
         else:
             QtWidgets.QMessageBox.warning(
@@ -3450,6 +3510,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._clear_session_info()
         self._cleanup_processing_files()
         self._reset_firebase_state()
+        self.comment_widget.clear_comments()
         self.resetState()
         self.setClean()
         self.toggleActions(False)
@@ -3512,11 +3573,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.statusBar().showMessage(message)
             # Disable load/submit buttons during operation
             self.actions.loadTask.setEnabled(False)
+            self.actions.loadModifyTask.setEnabled(False)
+            self.actions.loadPostponeTask.setEnabled(False)
+            self.actions.loadReadyGtTask.setEnabled(False)
             self.actions.submitTask.setEnabled(False)
         else:
             QtWidgets.QApplication.restoreOverrideCursor()
             self.statusBar().showMessage("")
             self.actions.loadTask.setEnabled(True)
+            self.actions.loadModifyTask.setEnabled(True)
+            self.actions.loadPostponeTask.setEnabled(True)
+            self.actions.loadReadyGtTask.setEnabled(True)
 
     def _on_firebase_error(self, msg):
         self._set_firebase_loading(False)
@@ -3543,6 +3610,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 logger.info(f"Cleaned up: {f}")
             except Exception as e:
                 logger.warning(f"Failed to cleanup {f}: {e}")
+
+        # Remove generated image directories
+        for dirname in ("masked_image", "overlayed_image"):
+            dirpath = os.path.join(self.processing_dir, dirname)
+            if os.path.isdir(dirpath):
+                try:
+                    shutil.rmtree(dirpath)
+                    logger.info(f"Cleaned up directory: {dirpath}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to cleanup {dirpath}: {e}"
+                    )
 
     # ============ Timer Methods ============
 

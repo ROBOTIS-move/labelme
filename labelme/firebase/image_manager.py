@@ -15,18 +15,36 @@ class ImageManager:
         self.base_url = cfg_loader.common_config.get('base_url')
         self.bucket_name = cfg_loader.common_config.get('bucket_name')
 
+    def delete_file(self, storage_path):
+        url = f"{self.base_url}/delete-file"
+        params = {
+            'bucketName': self.bucket_name,
+            'filePath': storage_path,
+        }
+        response = requests.delete(url, params=params)
+        if response.status_code == 200:
+            print(f"Deleted: {storage_path}")
+        else:
+            print(
+                f"Failed to delete {storage_path}: "
+                f"{response.status_code}"
+            )
+
 
 class ImageUpload(ImageManager):
-    def upload(self, file_path_list, storage_path='images/'):
+    def upload(self, file_path_list, storage_dir='images/'):
+        if storage_dir and not storage_dir.endswith('/'):
+            storage_dir += '/'
         for file_path in file_path_list:
-            self.upload_single(file_path, storage_path)
+            file_name = os.path.basename(file_path)
+            self.upload_single(file_path, f"{storage_dir}{file_name}")
 
     def upload_single(self, local_path, storage_path):
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"File not found: {local_path}")
 
         content_type = self._get_mime_type(local_path)
-        upload_info = self._get_upload_url(local_path, content_type, storage_path)
+        upload_info = self._get_upload_url(content_type, storage_path)
         if not upload_info:
             raise RuntimeError(f"Failed to get upload URL for {local_path}")
 
@@ -39,17 +57,12 @@ class ImageUpload(ImageManager):
             return 'application/octet-stream'
         return mime_type
 
-    def _get_upload_url(self, local_path, mime_type, storage_path):
+    def _get_upload_url(self, mime_type, storage_path):
         url = f"{self.base_url}/upload-url"
-        file_name = os.path.basename(local_path)
-
-        # Ensure storage_path ends with /
-        if storage_path and not storage_path.endswith('/'):
-            storage_path += '/'
 
         payload = {
             'bucketName': self.bucket_name,
-            'filePath': f'{storage_path}{file_name}',
+            'filePath': storage_path,
             'contentType': mime_type,
         }
 

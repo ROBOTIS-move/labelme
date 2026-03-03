@@ -16,7 +16,11 @@ from labelme.firebase.constants import (
     STATUS_TRANSITIONS,
 )
 from labelme.firebase.database_manager import DatabaseManager
-from labelme.firebase.image_manager import ImageUpload, ImageDownload
+from labelme.firebase.image_manager import (
+    ImageManager,
+    ImageUpload,
+    ImageDownload,
+)
 
 
 class FirebaseWorker(QThread):
@@ -67,7 +71,11 @@ class LoadTaskWorker(FirebaseWorker):
                     doc = docs[0]
                     break
         else:
-            if len(statuses) == 1:
+            if self.mode == 'review':
+                doc = self.db.get_oldest_by_statuses_excluding_user(
+                    statuses, 'workerId', self.user_id,
+                )
+            elif len(statuses) == 1:
                 doc = self.db.get_oldest_by_status(statuses[0])
             else:
                 doc = self.db.get_oldest_by_statuses(statuses)
@@ -75,7 +83,7 @@ class LoadTaskWorker(FirebaseWorker):
         if not doc:
             return {'found': False}
 
-        doc_id = doc.get('image_name', '')
+        doc_id = doc.get('imageName', '')
         source_status_val = doc.get('status', '')
 
         # Determine source TaskStatus enum
@@ -95,11 +103,11 @@ class LoadTaskWorker(FirebaseWorker):
             return {'found': False}
 
         # Update document status
-        user_field = USER_FIELD_MAP.get(self.mode, 'worker_id')
+        user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         update_data = {
             'status': next_status.value,
-            'assigned_at': now_str,
+            'assignedAt': now_str,
             user_field: self.user_id,
         }
         self.db.update_document(doc_id, update_data)
@@ -108,25 +116,25 @@ class LoadTaskWorker(FirebaseWorker):
         basename = os.path.splitext(doc_id)[0]
         downloads = {}
 
-        img_path = doc.get('storage_image_path', '')
+        img_path = doc.get('storageImagePath', '')
         if img_path:
             downloads[img_path] = os.path.join(
                 self.processing_dir, os.path.basename(img_path)
             )
 
-        json_path = doc.get('storage_json_path', '')
+        json_path = doc.get('storageJsonPath', '')
         if json_path:
             downloads[json_path] = os.path.join(
                 self.processing_dir, f"{basename}.json"
             )
 
-        encrypt_path = doc.get('storage_encrypt_path', '')
+        encrypt_path = doc.get('storageEncryptPath', '')
         if encrypt_path:
             downloads[encrypt_path] = os.path.join(
                 self.processing_dir, f"{basename}_encrypt.bin"
             )
 
-        comment_path = doc.get('storage_comment_path', '')
+        comment_path = doc.get('storageCommentPath', '')
         if comment_path:
             downloads[comment_path] = os.path.join(
                 self.processing_dir, f"{basename}_comments.json"
@@ -143,7 +151,7 @@ class LoadTaskWorker(FirebaseWorker):
         return {
             'found': True,
             'doc_id': doc_id,
-            'image_name': doc.get('image_name', ''),
+            'imageName': doc.get('imageName', ''),
             'local_image_path': local_image_path,
             'document': doc,
             'next_status': next_status.value,
@@ -153,7 +161,7 @@ class LoadTaskWorker(FirebaseWorker):
 class SubmitTaskWorker(FirebaseWorker):
     def __init__(
         self, doc_id, current_status, processing_dir,
-        basename, mode, parent=None,
+        basename, mode, user_id='', parent=None,
     ):
         super().__init__(parent)
         self.doc_id = doc_id
@@ -161,12 +169,15 @@ class SubmitTaskWorker(FirebaseWorker):
         self.processing_dir = processing_dir
         self.basename = basename
         self.mode = mode
+        self.user_id = user_id
         self.db = DatabaseManager()
         self.uploader = ImageUpload()
 
     def execute(self):
         # Upload files from processing_dir
         storage_paths = {}
+
+        ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
         # Image file
         image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff']
@@ -175,43 +186,43 @@ class SubmitTaskWorker(FirebaseWorker):
                 self.processing_dir, f"{self.basename}{ext}"
             )
             if os.path.exists(img_file):
-                sp = StoragePath.normal(StoragePath.IMAGE, f"{self.basename}{ext}")
+                sp = f"{StoragePath.IMAGE}/{ts}/{self.basename}{ext}"
                 self.uploader.upload_single(img_file, sp)
-                storage_paths['storage_image_path'] = f"{sp}/{self.basename}{ext}"
+                storage_paths['storageImagePath'] = sp
                 break
 
         # JSON file
         json_file = os.path.join(self.processing_dir, f"{self.basename}.json")
         if os.path.exists(json_file):
-            sp = StoragePath.normal(StoragePath.JSON, f"{self.basename}.json")
+            sp = f"{StoragePath.JSON}/{ts}/{self.basename}.json"
             self.uploader.upload_single(json_file, sp)
-            storage_paths['storage_json_path'] = f"{sp}/{self.basename}.json"
+            storage_paths['storageJsonPath'] = sp
 
         # Encrypt file
         encrypt_file = os.path.join(
             self.processing_dir, f"{self.basename}_encrypt.bin"
         )
         if os.path.exists(encrypt_file):
-            sp = StoragePath.normal(
-                StoragePath.ENCRYPT, f"{self.basename}_encrypt.bin"
+            sp = (
+                f"{StoragePath.ENCRYPT}/{ts}/"
+                f"{self.basename}_encrypt.bin"
             )
             self.uploader.upload_single(encrypt_file, sp)
-            storage_paths['storage_encrypt_path'] = (
-                f"{sp}/{self.basename}_encrypt.bin"
-            )
+            storage_paths['storageEncryptPath'] = sp
 
         # Comment file
         comment_file = os.path.join(
             self.processing_dir, f"{self.basename}_comments.json"
         )
         if os.path.exists(comment_file):
-            sp = StoragePath.normal(
-                StoragePath.COMMENT, f"{self.basename}_comments.json"
+            sp = (
+                f"{StoragePath.COMMENT}/{ts}/"
+                f"{self.basename}_comments.json"
             )
             self.uploader.upload_single(comment_file, sp)
-            storage_paths['storage_comment_path'] = (
-                f"{sp}/{self.basename}_comments.json"
-            )
+            storage_paths['storageCommentPath'] = sp
+        else:
+            storage_paths['storageCommentPath'] = ''
 
         # Determine next status
         current_enum = None
@@ -226,7 +237,15 @@ class SubmitTaskWorker(FirebaseWorker):
             )
 
         assert current_enum is not None
-        next_status = STATUS_TRANSITIONS.get(current_enum)
+        has_comment = os.path.exists(comment_file)
+        # No comment on review → skip modify, go to final review
+        if (
+            current_enum == TaskStatus.REVIEWING
+            and not has_comment
+        ):
+            next_status = TaskStatus.REQUEST_FINAL_REVIEW
+        else:
+            next_status = STATUS_TRANSITIONS.get(current_enum)
         if next_status is None:
             raise RuntimeError(
                 f"No transition defined for status: {self.current_status}"
@@ -236,15 +255,47 @@ class SubmitTaskWorker(FirebaseWorker):
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         update_data = {
             'status': next_status.value,
-            'updated_at': now_str,
+            'updatedAt': now_str,
         }
         update_data.update(storage_paths)
         self.db.update_document(self.doc_id, update_data)
+
+        # Cleanup postpone storage if user_id is set
+        if self.user_id:
+            self._cleanup_postpone_storage()
 
         return {
             'doc_id': self.doc_id,
             'next_status': next_status.value,
         }
+
+    def _cleanup_postpone_storage(self):
+        manager = ImageManager()
+        image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff']
+        for ext in image_exts:
+            sp = StoragePath.postpone(
+                self.user_id, StoragePath.IMAGE,
+                f"{self.basename}{ext}",
+            )
+            manager.delete_file(sp)
+
+        sp = StoragePath.postpone(
+            self.user_id, StoragePath.JSON,
+            f"{self.basename}.json",
+        )
+        manager.delete_file(sp)
+
+        sp = StoragePath.postpone(
+            self.user_id, StoragePath.ENCRYPT,
+            f"{self.basename}_encrypt.bin",
+        )
+        manager.delete_file(sp)
+
+        sp = StoragePath.postpone(
+            self.user_id, StoragePath.COMMENT,
+            f"{self.basename}_comments.json",
+        )
+        manager.delete_file(sp)
 
 
 class PostponeTaskWorker(FirebaseWorker):
@@ -309,7 +360,7 @@ class PostponeTaskWorker(FirebaseWorker):
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(self.doc_id, {
             'status': TaskStatus.POSTPONE.value,
-            'updated_at': now_str,
+            'updatedAt': now_str,
         })
 
         return {'doc_id': self.doc_id}
@@ -326,7 +377,7 @@ class LoadPostponeWorker(FirebaseWorker):
     def execute(self):
         # Get postponed documents for this user
         docs = self.db.get_documents_by_status_and_user(
-            TaskStatus.POSTPONE, 'worker_id', self.user_id
+            TaskStatus.POSTPONE, 'workerId', self.user_id
         )
         if not docs:
             return {'found': False, 'documents': []}
@@ -345,32 +396,22 @@ class RestorePostponeWorker(FirebaseWorker):
 
     def execute(self):
         os.makedirs(self.processing_dir, exist_ok=True)
-
-        doc_id = self.doc.get('image_name', '')
+        doc_id = self.doc.get('imageName', '')
         basename = os.path.splitext(doc_id)[0]
 
-        # Download from postpone paths
+        # Determine image extension from stored path or doc_id
+        stored_img = self.doc.get('storageImagePath', '')
+        img_ext = os.path.splitext(stored_img or doc_id)[1]
+        img_filename = f"{basename}{img_ext}"
+
         downloads = {}
 
-        # Try postpone storage paths first, then normal
-        img_name = doc_id
-        image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff']
-        for ext in image_exts:
-            sp = StoragePath.postpone(
-                self.user_id, StoragePath.IMAGE, f"{basename}{ext}"
-            )
-            local = os.path.join(self.processing_dir, f"{basename}{ext}")
-            downloads[sp] = local
-            break  # Try first extension only, rely on stored path
-
-        # Use stored paths if available
-        stored_img = self.doc.get('storage_image_path', '')
-        if stored_img:
-            img_name = os.path.basename(stored_img)
-            downloads = {}
-            downloads[stored_img] = os.path.join(
-                self.processing_dir, img_name
-            )
+        # Always download from postpone paths
+        img_sp = StoragePath.postpone(
+            self.user_id, StoragePath.IMAGE, img_filename
+        )
+        local_img = os.path.join(self.processing_dir, img_filename)
+        downloads[img_sp] = local_img
 
         json_sp = StoragePath.postpone(
             self.user_id, StoragePath.JSON, f"{basename}.json"
@@ -380,40 +421,41 @@ class RestorePostponeWorker(FirebaseWorker):
         )
 
         encrypt_sp = StoragePath.postpone(
-            self.user_id, StoragePath.ENCRYPT, f"{basename}_encrypt.bin"
+            self.user_id, StoragePath.ENCRYPT,
+            f"{basename}_encrypt.bin",
         )
         downloads[encrypt_sp] = os.path.join(
             self.processing_dir, f"{basename}_encrypt.bin"
         )
 
         comment_sp = StoragePath.postpone(
-            self.user_id, StoragePath.COMMENT, f"{basename}_comments.json"
+            self.user_id, StoragePath.COMMENT,
+            f"{basename}_comments.json",
         )
         downloads[comment_sp] = os.path.join(
             self.processing_dir, f"{basename}_comments.json"
         )
 
-        # Download (ignore errors for optional files)
         for sp, local in downloads.items():
             try:
                 self.downloader.download_single(sp, local)
             except Exception:
-                pass
+                if sp == img_sp:
+                    raise  # Image is required
+                pass  # Others are optional
 
         # Update status back to processing
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(doc_id, {
             'status': TaskStatus.PROCESSING.value,
-            'assigned_at': now_str,
+            'assignedAt': now_str,
         })
-
-        local_image_path = os.path.join(self.processing_dir, img_name)
 
         return {
             'found': True,
             'doc_id': doc_id,
-            'image_name': doc_id,
-            'local_image_path': local_image_path,
+            'imageName': doc_id,
+            'local_image_path': local_img,
             'document': self.doc,
         }
 
@@ -426,13 +468,13 @@ class DropTaskWorker(FirebaseWorker):
         self.db = DatabaseManager()
 
     def execute(self):
-        user_field = USER_FIELD_MAP.get(self.mode, 'worker_id')
+        user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(self.doc_id, {
             'status': TaskStatus.READY.value,
             user_field: '',
-            'assigned_at': '',
-            'updated_at': now_str,
+            'assignedAt': '',
+            'updatedAt': now_str,
         })
         return {'doc_id': self.doc_id}
 
@@ -447,10 +489,10 @@ class DiscardTaskWorker(FirebaseWorker):
     def execute(self):
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(self.doc_id, {
-            'discard_reason': self.discard_reason,
-            'updated_at': now_str,
+            'status': TaskStatus.DISCARD.value,
+            'discardReason': self.discard_reason,
+            'updatedAt': now_str,
         })
-        self.db.delete_document(self.doc_id)
         return {'doc_id': self.doc_id}
 
 
@@ -465,9 +507,9 @@ class ReadyGtWorker(FirebaseWorker):
     def execute(self):
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(self.doc_id, {
-            'is_gt': self.is_gt,
-            'discard_reason': self.discard_reason,
-            'updated_at': now_str,
+            'isGt': self.is_gt,
+            'discardReason': self.discard_reason,
+            'updatedAt': now_str,
         })
         self.db.delete_document(self.doc_id)
         return {
