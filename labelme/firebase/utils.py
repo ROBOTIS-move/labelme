@@ -2,6 +2,7 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import os
 import yaml
 import requests
 
@@ -13,8 +14,10 @@ class ConfigLoader:
         self.database_config = self.config.get('database')
 
     def _load_config(self):
-        # with open('./config/config.yaml', 'r') as f:
-        with open('/home/hun/gaemi_ws/src/labelme/labelme/firebase/config/config.yaml', 'r') as f:
+        config_path = os.path.join(
+            os.path.dirname(__file__), 'config', 'config.yaml'
+        )
+        with open(config_path, 'r') as f:
             return yaml.safe_load(f)
 
     def get(self, key):
