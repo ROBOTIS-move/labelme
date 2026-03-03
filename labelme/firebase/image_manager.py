@@ -6,34 +6,32 @@ import os
 import requests
 import mimetypes
 
+from labelme.firebase.utils import ConfigLoader
+
 
 class ImageManager:
     def __init__(self):
-        self.base_url = 'https://gaemi-storage-manager-675180880514.asia-northeast3.run.app'
-        self.bucket_name = 'label-0001'
+        cfg_loader = ConfigLoader()
+        self.base_url = cfg_loader.common_config.get('base_url')
+        self.bucket_name = cfg_loader.common_config.get('bucket_name')
+
 
 class ImageUpload(ImageManager):
-    def upload(self, file_path_list):
+    def upload(self, file_path_list, storage_path='images/'):
         for file_path in file_path_list:
-            if not os.path.exists(file_path):
-                print(f"File not found: {file_path}")
-                continue
+            self.upload_single(file_path, storage_path)
 
-            # 1. 인증된 업로드 URL 가져오기
-            try:
-                # API 호출 시 사용한 contentType을 그대로 사용해야 함
-                content_type = self._get_mime_type(file_path)
-                upload_info = self._get_upload_url(file_path, content_type)
-                if not upload_info:
-                    continue
+    def upload_single(self, local_path, storage_path):
+        if not os.path.exists(local_path):
+            raise FileNotFoundError(f"File not found: {local_path}")
 
-                upload_url = upload_info.get('uploadUrl')
+        content_type = self._get_mime_type(local_path)
+        upload_info = self._get_upload_url(local_path, content_type, storage_path)
+        if not upload_info:
+            raise RuntimeError(f"Failed to get upload URL for {local_path}")
 
-                # 2. 실제 파일 업로드
-                self._upload_to_signed_url(file_path, upload_url, content_type)
-
-            except Exception as e:
-                print(f"Failed to upload {file_path}: {e}")
+        upload_url = upload_info.get('uploadUrl')
+        self._upload_to_signed_url(local_path, upload_url, content_type)
 
     def _get_mime_type(self, file_path):
         mime_type, _ = mimetypes.guess_type(file_path)
@@ -41,10 +39,13 @@ class ImageUpload(ImageManager):
             return 'application/octet-stream'
         return mime_type
 
-    def _get_upload_url(self, local_path, mime_type):
+    def _get_upload_url(self, local_path, mime_type, storage_path):
         url = f"{self.base_url}/upload-url"
         file_name = os.path.basename(local_path)
-        storage_path = 'images/'
+
+        # Ensure storage_path ends with /
+        if storage_path and not storage_path.endswith('/'):
+            storage_path += '/'
 
         payload = {
             'bucketName': self.bucket_name,
@@ -52,14 +53,15 @@ class ImageUpload(ImageManager):
             'contentType': mime_type,
         }
 
-        # JSON body로 전송 (spec: body json structure)
         response = requests.post(url, json=payload)
 
         if response.status_code == 200:
             return response.json()
         else:
-            print(f"Error getting upload URL: {response.status_code}, {response.text}")
-            return None
+            raise RuntimeError(
+                f"Error getting upload URL: {response.status_code}, "
+                f"{response.text}"
+            )
 
     def _upload_to_signed_url(self, local_path, upload_url, content_type):
         headers = {
@@ -67,13 +69,15 @@ class ImageUpload(ImageManager):
         }
 
         with open(local_path, 'rb') as f:
-            # PUT method 사용 (spec: method PUT)
             response = requests.put(upload_url, data=f, headers=headers)
 
             if response.status_code == 200:
                 print(f"Successfully uploaded: {local_path}")
             else:
-                print(f"Upload failed: {response.status_code}, {response.text}")
+                raise RuntimeError(
+                    f"Upload failed: {response.status_code}, "
+                    f"{response.text}"
+                )
 
 
 class ImageDownload(ImageManager):
@@ -86,8 +90,38 @@ class ImageDownload(ImageManager):
         if response.status_code == 200:
             return response.json()
         else:
-            print(f"Failed to get file list: {response.status_code}, {response.text}")
-            return []
+            raise RuntimeError(
+                f"Failed to get file list: {response.status_code}, "
+                f"{response.text}"
+            )
+
+    def download_single(self, storage_path, local_path):
+        download_url = self._get_download_url(storage_path)
+        if not download_url:
+            raise RuntimeError(
+                f"Failed to get download URL for {storage_path}"
+            )
+
+        local_dir = os.path.dirname(local_path)
+        if local_dir:
+            os.makedirs(local_dir, exist_ok=True)
+
+        response = requests.get(download_url, stream=True)
+        if response.status_code == 200:
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print(f"Downloaded: {local_path}")
+        else:
+            raise RuntimeError(
+                f"Failed to download {storage_path}: "
+                f"{response.status_code}"
+            )
+
+    def download_files(self, storage_to_local):
+        for storage_path, local_path in storage_to_local.items():
+            if storage_path:
+                self.download_single(storage_path, local_path)
 
     def download_all_images(self, local_dir):
         if not os.path.exists(local_dir):
@@ -99,12 +133,14 @@ class ImageDownload(ImageManager):
             return
 
         for file_info in file_list:
-            # Assuming file_info contains 'name' or 'path' key
-            # Adjust based on actual API response structure
             if isinstance(file_info, str):
                 file_path = file_info
             elif isinstance(file_info, dict):
-                file_path = file_info.get('name') or file_info.get('path') or file_info.get('filePath')
+                file_path = (
+                    file_info.get('name')
+                    or file_info.get('path')
+                    or file_info.get('filePath')
+                )
             else:
                 print(f"Unknown file info format: {file_info}")
                 continue
@@ -112,25 +148,10 @@ class ImageDownload(ImageManager):
             if not file_path:
                 continue
 
+            filename = os.path.basename(file_path)
+            local_path = os.path.join(local_dir, filename)
             try:
-                download_url = self._get_download_url(file_path)
-                if not download_url:
-                    continue
-
-                # Extract filename from path (flatten directory structure)
-                filename = os.path.basename(file_path)
-                local_path = os.path.join(local_dir, filename)
-
-                # Download file with streaming for memory efficiency
-                response = requests.get(download_url, stream=True)
-                if response.status_code == 200:
-                    with open(local_path, 'wb') as f:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                    print(f"Downloaded: {filename}")
-                else:
-                    print(f"Failed to download {filename}: {response.status_code}")
-
+                self.download_single(file_path, local_path)
             except Exception as e:
                 print(f"Error downloading {file_path}: {e}")
 
@@ -146,12 +167,7 @@ class ImageDownload(ImageManager):
         if response.status_code == 200:
             return response.json().get('downloadUrl')
         else:
-            print(f"Failed to get download URL for {file_path}: {response.status_code}, {response.text}")
-            return None
-
-if __name__ == '__main__':
-    downloader = ImageDownload()
-    firebase_upload = ImageUpload()
-    # 테스트용 경로 (실제 경로에 맞게 수정 필요)
-    test_file = '/home/hun/Downloads/2026_01_30_13_11_57/csi/floor_1/outside/2026_01_30_10_57_40_330.jpg'
-    firebase_upload.upload([test_file])
+            raise RuntimeError(
+                f"Failed to get download URL for {file_path}: "
+                f"{response.status_code}, {response.text}"
+            )
