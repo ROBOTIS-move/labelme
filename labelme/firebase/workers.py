@@ -54,6 +54,7 @@ class LoadTaskWorker(FirebaseWorker):
         self.downloader = ImageDownload()
 
     MAX_CLAIM_RETRIES = 3
+    MAX_VERIFY_RETRIES = 2
     VERIFY_DELAY = 0.3
 
     def execute(self):
@@ -129,17 +130,25 @@ class LoadTaskWorker(FirebaseWorker):
 
         time.sleep(self.VERIFY_DELAY)
 
-        # Verify ownership
-        try:
-            all_docs = self.db.get_all_document()
-        except Exception:
+        # Verify ownership with network retry
+        for attempt in range(self.MAX_VERIFY_RETRIES):
+            try:
+                all_docs = self.db.get_all_document()
+            except Exception:
+                if attempt < self.MAX_VERIFY_RETRIES - 1:
+                    time.sleep(self.VERIFY_DELAY)
+                    continue
+                # Claim POST succeeded but verify failed
+                # Assume ownership to avoid orphan claim
+                return True
+
+            for d in all_docs:
+                if d.get('imageName') == doc_id:
+                    return d.get(user_field) == self.user_id
+            # Document disappeared
             return False
 
-        for d in all_docs:
-            if d.get('imageName') == doc_id:
-                return d.get(user_field) == self.user_id
-        # Document disappeared
-        return False
+        return True
 
     def _download_task(self, doc, next_status):
         doc_id = doc.get('imageName', '')
