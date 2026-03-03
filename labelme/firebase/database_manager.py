@@ -2,12 +2,11 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
-import os
-import time
 import datetime
 import requests
 
 from labelme.firebase.utils import ConfigLoader
+
 
 class DatabaseManager:
     def __init__(self):
@@ -24,7 +23,7 @@ class DatabaseManager:
             'data': {
                 'image_name': image_name,
                 'status': 'ready',
-                'worker_id':'',
+                'worker_id': '',
                 'reviewer_id': '',
                 'final_reviewer_id': '',
                 'created_at': str_now,
@@ -43,52 +42,117 @@ class DatabaseManager:
         if response.status_code == 201:
             print(f"Successfully created document: {image_name}")
         else:
-            print(f"Failed to create document: {response.status_code}, {response.text}")
+            raise RuntimeError(
+                f"Failed to create document: {response.status_code}, "
+                f"{response.text}"
+            )
 
     def delete_document(self, image_name):
         url = f"{self.common_url}/annotation?docId={image_name}"
         response = requests.delete(url)
 
-        if response.status_code == 201:
+        if response.status_code == 200:
             print(f"Successfully deleted document: {image_name}")
         else:
-            print(f"Failed to delete document: {response.status_code}, {response.text}")
+            raise RuntimeError(
+                f"Failed to delete document: {response.status_code}, "
+                f"{response.text}"
+            )
 
     def get_all_document(self):
         url = f"{self.common_url}/annotations"
         response = requests.get(url)
 
         if response.status_code == 200:
-            print(f"Successfully get all document")
             return response.json()
         else:
-            print(f"Failed to get all document: {response.status_code}, {response.text}")
+            raise RuntimeError(
+                f"Failed to get all document: {response.status_code}, "
+                f"{response.text}"
+            )
+
+    def update_document(self, doc_id, data):
+        # --- Original PATCH implementation (server not ready) ---
+        # url = f"{self.common_url}/annotation"
+        # body = {'id': doc_id, 'data': data}
+        # response = requests.patch(url, json=body)
+        # if response.status_code in (200, 201):
+        #     print(f"Successfully updated document: {doc_id}")
+        # else:
+        #     raise RuntimeError(
+        #         f"Failed to update document: {response.status_code}, "
+        #         f"{response.text}"
+        #     )
+
+        # Workaround: GET all → merge → POST (overwrite)
+        all_docs = self.get_all_document()
+        existing = None
+        for d in all_docs:
+            if d.get('image_name') == doc_id:
+                existing = d
+                break
+
+        if existing is None:
+            raise RuntimeError(f"Document not found: {doc_id}")
+
+        existing.update(data)
+
+        url = f"{self.common_url}/annotation"
+        body = {'id': doc_id, 'data': existing}
+        response = requests.post(url, json=body)
+
+        if response.status_code in (200, 201):
+            print(f"Successfully updated document: {doc_id}")
+        else:
+            raise RuntimeError(
+                f"Failed to update document: {response.status_code}, "
+                f"{response.text}"
+            )
+
+    def get_documents_by_status(self, status):
+        all_docs = self.get_all_document()
+        if not all_docs:
+            return []
+        status_val = status.value if hasattr(status, 'value') else status
+        filtered = [
+            d for d in all_docs if d.get('status') == status_val
+        ]
+        # FIFO sort by created_at ASC
+        filtered.sort(key=lambda d: d.get('created_at', ''))
+        return filtered
+
+    def get_oldest_by_status(self, status):
+        docs = self.get_documents_by_status(status)
+        return docs[0] if docs else None
+
+    def get_oldest_by_statuses(self, statuses):
+        all_docs = self.get_all_document()
+        if not all_docs:
             return None
+        status_vals = [
+            s.value if hasattr(s, 'value') else s for s in statuses
+        ]
+        filtered = [
+            d for d in all_docs if d.get('status') in status_vals
+        ]
+        if not filtered:
+            return None
+        filtered.sort(key=lambda d: d.get('created_at', ''))
+        return filtered[0]
 
-    def compare_create_time(self, all_documents):
-        earliest_create_time = None
-        earliest_image_name = None
-        for document in all_documents:
-            create_time = document.get('created_at')
-            if earliest_create_time is None:
-                earliest_create_time = create_time
-                earliest_image_name = document.get('image_name')
-            else:
-                if create_time < earliest_create_time:
-                    earliest_create_time = create_time
-                    earliest_image_name = document.get('image_name')
-        print(earliest_image_name)
-        return earliest_image_name
-
+    def get_documents_by_status_and_user(self, status, field, user_id):
+        all_docs = self.get_all_document()
+        if not all_docs:
+            return []
+        status_val = status.value if hasattr(status, 'value') else status
+        filtered = [
+            d for d in all_docs
+            if d.get('status') == status_val and d.get(field) == user_id
+        ]
+        filtered.sort(key=lambda d: d.get('created_at', ''))
+        return filtered
 
 if __name__ == '__main__':
-    db_manager = DatabaseManager()
-    # for i in range(0, 300):
-    #     db_manager.create_document(f'test_image_{i}.jpg')
-    # db_manager.delete_document('test_image.jpg')
-    start_time = time.time()
-    all_documents = db_manager.get_all_document()
-    db_manager.compare_create_time(all_documents)
-    end_time = time.time()
-    print(f"Time taken: {end_time - start_time}")
-
+    db = DatabaseManager()
+    for i in range(1, 700):
+        db.delete_document(f"test_image_{i}.jpg")
