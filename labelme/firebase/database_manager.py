@@ -160,6 +160,36 @@ class DatabaseManager:
         filtered.sort(key=lambda d: d.get('createdAt', ''))
         return filtered[0]
 
+    def get_candidates_by_statuses(self, statuses):
+        all_docs = self.get_all_document()
+        if not all_docs:
+            return []
+        status_vals = [
+            s.value if hasattr(s, 'value') else s for s in statuses
+        ]
+        filtered = [
+            d for d in all_docs if d.get('status') in status_vals
+        ]
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
+        return filtered
+
+    def get_candidates_by_statuses_excluding_user(
+        self, statuses, exclude_field, exclude_user_id,
+    ):
+        all_docs = self.get_all_document()
+        if not all_docs:
+            return []
+        status_vals = [
+            s.value if hasattr(s, 'value') else s for s in statuses
+        ]
+        filtered = [
+            d for d in all_docs
+            if d.get('status') in status_vals
+            and d.get(exclude_field) != exclude_user_id
+        ]
+        filtered.sort(key=lambda d: d.get('createdAt', ''))
+        return filtered
+
     def get_documents_by_status_and_user(self, status, field, user_id):
         all_docs = self.get_all_document()
         if not all_docs:

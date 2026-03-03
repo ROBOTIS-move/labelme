@@ -3,6 +3,7 @@
 # Authors: Sunghun Jung
 
 import os
+import time
 import datetime
 
 from qtpy.QtCore import QThread, Signal
@@ -52,98 +53,126 @@ class LoadTaskWorker(FirebaseWorker):
         self.db = DatabaseManager()
         self.downloader = ImageDownload()
 
+    MAX_CLAIM_RETRIES = 3
+    VERIFY_DELAY = 0.3
+
     def execute(self):
         os.makedirs(self.processing_dir, exist_ok=True)
 
-        # Get source statuses from mode if not explicitly provided
         statuses = self.source_statuses
         if statuses is None:
             statuses = LOAD_SOURCE_STATUSES.get(self.mode, [])
 
-        # Filter by user if user_filter_field specified
-        doc = None
+        candidates = self._get_candidates(statuses)
+        if not candidates:
+            return {'found': False}
+
+        user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
+        next_status_map = LOAD_NEXT_STATUS.get(self.mode, {})
+
+        # Retry loop: try up to MAX_CLAIM_RETRIES candidates
+        for doc in candidates[:self.MAX_CLAIM_RETRIES]:
+            source_status_val = doc.get('status', '')
+            source_status = None
+            for s in TaskStatus:
+                if s.value == source_status_val:
+                    source_status = s
+                    break
+            if source_status is None:
+                continue
+
+            next_status = next_status_map.get(source_status)
+            if next_status is None:
+                continue
+
+            claimed = self._try_claim_and_verify(
+                doc, user_field, next_status,
+            )
+            if not claimed:
+                continue
+
+            return self._download_task(
+                doc, next_status,
+            )
+
+        return {'found': False}
+
+    def _get_candidates(self, statuses):
         if self.user_filter_field:
+            candidates = []
             for status in statuses:
                 docs = self.db.get_documents_by_status_and_user(
-                    status, self.user_filter_field, self.user_id
+                    status, self.user_filter_field, self.user_id,
                 )
-                if docs:
-                    doc = docs[0]
-                    break
-        else:
-            if self.mode == 'review':
-                doc = self.db.get_oldest_by_statuses_excluding_user(
-                    statuses, 'workerId', self.user_id,
-                )
-            elif len(statuses) == 1:
-                doc = self.db.get_oldest_by_status(statuses[0])
-            else:
-                doc = self.db.get_oldest_by_statuses(statuses)
+                candidates.extend(docs)
+            return candidates
 
-        if not doc:
-            return {'found': False}
+        if self.mode == 'review':
+            return self.db.get_candidates_by_statuses_excluding_user(
+                statuses, 'workerId', self.user_id,
+            )
 
+        return self.db.get_candidates_by_statuses(statuses)
+
+    def _try_claim_and_verify(self, doc, user_field, next_status):
         doc_id = doc.get('imageName', '')
-        source_status_val = doc.get('status', '')
-
-        # Determine source TaskStatus enum
-        source_status = None
-        for s in TaskStatus:
-            if s.value == source_status_val:
-                source_status = s
-                break
-
-        if source_status is None:
-            return {'found': False}
-
-        # Determine next status
-        next_status_map = LOAD_NEXT_STATUS.get(self.mode, {})
-        next_status = next_status_map.get(source_status)
-        if next_status is None:
-            return {'found': False}
-
-        # Update document status
-        user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        update_data = {
+        claim_data = {
             'status': next_status.value,
             'assignedAt': now_str,
             user_field: self.user_id,
         }
-        self.db.update_document(doc_id, update_data)
+        # Pass shallow copy to skip internal GET
+        self.db.update_document(
+            doc_id, claim_data, existing_doc=dict(doc),
+        )
 
-        # Download files to processing_dir
+        time.sleep(self.VERIFY_DELAY)
+
+        # Verify ownership
+        try:
+            all_docs = self.db.get_all_document()
+        except Exception:
+            return False
+
+        for d in all_docs:
+            if d.get('imageName') == doc_id:
+                return d.get(user_field) == self.user_id
+        # Document disappeared
+        return False
+
+    def _download_task(self, doc, next_status):
+        doc_id = doc.get('imageName', '')
         basename = os.path.splitext(doc_id)[0]
         downloads = {}
 
         img_path = doc.get('storageImagePath', '')
         if img_path:
             downloads[img_path] = os.path.join(
-                self.processing_dir, os.path.basename(img_path)
+                self.processing_dir, os.path.basename(img_path),
             )
 
         json_path = doc.get('storageJsonPath', '')
         if json_path:
             downloads[json_path] = os.path.join(
-                self.processing_dir, f"{basename}.json"
+                self.processing_dir, f"{basename}.json",
             )
 
         encrypt_path = doc.get('storageEncryptPath', '')
         if encrypt_path:
             downloads[encrypt_path] = os.path.join(
-                self.processing_dir, f"{basename}_encrypt.bin"
+                self.processing_dir, f"{basename}_encrypt.bin",
             )
 
         comment_path = doc.get('storageCommentPath', '')
         if comment_path:
             downloads[comment_path] = os.path.join(
-                self.processing_dir, f"{basename}_comments.json"
+                self.processing_dir, f"{basename}_comments.json",
             )
 
         if downloads:
             self.downloader.download_files(downloads)
 
-        # Determine local image path
         local_image_path = ''
         if img_path:
             local_image_path = downloads[img_path]
