@@ -50,6 +50,24 @@ from labelme.widgets import DiscardDialog
 from labelme.widgets import TaskInfoWidget
 from labelme.widgets import PostponedListDialog
 from labelme.utils.encrypt_cache import EncryptCache
+from labelme.firebase.constants import (
+    TaskStatus,
+    StoragePath,
+    STATUS_TRANSITIONS,
+    USER_FIELD_MAP,
+)
+from labelme.firebase.database_manager import DatabaseManager
+from labelme.firebase.image_manager import ImageUpload, ImageDownload
+from labelme.firebase.workers import (
+    LoadTaskWorker,
+    SubmitTaskWorker,
+    PostponeTaskWorker,
+    LoadPostponeWorker,
+    RestorePostponeWorker,
+    DropTaskWorker,
+    DiscardTaskWorker,
+    ReadyGtWorker,
+)
 
 # FIXME
 # - [medium] Set max zoom value to something big enough for FitWidth/Window
@@ -232,6 +250,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.is_cloud_native_mode = False  # Changed to True upon successful login
         self.current_user_id = None
         self.current_mode = None  # 'labeling', 'review', 'final_review'
+
+        # Firebase integration
+        self.db_manager = DatabaseManager()
+        self.image_uploader = ImageUpload()
+        self.image_downloader = ImageDownload()
+        self.current_doc_id = None
+        self.current_task_status = None
+        self.current_document = None
+        self._active_worker = None
 
         # Cloud-Native: Work directory setup (Improved to be configurable)
         # TODO: Improve to allow user to configure path via QSettings
@@ -693,12 +720,30 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
 
+        loadModifyTask = action(
+            self.tr("Load Modify"),
+            self.loadModifyTaskAction,
+            None,
+            "open",
+            self.tr("Load a task that needs modification"),
+            enabled=True,
+        )
+
         loadPostponeTask = action(
             self.tr("Load Postpone"),
             self.loadPostponeTaskAction,
             None,
             "undo",
             self.tr("Load a postponed task"),
+            enabled=True,
+        )
+
+        loadReadyGtTask = action(
+            self.tr("Load Ready GT"),
+            self.loadReadyGtTaskAction,
+            None,
+            "open",
+            self.tr("Load a ready GT task for final processing"),
             enabled=True,
         )
 
@@ -923,7 +968,9 @@ class MainWindow(QtWidgets.QMainWindow):
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             # Cloud-Native Actions
             loadTask=loadTask,
+            loadModifyTask=loadModifyTask,
             loadPostponeTask=loadPostponeTask,
+            loadReadyGtTask=loadReadyGtTask,
             submitTask=submitTask,
             postponeTask=postponeTask,
             dropTask=dropTask,
@@ -1013,7 +1060,9 @@ class MainWindow(QtWidgets.QMainWindow):
             (
                 # Cloud-Native Actions (Main Menu)
                 loadTask,
+                loadModifyTask,
                 loadPostponeTask,
+                loadReadyGtTask,
                 submitTask,
                 postponeTask,
                 dropTask,
@@ -1108,7 +1157,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Menu buttons on Left (Cloud-Native version)
         self.actions.tool = (
             loadTask,
+            loadModifyTask,
             loadPostponeTask,
+            loadReadyGtTask,
             submitTask,
             None,
             createMode,
@@ -2860,18 +2911,28 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.information(
                     self,
                     "Restore Task",
-                    f"Work in progress found.\nImage: {image_filename}\nMode: {saved_mode}"
+                    f"Work in progress found.\n"
+                    f"Image: {image_filename}\nMode: {saved_mode}"
                 )
 
                 # Set to saved mode
                 self.current_mode = saved_mode
-                logger.info(f"Session restored: mode={saved_mode}, image={image_filename}")
+                logger.info(
+                    f"Session restored: mode={saved_mode}, "
+                    f"image={image_filename}"
+                )
+
+                # Restore Firebase state
+                self.current_doc_id = session_data.get("doc_id")
+                self.current_task_status = session_data.get("task_status")
 
                 # Apply mode settings
                 self._applyModeSettings()
 
                 # Find and load image from processing directory
-                image_path = os.path.join(self.processing_dir, image_filename)
+                image_path = os.path.join(
+                    self.processing_dir, image_filename
+                )
                 if os.path.exists(image_path):
                     self.loadFile(image_path)
                 else:
@@ -2936,6 +2997,36 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'comment_widget') and self.comment_widget:
             self.comment_widget.set_user_id(self.current_user_id)
 
+        # Button visibility per mode
+        is_worker = (
+            self.current_mode == ModeSelectionDialog.MODE_LABELING
+        )
+        is_reviewer = (
+            self.current_mode == ModeSelectionDialog.MODE_REVIEW
+        )
+        is_supervisor = (
+            self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW
+        )
+
+        # Load Task: all modes
+        self.actions.loadTask.setEnabled(True)
+        # Load Modify: worker only
+        self.actions.loadModifyTask.setVisible(is_worker)
+        self.actions.loadModifyTask.setEnabled(is_worker)
+        # Load Postpone: worker only
+        self.actions.loadPostponeTask.setVisible(is_worker)
+        self.actions.loadPostponeTask.setEnabled(is_worker)
+        # Load Ready GT: supervisor only
+        self.actions.loadReadyGtTask.setVisible(is_supervisor)
+        self.actions.loadReadyGtTask.setEnabled(is_supervisor)
+        # Submit: all modes (enabled when image loaded)
+        # Postpone: worker only
+        self.actions.postponeTask.setVisible(is_worker)
+        # Drop: worker only
+        self.actions.dropTask.setVisible(is_worker)
+        # Discard: reviewer + supervisor
+        self.actions.discardTask.setVisible(is_reviewer or is_supervisor)
+
     def changeModeAction(self):
         # Check if an image is currently loaded
         if self.filename is not None:
@@ -2960,54 +3051,117 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadTaskAction(self):
         logger.info("Load Task action triggered")
-        # TODO: Implement actual task load logic upon Firebase integration
-        # Limit to processing_dir until Firebase integration to maintain consistency with session restoration
-        self.openDirDialog(dirpath=self.processing_dir)
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Load",
+                "An image is already loaded. Submit or drop first."
+            )
+            return
+
+        self._set_firebase_loading(True, "Loading task from Firebase...")
+        worker = LoadTaskWorker(
+            mode=self.current_mode,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            parent=self,
+        )
+        worker.finished.connect(self._on_load_task_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    def loadModifyTaskAction(self):
+        logger.info("Load Modify action triggered")
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Load",
+                "An image is already loaded. Submit or drop first."
+            )
+            return
+
+        self._set_firebase_loading(True, "Loading modify task...")
+        worker = LoadTaskWorker(
+            mode=self.current_mode,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            source_statuses=[TaskStatus.MODIFY],
+            user_filter_field='worker_id',
+            parent=self,
+        )
+        worker.finished.connect(self._on_load_task_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
     def loadPostponeTaskAction(self):
         logger.info("Load Postpone action triggered")
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Load",
+                "An image is already loaded. Submit or drop first."
+            )
+            return
 
-        # Show PostponedListDialog
-        dialog = PostponedListDialog(
-            self.postpone_dir,
-            self.current_user_id,
-            self
+        self._set_firebase_loading(True, "Loading postponed tasks...")
+        worker = LoadPostponeWorker(
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            parent=self,
         )
+        worker.finished.connect(self._on_load_postpone_list_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
-        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+    def loadReadyGtTaskAction(self):
+        logger.info("Load Ready GT action triggered")
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Load",
+                "An image is already loaded. Submit or drop first."
+            )
             return
 
-        selected_image = dialog.get_selected_image()
-        if not selected_image:
-            return
-
-        # Restore files from user-specific postpone directory
-        self._restore_postponed_files(selected_image)
+        self._set_firebase_loading(True, "Loading Ready GT task...")
+        worker = LoadTaskWorker(
+            mode=self.current_mode,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            source_statuses=[TaskStatus.READY_GT],
+            parent=self,
+        )
+        worker.finished.connect(self._on_load_ready_gt_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
     def submitTaskAction(self):
         logger.info("Submit Task action triggered")
 
-        # Check if image is loaded
         if self.filename is None:
             QtWidgets.QMessageBox.warning(
-                self,
-                "Cannot Submit",
-                "No image loaded."
+                self, "Cannot Submit", "No image loaded."
             )
             return
 
-        # Conditional popup: Show different message based on data existence
+        if not self.current_doc_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Submit",
+                "No Firebase document associated with this task."
+            )
+            return
+
+        # Confirmation dialog
         if not len(self.labelList):
-            # Case 1: Empty data
             reply = QtWidgets.QMessageBox.question(
                 self,
                 "Confirm Submission",
-                "No annotations have been made on this image.\nDo you still want to submit?",
+                "No annotations have been made on this image.\n"
+                "Do you still want to submit?",
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                 QtWidgets.QMessageBox.No
             )
         else:
-            # Case 2: Work data exists
             reply = QtWidgets.QMessageBox.question(
                 self,
                 "Confirm Submission",
@@ -3016,11 +3170,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.No
             )
 
-
         if reply == QtWidgets.QMessageBox.No:
             return
 
-        # Save current file (Used temporarily until Firebase integration)
+        # Save file locally first
         self.saveFile()
 
         # Delete load time file
@@ -3032,62 +3185,76 @@ class MainWindow(QtWidgets.QMainWindow):
                 except Exception as e:
                     logger.warning(f"Failed to delete load time file: {e}")
 
-        # TODO: Replace with actual upload logic upon Firebase integration
-        QtWidgets.QMessageBox.information(
-            self,
-            "Submitted",
-            "Task submitted successfully.\n(Will be uploaded to cloud after Firebase integration)"
+        basename = os.path.splitext(os.path.basename(self.filename))[0]
+
+        self._set_firebase_loading(True, "Uploading and submitting task...")
+        worker = SubmitTaskWorker(
+            doc_id=self.current_doc_id,
+            current_status=self.current_task_status,
+            processing_dir=self.processing_dir,
+            basename=basename,
+            mode=self.current_mode,
+            parent=self,
         )
-
-        # Delete session info
-        self._clear_session_info()
-
-        # Reset state (unload image) + UI cleanup
-        self.resetState()
-        self.setClean()
-        self.toggleActions(False)
-        self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
+        worker.finished.connect(self._on_submit_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
     def postponeTaskAction(self):
         logger.info("Postpone Task action triggered")
 
+        if not self.current_doc_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Postpone",
+                "No Firebase document associated with this task."
+            )
+            return
+
         reply = QtWidgets.QMessageBox.question(
             self,
             "Postpone Task",
-            "Do you want to postpone this task?\nYou can resume it later.",
+            "Do you want to postpone this task?\n"
+            "You can resume it later.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            # Save current file
-            self.saveFile()
+        if reply != QtWidgets.QMessageBox.Yes:
+            return
 
-            # Move files with same basename to postpone directory
-            if self.filename:
-                self._move_files_to_postpone(self.filename)
+        # Save current file
+        self.saveFile()
+        basename = os.path.splitext(os.path.basename(self.filename))[0]
 
-            # TODO: Change status to 'postponed' upon Firebase integration
-
-            self._clear_session_info()
-            self.resetState()
-
-            QtWidgets.QMessageBox.information(
-                self,
-                "Postponed",
-                "Task postponed.\n(Status will be updated after Firebase integration)"
-            )
+        self._set_firebase_loading(True, "Postponing task...")
+        worker = PostponeTaskWorker(
+            doc_id=self.current_doc_id,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            basename=basename,
+            parent=self,
+        )
+        worker.finished.connect(self._on_postpone_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
     def dropTaskAction(self):
         logger.info("Drop Task action triggered")
 
-        # Check Drop count limit
+        if not self.current_doc_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Drop",
+                "No Firebase document associated with this task."
+            )
+            return
+
+        # Check drop count limit
         drop_count = self._check_drop_count()
         if drop_count >= 3:
             QtWidgets.QMessageBox.warning(
-                self,
-                "Cannot Drop Task",
+                self, "Cannot Drop Task",
                 "You have exceeded the daily drop limit."
             )
             return
@@ -3095,51 +3262,287 @@ class MainWindow(QtWidgets.QMainWindow):
         reply = QtWidgets.QMessageBox.warning(
             self,
             "Drop Task",
-            "Do you want to drop this task?\nYour work will not be saved and the task will be returned to the pool.",
+            "Do you want to drop this task?\n"
+            "Your work will not be saved and the task "
+            "will be returned to the pool.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No
         )
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            # TODO: Revert status to 'ready' and increment drop_count upon Firebase integration
-            self._clear_session_info()
-            
-            # Reset state (unload image) + UI cleanup
-            self.resetState()
-            self.setClean()
-            self.toggleActions(False)
-            self.canvas.setEnabled(False)
-            self.actions.saveAs.setEnabled(False)
-            
-            QtWidgets.QMessageBox.information(
-                self,
-                "Dropped",
-                "Task dropped.\n(Will be returned to task pool after Firebase integration)"
-            )
+        if reply != QtWidgets.QMessageBox.Yes:
+            return
 
+        self._set_firebase_loading(True, "Dropping task...")
+        worker = DropTaskWorker(
+            doc_id=self.current_doc_id,
+            mode=self.current_mode,
+            parent=self,
+        )
+        worker.finished.connect(self._on_drop_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
 
     def discardTaskAction(self):
         logger.info("Discard Task action triggered")
 
-        discard_dialog = DiscardDialog(self)
-        if discard_dialog.exec_() == QtWidgets.QDialog.Accepted:
-            reason = discard_dialog.get_discard_reason()
-            logger.info(f"Discard reason: {reason}")
-
-            # TODO: Change status to 'discarded' and save reason upon Firebase integration
-            self._clear_session_info()
-            
-            # Reset state (unload image) + UI cleanup
-            self.resetState()
-            self.setClean()
-            self.toggleActions(False)
-            self.canvas.setEnabled(False)
-            self.actions.saveAs.setEnabled(False)
-            QtWidgets.QMessageBox.information(
-                self,
-                "Discarded",
-                "Task discarded.\n(Discard reason will be recorded after Firebase integration)"
+        if not self.current_doc_id:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Discard",
+                "No Firebase document associated with this task."
             )
+            return
+
+        discard_dialog = DiscardDialog(self)
+        if discard_dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        reason = discard_dialog.get_discard_reason()
+        logger.info(f"Discard reason: {reason}")
+
+        self._set_firebase_loading(True, "Discarding task...")
+        worker = DiscardTaskWorker(
+            doc_id=self.current_doc_id,
+            discard_reason=reason,
+            parent=self,
+        )
+        worker.finished.connect(self._on_discard_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    # ============ Firebase Callback Handlers ============
+
+    def _on_load_task_finished(self, result):
+        self._set_firebase_loading(False)
+
+        if not result.get('found'):
+            QtWidgets.QMessageBox.information(
+                self, "No Task Available",
+                "No tasks available for your current mode."
+            )
+            return
+
+        self.current_doc_id = result.get('doc_id')
+        self.current_task_status = result.get('next_status')
+        self.current_document = result.get('document')
+
+        local_image_path = result.get('local_image_path', '')
+        if local_image_path and os.path.exists(local_image_path):
+            self.loadFile(local_image_path)
+            logger.info(
+                f"Task loaded: doc_id={self.current_doc_id}, "
+                f"status={self.current_task_status}"
+            )
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Load Failed",
+                "Downloaded image file not found."
+            )
+            self._reset_firebase_state()
+
+    def _on_load_postpone_list_finished(self, result):
+        self._set_firebase_loading(False)
+
+        if not result.get('found'):
+            QtWidgets.QMessageBox.information(
+                self, "No Postponed Tasks",
+                "No postponed tasks found."
+            )
+            return
+
+        documents = result.get('documents', [])
+        image_names = [d.get('image_name', '') for d in documents]
+
+        # Show selection dialog
+        item, ok = QtWidgets.QInputDialog.getItem(
+            self, "Select Postponed Task",
+            "Select a task to restore:",
+            image_names, 0, False
+        )
+        if not ok or not item:
+            return
+
+        # Find matching document
+        selected_doc = None
+        for d in documents:
+            if d.get('image_name') == item:
+                selected_doc = d
+                break
+
+        if not selected_doc:
+            return
+
+        # Restore postponed task
+        self._set_firebase_loading(True, "Restoring postponed task...")
+        worker = RestorePostponeWorker(
+            doc=selected_doc,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            parent=self,
+        )
+        worker.finished.connect(self._on_restore_postpone_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    def _on_restore_postpone_finished(self, result):
+        self._set_firebase_loading(False)
+
+        if not result.get('found'):
+            QtWidgets.QMessageBox.warning(
+                self, "Restore Failed",
+                "Failed to restore postponed task."
+            )
+            return
+
+        self.current_doc_id = result.get('doc_id')
+        self.current_task_status = TaskStatus.PROCESSING.value
+        self.current_document = result.get('document')
+
+        local_image_path = result.get('local_image_path', '')
+        if local_image_path and os.path.exists(local_image_path):
+            self.loadFile(local_image_path)
+            logger.info(f"Postponed task restored: {self.current_doc_id}")
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Load Failed",
+                "Restored image file not found."
+            )
+            self._reset_firebase_state()
+
+    def _on_load_ready_gt_finished(self, result):
+        self._set_firebase_loading(False)
+
+        if not result.get('found'):
+            QtWidgets.QMessageBox.information(
+                self, "No Ready GT Task",
+                "No Ready GT tasks available."
+            )
+            return
+
+        self.current_doc_id = result.get('doc_id')
+        self.current_task_status = result.get('next_status')
+        self.current_document = result.get('document')
+
+        local_image_path = result.get('local_image_path', '')
+        if local_image_path and os.path.exists(local_image_path):
+            self.loadFile(local_image_path)
+            logger.info(
+                f"Ready GT task loaded: doc_id={self.current_doc_id}"
+            )
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Load Failed",
+                "Downloaded image file not found."
+            )
+            self._reset_firebase_state()
+
+    def _on_submit_finished(self, result):
+        self._set_firebase_loading(False)
+
+        QtWidgets.QMessageBox.information(
+            self, "Submitted",
+            f"Task submitted successfully.\n"
+            f"Status: {result.get('next_status', 'unknown')}"
+        )
+
+        self._clear_session_info()
+        self._cleanup_processing_files()
+        self._reset_firebase_state()
+        self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
+
+    def _on_postpone_finished(self, result):
+        self._set_firebase_loading(False)
+
+        QtWidgets.QMessageBox.information(
+            self, "Postponed", "Task postponed successfully."
+        )
+
+        self._clear_session_info()
+        self._cleanup_processing_files()
+        self._reset_firebase_state()
+        self.resetState()
+
+    def _on_drop_finished(self, result):
+        self._set_firebase_loading(False)
+
+        self._clear_session_info()
+        self._cleanup_processing_files()
+        self._reset_firebase_state()
+        self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
+
+        QtWidgets.QMessageBox.information(
+            self, "Dropped",
+            "Task dropped and returned to task pool."
+        )
+
+    def _on_discard_finished(self, result):
+        self._set_firebase_loading(False)
+
+        self._clear_session_info()
+        self._cleanup_processing_files()
+        self._reset_firebase_state()
+        self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
+
+        QtWidgets.QMessageBox.information(
+            self, "Discarded",
+            "Task discarded successfully."
+        )
+
+    # ============ Firebase Helper Methods ============
+
+    def _set_firebase_loading(self, loading, message=""):
+        if loading:
+            QtWidgets.QApplication.setOverrideCursor(
+                QtGui.QCursor(Qt.WaitCursor)
+            )
+            self.statusBar().showMessage(message)
+            # Disable load/submit buttons during operation
+            self.actions.loadTask.setEnabled(False)
+            self.actions.submitTask.setEnabled(False)
+        else:
+            QtWidgets.QApplication.restoreOverrideCursor()
+            self.statusBar().showMessage("")
+            self.actions.loadTask.setEnabled(True)
+
+    def _on_firebase_error(self, msg):
+        self._set_firebase_loading(False)
+        logger.error(f"Firebase error: {msg}")
+        QtWidgets.QMessageBox.critical(
+            self, "Firebase Error",
+            f"An error occurred:\n{msg}\n\nPlease try again."
+        )
+
+    def _reset_firebase_state(self):
+        self.current_doc_id = None
+        self.current_task_status = None
+        self.current_document = None
+        self._active_worker = None
+
+    def _cleanup_processing_files(self):
+        if not self.filename:
+            return
+        basename = os.path.splitext(os.path.basename(self.filename))[0]
+        pattern = os.path.join(self.processing_dir, f"{basename}*")
+        for f in glob.glob(pattern):
+            try:
+                os.remove(f)
+                logger.info(f"Cleaned up: {f}")
+            except Exception as e:
+                logger.warning(f"Failed to cleanup {f}: {e}")
 
     # ============ Timer Methods ============
 
@@ -3221,10 +3624,12 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         session_data = {
-            "image_filename": os.path.basename(image_filename),  # Save only filename
+            "image_filename": os.path.basename(image_filename),
             "load_time": datetime.datetime.now().isoformat(),
             "mode": self.current_mode,
-            "user_id": self.current_user_id
+            "user_id": self.current_user_id,
+            "doc_id": self.current_doc_id,
+            "task_status": self.current_task_status,
         }
 
         try:
