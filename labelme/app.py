@@ -3091,6 +3091,9 @@ class MainWindow(QtWidgets.QMainWindow):
             is_5_generation=self.current_user_data.get(
                 '5-generation', False
             ),
+            is_supervisor=self.current_user_data.get(
+                'supervisor', False
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_load_task_finished)
@@ -3116,6 +3119,9 @@ class MainWindow(QtWidgets.QMainWindow):
             user_filter_field='workerId',
             is_5_generation=self.current_user_data.get(
                 '5-generation', False
+            ),
+            is_supervisor=self.current_user_data.get(
+                'supervisor', False
             ),
             parent=self,
         )
@@ -3161,6 +3167,9 @@ class MainWindow(QtWidgets.QMainWindow):
             source_statuses=[TaskStatus.READY_GT],
             is_5_generation=self.current_user_data.get(
                 '5-generation', False
+            ),
+            is_supervisor=self.current_user_data.get(
+                'supervisor', False
             ),
             parent=self,
         )

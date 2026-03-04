@@ -43,7 +43,7 @@ class LoadTaskWorker(FirebaseWorker):
     def __init__(
         self, mode, user_id, processing_dir,
         source_statuses=None, user_filter_field=None,
-        is_5_generation=False, parent=None,
+        is_5_generation=False, is_supervisor=False, parent=None,
     ):
         super().__init__(parent)
         self.mode = mode
@@ -52,6 +52,7 @@ class LoadTaskWorker(FirebaseWorker):
         self.source_statuses = source_statuses
         self.user_filter_field = user_filter_field
         self.is_5_generation = is_5_generation
+        self.is_supervisor = is_supervisor
         self.db = DatabaseManager()
         self.downloader = ImageDownload()
 
@@ -122,6 +123,8 @@ class LoadTaskWorker(FirebaseWorker):
         return self._filter_by_class_type(candidates)
 
     def _filter_by_class_type(self, candidates):
+        if self.is_supervisor:
+            return candidates
         if self.is_5_generation:
             return [
                 c for c in candidates
