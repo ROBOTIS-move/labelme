@@ -66,7 +66,6 @@ from labelme.firebase.workers import (
     RestorePostponeWorker,
     DropTaskWorker,
     DiscardTaskWorker,
-    ReadyGtWorker,
 )
 
 # FIXME
@@ -739,15 +738,6 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
 
-        loadReadyGtTask = action(
-            self.tr("Load Ready GT"),
-            self.loadReadyGtTaskAction,
-            None,
-            "open",
-            self.tr("Load a ready GT task for final processing"),
-            enabled=True,
-        )
-
         submitTask = action(
             self.tr("Submit"),
             self.submitTaskAction,
@@ -971,7 +961,6 @@ class MainWindow(QtWidgets.QMainWindow):
             loadTask=loadTask,
             loadModifyTask=loadModifyTask,
             loadPostponeTask=loadPostponeTask,
-            loadReadyGtTask=loadReadyGtTask,
             submitTask=submitTask,
             postponeTask=postponeTask,
             dropTask=dropTask,
@@ -1063,7 +1052,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 loadTask,
                 loadModifyTask,
                 loadPostponeTask,
-                loadReadyGtTask,
                 submitTask,
                 postponeTask,
                 dropTask,
@@ -1160,7 +1148,6 @@ class MainWindow(QtWidgets.QMainWindow):
             loadTask,
             loadModifyTask,
             loadPostponeTask,
-            loadReadyGtTask,
             submitTask,
             None,
             createMode,
@@ -1370,8 +1357,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.loadModifyTask.setEnabled(not value)
         if hasattr(self.actions, 'loadPostponeTask'):
             self.actions.loadPostponeTask.setEnabled(not value)
-        if hasattr(self.actions, 'loadReadyGtTask'):
-            self.actions.loadReadyGtTask.setEnabled(not value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -3041,9 +3026,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Load Postpone: worker only
         self.actions.loadPostponeTask.setVisible(is_worker)
         self.actions.loadPostponeTask.setEnabled(is_worker)
-        # Load Ready GT: supervisor only
-        self.actions.loadReadyGtTask.setVisible(is_supervisor)
-        self.actions.loadReadyGtTask.setEnabled(is_supervisor)
         # Submit: all modes (enabled when image loaded)
         # Postpone: worker only
         self.actions.postponeTask.setVisible(is_worker)
@@ -3149,34 +3131,6 @@ class MainWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         worker.finished.connect(self._on_load_postpone_list_finished)
-        worker.error.connect(self._on_firebase_error)
-        self._active_worker = worker
-        worker.start()
-
-    def loadReadyGtTaskAction(self):
-        logger.info("Load Ready GT action triggered")
-        if self.filename is not None:
-            QtWidgets.QMessageBox.warning(
-                self, "Cannot Load",
-                "An image is already loaded. Submit or drop first."
-            )
-            return
-
-        self._set_firebase_loading(True, "Loading Ready GT task...")
-        worker = LoadTaskWorker(
-            mode=self.current_mode,
-            user_id=self.current_user_id,
-            processing_dir=self.processing_dir,
-            source_statuses=[TaskStatus.READY_GT],
-            is_5_generation=self.current_user_data.get(
-                '5-generation', False
-            ),
-            is_supervisor=self.current_user_data.get(
-                'supervisor', False
-            ),
-            parent=self,
-        )
-        worker.finished.connect(self._on_load_ready_gt_finished)
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
@@ -3499,33 +3453,6 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             self._reset_firebase_state()
 
-    def _on_load_ready_gt_finished(self, result):
-        self._set_firebase_loading(False)
-
-        if not result.get('found'):
-            QtWidgets.QMessageBox.information(
-                self, "No Ready GT Task",
-                "No Ready GT tasks available."
-            )
-            return
-
-        self.current_doc_id = result.get('doc_id')
-        self.current_task_status = result.get('next_status')
-        self.current_document = result.get('document')
-
-        local_image_path = result.get('local_image_path', '')
-        if local_image_path and os.path.exists(local_image_path):
-            self.loadFile(local_image_path)
-            logger.info(
-                f"Ready GT task loaded: doc_id={self.current_doc_id}"
-            )
-        else:
-            QtWidgets.QMessageBox.warning(
-                self, "Load Failed",
-                "Downloaded image file not found."
-            )
-            self._reset_firebase_state()
-
     def _on_submit_finished(self, result):
         self._set_firebase_loading(False)
 
@@ -3610,7 +3537,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.loadTask.setEnabled(False)
             self.actions.loadModifyTask.setEnabled(False)
             self.actions.loadPostponeTask.setEnabled(False)
-            self.actions.loadReadyGtTask.setEnabled(False)
             self.actions.submitTask.setEnabled(False)
         else:
             QtWidgets.QApplication.restoreOverrideCursor()
@@ -3618,7 +3544,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.loadTask.setEnabled(True)
             self.actions.loadModifyTask.setEnabled(True)
             self.actions.loadPostponeTask.setEnabled(True)
-            self.actions.loadReadyGtTask.setEnabled(True)
 
     def _on_firebase_error(self, msg):
         self._set_firebase_loading(False)

@@ -583,25 +583,3 @@ class DiscardTaskWorker(FirebaseWorker):
             'updatedAt': now_str,
         })
         return {'doc_id': self.doc_id}
-
-
-class ReadyGtWorker(FirebaseWorker):
-    def __init__(self, doc_id, is_gt, discard_reason='', parent=None):
-        super().__init__(parent)
-        self.doc_id = doc_id
-        self.is_gt = is_gt
-        self.discard_reason = discard_reason
-        self.db = DatabaseManager()
-
-    def execute(self):
-        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.db.update_document(self.doc_id, {
-            'isGt': self.is_gt,
-            'discardReason': self.discard_reason,
-            'updatedAt': now_str,
-        })
-        self.db.delete_document(self.doc_id)
-        return {
-            'doc_id': self.doc_id,
-            'is_gt': self.is_gt,
-        }
