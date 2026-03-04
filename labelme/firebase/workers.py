@@ -233,7 +233,8 @@ class LoadTaskWorker(FirebaseWorker):
 class SubmitTaskWorker(FirebaseWorker):
     def __init__(
         self, doc_id, current_status, processing_dir,
-        basename, mode, user_id='', parent=None,
+        basename, mode, user_id='',
+        from_postpone=False, parent=None,
     ):
         super().__init__(parent)
         self.doc_id = doc_id
@@ -242,6 +243,7 @@ class SubmitTaskWorker(FirebaseWorker):
         self.basename = basename
         self.mode = mode
         self.user_id = user_id
+        self.from_postpone = from_postpone
         self.db = DatabaseManager()
         self.uploader = ImageUpload()
 
@@ -332,8 +334,8 @@ class SubmitTaskWorker(FirebaseWorker):
         update_data.update(storage_paths)
         self.db.update_document(self.doc_id, update_data)
 
-        # Cleanup postpone storage if user_id is set
-        if self.user_id:
+        # Cleanup postpone storage only when submitting a restored postpone task
+        if self.from_postpone and self.user_id:
             self._cleanup_postpone_storage()
 
         return {

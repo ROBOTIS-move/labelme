@@ -259,6 +259,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_task_status = None
         self.current_document = None
         self._active_worker = None
+        self._from_postpone = False
 
         # Cloud-Native: Work directory setup (Improved to be configurable)
         # TODO: Improve to allow user to configure path via QSettings
@@ -3187,6 +3188,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         basename = os.path.splitext(os.path.basename(self.filename))[0]
 
+        # Update encrypt cache before upload
+        encrypt_path = os.path.join(
+            self.processing_dir, f"{basename}_encrypt.bin"
+        )
+        json_path = os.path.join(
+            self.processing_dir, f"{basename}.json"
+        )
+        if os.path.exists(json_path):
+            self.encrypt.run_single(
+                encrypt_path, json_path,
+                worker_name=self.current_user_id,
+            )
+
         self._set_firebase_loading(True, "Uploading and submitting task...")
         worker = SubmitTaskWorker(
             doc_id=self.current_doc_id,
@@ -3195,6 +3209,7 @@ class MainWindow(QtWidgets.QMainWindow):
             basename=basename,
             mode=self.current_mode,
             user_id=self.current_user_id or '',
+            from_postpone=self._from_postpone,
             parent=self,
         )
         worker.finished.connect(self._on_submit_finished)
@@ -3436,6 +3451,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_doc_id = result.get('doc_id')
         self.current_task_status = TaskStatus.PROCESSING.value
         self.current_document = result.get('document')
+        self._from_postpone = True
 
         local_image_path = result.get('local_image_path', '')
         if local_image_path and os.path.exists(local_image_path):
@@ -3558,6 +3574,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_task_status = None
         self.current_document = None
         self._active_worker = None
+        self._from_postpone = False
 
     def _cleanup_processing_files(self):
         if not self.filename:
@@ -3616,7 +3633,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 logger.warning(f"Failed to write load time file: {e}")
 
         # Deadline = Load time + 48 hours
-        self.deadline = load_time + datetime.timedelta(hours=48)
+        self.deadline = load_time + datetime.timedelta(hours=24)
 
         # Start timer (Update every 1 second)
         self.deadline_timer.start(1000)
