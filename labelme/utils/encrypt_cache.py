@@ -34,6 +34,24 @@ class EncryptCache():
             self._update_yaml_contents(dir_path)
         self._encrypt_file()
 
+    def run_single(self, encrypt_path, json_path, worker_name=None):
+        if worker_name:
+            self.worker_name = worker_name
+        self.encrypt_path = encrypt_path
+        self.cache_path = encrypt_path.replace(
+            '_encrypt.bin', '_cache.yaml'
+        )
+
+        if self._check_bin_file():
+            self._decrypt_file()
+        else:
+            self._create_yaml_file()
+            self._encrypt_file()
+            return
+        if not self._check_same_worker():
+            self._update_yaml_from_json(json_path)
+        self._encrypt_file()
+
     def _extract_worker_name(self):
         name_file_path = get_worker_name_file_path()
         if os.path.exists(name_file_path):
@@ -56,6 +74,33 @@ class EncryptCache():
             return True
         self.prev_worker_name = prev_worker
         return False
+
+    def _update_yaml_from_json(self, json_path):
+        yaml_contents = self._read_yaml()
+        json_data = self._read_json(json_path)
+        shape_list = self._extract_shape_list(json_data)
+        if shape_list is not None:
+            img_name = json_data.get('imagePath', None)
+            img_data = yaml_contents.get(img_name, None)
+            if img_data is None:
+                yaml_contents[img_name] = [{
+                    'worker': self.prev_worker_name,
+                    'shapes': shape_list,
+                }]
+            else:
+                save_flag = False
+                for working_data in yaml_contents[img_name]:
+                    if working_data['worker'] == self.prev_worker_name:
+                        working_data['shapes'] = shape_list
+                        save_flag = True
+                        break
+                if not save_flag:
+                    yaml_contents[img_name].append({
+                        'worker': self.prev_worker_name,
+                        'shapes': shape_list,
+                    })
+        yaml_contents['prev_worker'] = self.worker_name
+        self._write_yaml(yaml_contents)
 
     def _update_yaml_contents(self, dir_path):
         yaml_contents = self._read_yaml()
