@@ -4,8 +4,6 @@
 
 import os
 import yaml
-import requests
-
 
 class ConfigLoader:
     def __init__(self):
@@ -20,20 +18,3 @@ class ConfigLoader:
         )
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
-
-    def get(self, key):
-        return self.config.get(key)
-
-
-class APIManager:
-    def request_post(self, url, body):
-        response = requests.post(url, json=body)
-        return response
-
-    def request_get(self, url):
-        response = requests.get(url)
-        return response
-
-    def request_delete(self, url):
-        response = requests.delete(url)
-        return response

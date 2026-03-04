@@ -32,12 +32,12 @@ class ImageManager:
 
 
 class ImageUpload(ImageManager):
-    def upload(self, file_path_list, storage_dir='images/'):
-        if storage_dir and not storage_dir.endswith('/'):
-            storage_dir += '/'
-        for file_path in file_path_list:
-            file_name = os.path.basename(file_path)
-            self.upload_single(file_path, f"{storage_dir}{file_name}")
+    # def upload(self, file_path_list, storage_dir='images/'):
+    #     if storage_dir and not storage_dir.endswith('/'):
+    #         storage_dir += '/'
+    #     for file_path in file_path_list:
+    #         file_name = os.path.basename(file_path)
+    #         self.upload_single(file_path, f"{storage_dir}{file_name}")
 
     def upload_single(self, local_path, storage_path):
         if not os.path.exists(local_path):
@@ -94,19 +94,19 @@ class ImageUpload(ImageManager):
 
 
 class ImageDownload(ImageManager):
-    def get_file_list(self):
-        url = f"{self.base_url}/files"
-        params = {'bucketName': self.bucket_name}
-
-        response = requests.get(url, params=params)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise RuntimeError(
-                f"Failed to get file list: {response.status_code}, "
-                f"{response.text}"
-            )
+    # def get_file_list(self):
+    #     url = f"{self.base_url}/files"
+    #     params = {'bucketName': self.bucket_name}
+    #
+    #     response = requests.get(url, params=params)
+    #
+    #     if response.status_code == 200:
+    #         return response.json()
+    #     else:
+    #         raise RuntimeError(
+    #             f"Failed to get file list: {response.status_code}, "
+    #             f"{response.text}"
+    #         )
 
     def download_single(self, storage_path, local_path):
         download_url = self._get_download_url(storage_path)
@@ -136,37 +136,6 @@ class ImageDownload(ImageManager):
             if storage_path:
                 self.download_single(storage_path, local_path)
 
-    def download_all_images(self, local_dir):
-        if not os.path.exists(local_dir):
-            os.makedirs(local_dir)
-
-        file_list = self.get_file_list()
-        if not file_list:
-            print("No files to download.")
-            return
-
-        for file_info in file_list:
-            if isinstance(file_info, str):
-                file_path = file_info
-            elif isinstance(file_info, dict):
-                file_path = (
-                    file_info.get('name')
-                    or file_info.get('path')
-                    or file_info.get('filePath')
-                )
-            else:
-                print(f"Unknown file info format: {file_info}")
-                continue
-
-            if not file_path:
-                continue
-
-            filename = os.path.basename(file_path)
-            local_path = os.path.join(local_dir, filename)
-            try:
-                self.download_single(file_path, local_path)
-            except Exception as e:
-                print(f"Error downloading {file_path}: {e}")
 
     def _get_download_url(self, file_path):
         url = f"{self.base_url}/download-url"

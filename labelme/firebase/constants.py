@@ -70,11 +70,6 @@ class StoragePath:
     COMMENT = 'comment'
 
     @staticmethod
-    def normal(folder, filename):
-        # e.g. "image/xxx.jpg"
-        return f"{folder}/{filename}"
-
-    @staticmethod
     def postpone(user_id, folder, filename):
         # e.g. "postpone/user1/image/xxx.jpg"
         return f"postpone/{user_id}/{folder}/{filename}"
