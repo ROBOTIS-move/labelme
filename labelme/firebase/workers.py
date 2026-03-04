@@ -42,7 +42,8 @@ class FirebaseWorker(QThread):
 class LoadTaskWorker(FirebaseWorker):
     def __init__(
         self, mode, user_id, processing_dir,
-        source_statuses=None, user_filter_field=None, parent=None,
+        source_statuses=None, user_filter_field=None,
+        is_5_generation=False, parent=None,
     ):
         super().__init__(parent)
         self.mode = mode
@@ -50,6 +51,7 @@ class LoadTaskWorker(FirebaseWorker):
         self.processing_dir = processing_dir
         self.source_statuses = source_statuses
         self.user_filter_field = user_filter_field
+        self.is_5_generation = is_5_generation
         self.db = DatabaseManager()
         self.downloader = ImageDownload()
 
@@ -106,14 +108,29 @@ class LoadTaskWorker(FirebaseWorker):
                     status, self.user_filter_field, self.user_id,
                 )
                 candidates.extend(docs)
-            return candidates
+            return self._filter_by_class_type(candidates)
 
         if self.mode == 'review':
-            return self.db.get_candidates_by_statuses_excluding_user(
-                statuses, 'workerId', self.user_id,
+            candidates = (
+                self.db.get_candidates_by_statuses_excluding_user(
+                    statuses, 'workerId', self.user_id,
+                )
             )
+            return self._filter_by_class_type(candidates)
 
-        return self.db.get_candidates_by_statuses(statuses)
+        candidates = self.db.get_candidates_by_statuses(statuses)
+        return self._filter_by_class_type(candidates)
+
+    def _filter_by_class_type(self, candidates):
+        if self.is_5_generation:
+            return [
+                c for c in candidates
+                if c.get('classType') == 'FrontViewSegmentation'
+            ]
+        return [
+            c for c in candidates
+            if c.get('classType') != 'FrontViewSegmentation'
+        ]
 
     def _try_claim_and_verify(self, doc, user_field, next_status):
         doc_id = doc.get('imageName', '')
@@ -123,10 +140,7 @@ class LoadTaskWorker(FirebaseWorker):
             'assignedAt': now_str,
             user_field: self.user_id,
         }
-        # Pass shallow copy to skip internal GET
-        self.db.update_document(
-            doc_id, claim_data, existing_doc=dict(doc),
-        )
+        self.db.update_document(doc_id, claim_data)
 
         time.sleep(self.VERIFY_DELAY)
 

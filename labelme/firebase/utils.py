@@ -12,6 +12,7 @@ class ConfigLoader:
         self.config = self._load_config()
         self.common_config = self.config.get('common')
         self.database_config = self.config.get('database')
+        self.user_config = self.config.get('user')
 
     def _load_config(self):
         config_path = os.path.join(

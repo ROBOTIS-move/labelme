@@ -249,6 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Cloud-Native Mode: Flags and User Info
         self.is_cloud_native_mode = False  # Changed to True upon successful login
         self.current_user_id = None
+        self.current_user_data = {}
         self.current_mode = None  # 'labeling', 'review', 'final_review'
 
         # Firebase integration
@@ -2914,6 +2915,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.current_user_id = login_dialog.get_user_id()
+        self.current_user_data = login_dialog.get_user_data()
         self.is_cloud_native_mode = True  # Enable Cloud-native mode
         logger.info(f"User logged in: {self.current_user_id}, Cloud-native mode enabled")
 
@@ -2973,7 +2975,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._selectModeAndApply()
 
     def _selectModeAndApply(self):
-        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        mode_dialog = ModeSelectionDialog(self.current_user_data, self)
         if mode_dialog.exec_() != QtWidgets.QDialog.Accepted:
             # Exit app if mode selection cancelled
             self.close()
@@ -3064,7 +3066,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logger.info("Change Mode action triggered")
 
         # Show mode selection dialog
-        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        mode_dialog = ModeSelectionDialog(self.current_user_data, self)
         if mode_dialog.exec_() == QtWidgets.QDialog.Accepted:
             new_mode = mode_dialog.get_selected_mode()
             if new_mode != self.current_mode:
@@ -3086,13 +3088,15 @@ class MainWindow(QtWidgets.QMainWindow):
             mode=self.current_mode,
             user_id=self.current_user_id,
             processing_dir=self.processing_dir,
+            is_5_generation=self.current_user_data.get(
+                '5-generation', False
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_load_task_finished)
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
-        # worker.execute()
 
     def loadModifyTaskAction(self):
         logger.info("Load Modify action triggered")
@@ -3110,6 +3114,9 @@ class MainWindow(QtWidgets.QMainWindow):
             processing_dir=self.processing_dir,
             source_statuses=[TaskStatus.MODIFY],
             user_filter_field='workerId',
+            is_5_generation=self.current_user_data.get(
+                '5-generation', False
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_load_task_finished)
@@ -3152,6 +3159,9 @@ class MainWindow(QtWidgets.QMainWindow):
             user_id=self.current_user_id,
             processing_dir=self.processing_dir,
             source_statuses=[TaskStatus.READY_GT],
+            is_5_generation=self.current_user_data.get(
+                '5-generation', False
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_load_ready_gt_finished)

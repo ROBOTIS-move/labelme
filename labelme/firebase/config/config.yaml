@@ -2,5 +2,5 @@ common:
   base_url: 'https://gaemi-storage-manager-675180880514.asia-northeast3.run.app'
   bucket_name: 'label-0001'
 
-database:
-  collection: label_annotation
+user:
+  url: 'https://gaemi-storage-manager-675180880514.asia-northeast3.run.app'

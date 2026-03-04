@@ -11,12 +11,10 @@ class ModeSelectionDialog(QtWidgets.QDialog):
     MODE_REVIEW = "review"
     MODE_FINAL_REVIEW = "final_review"
 
-    # Admin code (To be fetched from Firebase later)
-    ADMIN_CODE = "admin123"
-
-    def __init__(self, user_id: str, parent=None):
+    def __init__(self, user_data: dict, parent=None):
         super().__init__(parent)
-        self.user_id = user_id
+        self.user_data = user_data
+        self.user_id = user_data.get('email', '')
         self.selected_mode = None
         self._init_ui()
 
@@ -36,7 +34,9 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         layout.addWidget(welcome_label)
 
         # Instruction
-        instruction_label = QtWidgets.QLabel("Please select your working mode:")
+        instruction_label = QtWidgets.QLabel(
+            "Please select your working mode:"
+        )
         instruction_label.setAlignment(QtCore.Qt.AlignCenter)
         layout.addWidget(instruction_label)
 
@@ -86,7 +86,7 @@ class ModeSelectionDialog(QtWidgets.QDialog):
 
         # Final Review button
         self.final_review_btn = QtWidgets.QPushButton("Final Review")
-        self.final_review_btn.setToolTip("Final review mode (Admin only)")
+        self.final_review_btn.setToolTip("Final review mode")
         self.final_review_btn.setMinimumHeight(40)
         self.final_review_btn.setStyleSheet("""
             QPushButton {
@@ -111,32 +111,28 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         self.accept()
 
     def _on_review(self):
+        if not self.user_data.get('reviewer', False):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Permission Denied",
+                "You do not have reviewer permission.\n"
+                "Please contact the administrator."
+            )
+            return
         self.selected_mode = self.MODE_REVIEW
         self.accept()
 
     def _on_final_review(self):
-        admin_code, ok = QtWidgets.QInputDialog.getText(
-            self,
-            "Admin Authentication",
-            "Please enter admin code:",
-            QtWidgets.QLineEdit.Password
-        )
-
-        if ok and admin_code:
-            # Mock admin code validation (Replace with Firebase integration later)
-            if self._validate_admin_code(admin_code):
-                self.selected_mode = self.MODE_FINAL_REVIEW
-                self.accept()
-            else:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    "Authentication Failed",
-                    "Invalid admin code."
-                )
-
-    def _validate_admin_code(self, code: str) -> bool:
-        # TODO: Replace with actual validation logic upon Firebase integration
-        return code == self.ADMIN_CODE
+        if not self.user_data.get('finalReviewer', False):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Permission Denied",
+                "You do not have final reviewer permission.\n"
+                "Please contact the administrator."
+            )
+            return
+        self.selected_mode = self.MODE_FINAL_REVIEW
+        self.accept()
 
     def get_selected_mode(self) -> str:
         return self.selected_mode
