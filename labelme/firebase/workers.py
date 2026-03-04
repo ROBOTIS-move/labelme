@@ -16,6 +16,7 @@ from labelme.firebase.constants import (
     USER_FIELD_MAP,
     STATUS_TRANSITIONS,
 )
+from labelme.firebase.authority_checker import AuthorityChecker
 from labelme.firebase.database_manager import DatabaseManager
 from labelme.firebase.image_manager import (
     ImageManager,
@@ -43,7 +44,8 @@ class LoadTaskWorker(FirebaseWorker):
     def __init__(
         self, mode, user_id, processing_dir,
         source_statuses=None, user_filter_field=None,
-        is_5_generation=False, is_supervisor=False, parent=None,
+        is_5_generation=False, is_supervisor=False,
+        drop_image_list=None, parent=None,
     ):
         super().__init__(parent)
         self.mode = mode
@@ -53,6 +55,7 @@ class LoadTaskWorker(FirebaseWorker):
         self.user_filter_field = user_filter_field
         self.is_5_generation = is_5_generation
         self.is_supervisor = is_supervisor
+        self.drop_image_list = drop_image_list or []
         self.db = DatabaseManager()
         self.downloader = ImageDownload()
 
@@ -109,7 +112,9 @@ class LoadTaskWorker(FirebaseWorker):
                     status, self.user_filter_field, self.user_id,
                 )
                 candidates.extend(docs)
-            return self._filter_by_class_type(candidates)
+            return self._filter_by_drop_list(
+                self._filter_by_class_type(candidates)
+            )
 
         if self.mode == 'review':
             candidates = (
@@ -117,10 +122,14 @@ class LoadTaskWorker(FirebaseWorker):
                     statuses, 'workerId', self.user_id,
                 )
             )
-            return self._filter_by_class_type(candidates)
+            return self._filter_by_drop_list(
+                self._filter_by_class_type(candidates)
+            )
 
         candidates = self.db.get_candidates_by_statuses(statuses)
-        return self._filter_by_class_type(candidates)
+        return self._filter_by_drop_list(
+            self._filter_by_class_type(candidates)
+        )
 
     def _filter_by_class_type(self, candidates):
         if self.is_supervisor:
@@ -133,6 +142,14 @@ class LoadTaskWorker(FirebaseWorker):
         return [
             c for c in candidates
             if c.get('classType') != 'FrontViewSegmentation'
+        ]
+
+    def _filter_by_drop_list(self, candidates):
+        if not self.drop_image_list:
+            return candidates
+        return [
+            c for c in candidates
+            if c.get('imageName', '') not in self.drop_image_list
         ]
 
     def _try_claim_and_verify(self, doc, user_field, next_status):
@@ -516,11 +533,18 @@ class RestorePostponeWorker(FirebaseWorker):
 
 
 class DropTaskWorker(FirebaseWorker):
-    def __init__(self, doc_id, mode, parent=None):
+    def __init__(
+        self, doc_id, mode, user_id, drop_count,
+        drop_image_list, parent=None,
+    ):
         super().__init__(parent)
         self.doc_id = doc_id
         self.mode = mode
+        self.user_id = user_id
+        self.drop_count = drop_count
+        self.drop_image_list = drop_image_list
         self.db = DatabaseManager()
+        self.authority = AuthorityChecker()
 
     def execute(self):
         user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
@@ -531,7 +555,17 @@ class DropTaskWorker(FirebaseWorker):
             'assignedAt': '',
             'updatedAt': now_str,
         })
-        return {'doc_id': self.doc_id}
+        new_count = self.drop_count + 1
+        new_list = self.drop_image_list + [self.doc_id]
+        self.authority.update_user(
+            self.user_id,
+            {'dropCount': new_count, 'dropImageList': new_list},
+        )
+        return {
+            'doc_id': self.doc_id,
+            'dropCount': new_count,
+            'dropImageList': new_list,
+        }
 
 
 class DiscardTaskWorker(FirebaseWorker):

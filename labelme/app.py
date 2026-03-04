@@ -3094,6 +3094,9 @@ class MainWindow(QtWidgets.QMainWindow):
             is_supervisor=self.current_user_data.get(
                 'supervisor', False
             ),
+            drop_image_list=self.current_user_data.get(
+                'dropImageList', []
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_load_task_finished)
@@ -3299,7 +3302,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if drop_count >= 3:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Drop Task",
-                "You have exceeded the daily drop limit."
+                "Drop 횟수(3회)를 초과하여 더 이상 Drop할 수 없습니다.\n"
+                "현재 작업을 계속 진행해주세요."
             )
             return
 
@@ -3320,6 +3324,11 @@ class MainWindow(QtWidgets.QMainWindow):
         worker = DropTaskWorker(
             doc_id=self.current_doc_id,
             mode=self.current_mode,
+            user_id=self.current_user_id,
+            drop_count=drop_count,
+            drop_image_list=self.current_user_data.get(
+                'dropImageList', []
+            ),
             parent=self,
         )
         worker.finished.connect(self._on_drop_finished)
@@ -3550,6 +3559,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _on_drop_finished(self, result):
         self._set_firebase_loading(False)
+
+        if 'dropCount' in result:
+            self.current_user_data['dropCount'] = result['dropCount']
+        if 'dropImageList' in result:
+            self.current_user_data['dropImageList'] = (
+                result['dropImageList']
+            )
 
         self._clear_session_info()
         self._cleanup_processing_files()
@@ -3861,15 +3877,4 @@ class MainWindow(QtWidgets.QMainWindow):
             )
 
     def _check_drop_count(self) -> int:
-        # Mock implementation: Always return 0 (Can be changed for testing)
-        # TODO: Replace with code below after Firebase integration
-        # from firebase_admin import firestore
-        # db = firestore.client()
-        # user_ref = db.collection('users').document(self.current_user_id)
-        # user_doc = user_ref.get()
-        # if user_doc.exists:
-        #     return user_doc.to_dict().get('drop_count', 0)
-        # return 0
-        
-        logger.info(f"Checking drop count for user: {self.current_user_id}")
-        return 0  # Mock: Return 0 until actual Firebase integration
+        return self.current_user_data.get('dropCount', 0)

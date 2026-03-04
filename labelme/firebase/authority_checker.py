@@ -14,6 +14,7 @@ DEFAULT_DATA = {
     'supervisor': False,
     '5-generation': False,
     'dropCount': 0,
+    'dropImageList': [],
 }
 
 
