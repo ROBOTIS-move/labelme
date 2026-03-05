@@ -3560,6 +3560,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.loadTask.setEnabled(True)
             self.actions.loadModifyTask.setEnabled(True)
             self.actions.loadPostponeTask.setEnabled(True)
+            if self.filename:
+                self.actions.submitTask.setEnabled(True)
 
     def _on_firebase_error(self, msg):
         self._set_firebase_loading(False)
