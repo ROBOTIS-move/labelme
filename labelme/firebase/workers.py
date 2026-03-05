@@ -251,8 +251,6 @@ class SubmitTaskWorker(FirebaseWorker):
         # Upload files from processing_dir
         storage_paths = {}
 
-        ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-
         # Image file
         image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff']
         for ext in image_exts:
@@ -260,7 +258,7 @@ class SubmitTaskWorker(FirebaseWorker):
                 self.processing_dir, f"{self.basename}{ext}"
             )
             if os.path.exists(img_file):
-                sp = f"{StoragePath.IMAGE}/{ts}/{self.basename}{ext}"
+                sp = f"{StoragePath.IMAGE}/{self.basename}{ext}"
                 self.uploader.upload_single(img_file, sp)
                 storage_paths['storageImagePath'] = sp
                 break
@@ -268,7 +266,7 @@ class SubmitTaskWorker(FirebaseWorker):
         # JSON file
         json_file = os.path.join(self.processing_dir, f"{self.basename}.json")
         if os.path.exists(json_file):
-            sp = f"{StoragePath.JSON}/{ts}/{self.basename}.json"
+            sp = f"{StoragePath.JSON}/{self.basename}.json"
             self.uploader.upload_single(json_file, sp)
             storage_paths['storageJsonPath'] = sp
 
@@ -278,7 +276,7 @@ class SubmitTaskWorker(FirebaseWorker):
         )
         if os.path.exists(encrypt_file):
             sp = (
-                f"{StoragePath.ENCRYPT}/{ts}/"
+                f"{StoragePath.ENCRYPT}/"
                 f"{self.basename}_encrypt.bin"
             )
             self.uploader.upload_single(encrypt_file, sp)
@@ -290,7 +288,7 @@ class SubmitTaskWorker(FirebaseWorker):
         )
         if os.path.exists(comment_file):
             sp = (
-                f"{StoragePath.COMMENT}/{ts}/"
+                f"{StoragePath.COMMENT}/"
                 f"{self.basename}_comments.json"
             )
             self.uploader.upload_single(comment_file, sp)
