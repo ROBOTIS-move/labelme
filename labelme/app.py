@@ -3204,6 +3204,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 worker_name=self.current_user_id,
             )
 
+        # Capture working time before submit
+        self.canvas.measureWorkingTime.measure_time()
+        working_time = self.canvas.measureWorkingTime.working_total_time
+
         self._set_firebase_loading(True, "Uploading and submitting task...")
         worker = SubmitTaskWorker(
             doc_id=self.current_doc_id,
@@ -3213,6 +3217,7 @@ class MainWindow(QtWidgets.QMainWindow):
             mode=self.current_mode,
             user_id=self.current_user_id or '',
             from_postpone=self._from_postpone,
+            working_time=working_time,
             parent=self,
         )
         worker.finished.connect(self._on_submit_finished)
@@ -3583,6 +3588,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_document = None
         self._active_worker = None
         self._from_postpone = False
+
+        # Reset working time measurement
+        self.canvas.measureWorkingTime.working_total_time = 0
+        self.canvas.measureWorkingTime.break_total_time = 0
+        self.canvas.measureWorkingTime.working_count = 0
 
     def _cleanup_processing_files(self):
         if not self.filename:

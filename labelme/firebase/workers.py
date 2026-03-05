@@ -234,7 +234,7 @@ class SubmitTaskWorker(FirebaseWorker):
     def __init__(
         self, doc_id, current_status, processing_dir,
         basename, mode, user_id='',
-        from_postpone=False, parent=None,
+        from_postpone=False, working_time=0, parent=None,
     ):
         super().__init__(parent)
         self.doc_id = doc_id
@@ -244,6 +244,7 @@ class SubmitTaskWorker(FirebaseWorker):
         self.mode = mode
         self.user_id = user_id
         self.from_postpone = from_postpone
+        self.working_time = working_time
         self.db = DatabaseManager()
         self.uploader = ImageUpload()
 
@@ -328,6 +329,7 @@ class SubmitTaskWorker(FirebaseWorker):
         update_data = {
             'status': next_status.value,
             'updatedAt': now_str,
+            'workingTime': round(self.working_time, 2),
         }
         update_data.update(storage_paths)
         self.db.update_document(self.doc_id, update_data)
