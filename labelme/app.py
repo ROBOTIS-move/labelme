@@ -1428,7 +1428,10 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return
         if not hasattr(self, 'ImagePopup'):
-            folder_path = os.path.dirname(self.filename)
+            if hasattr(self, 'processing_dir') and self.processing_dir:
+                folder_path = self.processing_dir
+            else:
+                folder_path = os.path.dirname(self.filename)
             self.ImagePopup = ImagePopup(
                 parent=self,
                 folder_path=folder_path,
@@ -3498,6 +3501,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._clear_session_info()
         self._cleanup_processing_files()
         self._reset_firebase_state()
+        self.comment_widget.clear_comments()
         self.resetState()
 
     def _on_drop_finished(self, result):
@@ -3513,6 +3517,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._clear_session_info()
         self._cleanup_processing_files()
         self._reset_firebase_state()
+        self.comment_widget.clear_comments()
         self.resetState()
         self.setClean()
         self.toggleActions(False)
@@ -3530,6 +3535,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._clear_session_info()
         self._cleanup_processing_files()
         self._reset_firebase_state()
+        self.comment_widget.clear_comments()
         self.resetState()
         self.setClean()
         self.toggleActions(False)
