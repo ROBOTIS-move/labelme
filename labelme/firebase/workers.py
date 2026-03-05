@@ -329,8 +329,9 @@ class SubmitTaskWorker(FirebaseWorker):
         update_data = {
             'status': next_status.value,
             'updatedAt': now_str,
-            'workingTime': round(self.working_time, 2),
         }
+        if self.working_time > 0:
+            update_data['workingTime'] = round(self.working_time, 2)
         update_data.update(storage_paths)
         self.db.update_document(self.doc_id, update_data)
 

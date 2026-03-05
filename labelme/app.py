@@ -3204,9 +3204,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 worker_name=self.current_user_id,
             )
 
-        # Capture working time before submit
-        self.canvas.measureWorkingTime.measure_time()
-        working_time = self.canvas.measureWorkingTime.working_total_time
+        # Capture working time (labeling mode only)
+        working_time = 0
+        if self.current_mode == ModeSelectionDialog.MODE_LABELING:
+            self.canvas.measureWorkingTime.measure_time()
+            working_time = self.canvas.measureWorkingTime.working_total_time
+            # Accumulate with previous workingTime from DB (modify case)
+            prev_time = (self.current_document or {}).get('workingTime', 0)
+            working_time += prev_time
 
         self._set_firebase_loading(True, "Uploading and submitting task...")
         worker = SubmitTaskWorker(
