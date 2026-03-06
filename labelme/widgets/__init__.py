@@ -34,3 +34,4 @@ from .discard_dialog import DiscardDialog
 from .loading_dialog import LoadingDialog
 from .task_info_widget import TaskInfoWidget
 from .postponed_list_dialog import PostponedListDialog
+from .work_history_dialog import WorkHistoryDialog

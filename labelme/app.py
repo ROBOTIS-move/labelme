@@ -50,6 +50,7 @@ from labelme.widgets import DiscardDialog
 from labelme.widgets import LoadingDialog
 from labelme.widgets import TaskInfoWidget
 from labelme.widgets import PostponedListDialog
+from labelme.widgets import WorkHistoryDialog
 from labelme.utils.encrypt_cache import EncryptCache
 from labelme.firebase.constants import (
     TaskStatus,
@@ -778,6 +779,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Discard current task with reason"),
             enabled=False,
         )
+        viewWorkHistory = action(
+            self.tr("Work History"),
+            self.viewWorkHistoryAction,
+            None,
+            "file",
+            self.tr("View your work history by round"),
+            enabled=True,
+        )
         # ============ End Cloud-Native Actions ============
 
         zoom = QtWidgets.QWidgetAction(self)
@@ -970,6 +979,7 @@ class MainWindow(QtWidgets.QMainWindow):
             postponeTask=postponeTask,
             dropTask=dropTask,
             discardTask=discardTask,
+            viewWorkHistory=viewWorkHistory,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -1102,7 +1112,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Change work mode (only when no image is loaded)"),
             enabled=True,
         )
-        utils.addActions(self.menus.mode, (changeModeAction,))
+        utils.addActions(
+            self.menus.mode, (changeModeAction, viewWorkHistory)
+        )
         utils.addActions(
             self.menus.view,
             (
@@ -3353,6 +3365,13 @@ class MainWindow(QtWidgets.QMainWindow):
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
+
+    def viewWorkHistoryAction(self):
+        account_data = self.current_user_data.get("account", {})
+        dialog = WorkHistoryDialog(
+            account_data, self.current_user_id, parent=self
+        )
+        dialog.exec_()
 
     # ============ Firebase Callback Handlers ============
 
