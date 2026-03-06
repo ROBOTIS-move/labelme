@@ -2,9 +2,13 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import logging
+
 import requests
 
 from labelme.firebase.utils import ConfigLoader
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_DATA = {
@@ -25,7 +29,7 @@ class AuthorityChecker:
 
     def get_all_users(self):
         url = f"{self.url}/users"
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
         if response.status_code == 200:
             return response.json()
         else:
@@ -41,9 +45,9 @@ class AuthorityChecker:
             'data': DEFAULT_DATA
         }
         body['data']['name'] = name
-        response = requests.post(url, json=body)
+        response = requests.post(url, json=body, timeout=30)
         if response.status_code == 201:
-            print(f"Successfully created user: {user_id}")
+            logger.info("Successfully created user: %s", user_id)
         else:
             raise RuntimeError(
                 f"Failed to create user: {response.status_code}, "
@@ -56,9 +60,9 @@ class AuthorityChecker:
             'email': user_id,
             'data': data
         }
-        response = requests.patch(url, json=body)
+        response = requests.patch(url, json=body, timeout=30)
         if response.status_code == 200:
-            print(f"Successfully updated user: {user_id}")
+            logger.info("Successfully updated user: %s", user_id)
         else:
             raise RuntimeError(
                 f"Failed to update user: {response.status_code}, "
@@ -71,9 +75,9 @@ class AuthorityChecker:
             'email': user_id,
         }
 
-        response = requests.post(url, json=body)
+        response = requests.post(url, json=body, timeout=30)
         if response.status_code == 200:
-            print(f"Successfully updated user: {user_id}")
+            logger.info("Successfully updated user: %s", user_id)
         else:
             raise RuntimeError(
                 f"Failed to update user: {response.status_code}, "
@@ -81,28 +85,15 @@ class AuthorityChecker:
             )
 
     def delete_user(self, user_email):
-        url = f'{self.url}/user?email={user_email}'
-        response = requests.delete(url)
+        response = requests.delete(
+            f'{self.url}/user',
+            params={'email': user_email},
+            timeout=30,
+        )
         if response.status_code == 200:
-            print(f"Successfully deleted user: {user_email}")
+            logger.info("Successfully deleted user: %s", user_email)
         else:
             raise RuntimeError(
                 f"Failed to delete user: {response.status_code}, "
                 f"{response.text}"
             )
-
-if __name__ == '__main__':
-    authority_checker = AuthorityChecker()
-    # authority_checker.create_user('label_test@robotis.com', 'test')
-    # authority_checker.delete_user('labelme@robotis.com')
-    # authority_checker.update_supervisor_user('jsh@robotis.com', '정성훈')
-    data = DEFAULT_DATA
-    data['reviewer'] = True
-    data['finalReviewer'] = True
-    data['supervisor'] = True
-    data['5-generation'] = True
-    authority_checker.update_user('jsh@robotis.com', data)
-    users = authority_checker.get_all_users()
-    for user in users:
-        print('*' * 100)
-        print(user)

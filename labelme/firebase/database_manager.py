@@ -2,9 +2,13 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import logging
+
 import requests
 
 from labelme.firebase.utils import ConfigLoader
+
+logger = logging.getLogger(__name__)
 
 
 def _created_at_seconds(doc):
@@ -19,54 +23,9 @@ class DatabaseManager:
         cfg_loader = ConfigLoader()
         self.common_url = cfg_loader.common_config.get('base_url')
 
-    # def create_document(self, image_name):
-    #     url = f"{self.common_url}/annotation"
-    #     datetime_now = datetime.datetime.now()
-    #     str_now = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
-    #     body = {
-    #         'id': image_name,
-    #         'data': {
-    #             'imageName': image_name,
-    #             'status': 'ready',
-    #             'workerId': '',
-    #             'reviewerId': '',
-    #             'finalReviewerId': '',
-    #             'createdAt': str_now,
-    #             'assignedAt': '',
-    #             'updatedAt': '',
-    #             'storageImagePath': '',
-    #             'storageJsonPath': '',
-    #             'storageEncryptPath': '',
-    #             'storageCommentPath': '',
-    #             'classType': '',
-    #             'discardReason': '',
-    #             'isGt': '',
-    #         }
-    #     }
-    #     response = requests.post(url, json=body)
-    #     if response.status_code == 201:
-    #         print(f"Successfully created document: {image_name}")
-    #     else:
-    #         raise RuntimeError(
-    #             f"Failed to create document: {response.status_code}, "
-    #             f"{response.text}"
-    #         )
-
-    # def delete_document(self, image_name):
-    #     url = f"{self.common_url}/annotation?docId={image_name}"
-    #     response = requests.delete(url)
-    #
-    #     if response.status_code == 200:
-    #         print(f"Successfully deleted document: {image_name}")
-    #     else:
-    #         raise RuntimeError(
-    #             f"Failed to delete document: {response.status_code}, "
-    #             f"{response.text}"
-    #         )
-
     def get_all_document(self):
         url = f"{self.common_url}/annotations"
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
 
         if response.status_code == 200:
             return response.json()
@@ -79,15 +38,14 @@ class DatabaseManager:
     def update_document(self, doc_id, data):
         url = f"{self.common_url}/annotation"
         body = {'id': doc_id, 'data': data}
-        response = requests.patch(url, json=body)
+        response = requests.patch(url, json=body, timeout=30)
         if response.status_code in (200, 201):
-            print(f"Successfully updated document: {doc_id}")
+            logger.info("Successfully updated document: %s", doc_id)
         else:
             raise RuntimeError(
                 f"Failed to update document: {response.status_code}, "
                 f"{response.text}"
             )
-
 
     def get_candidates_by_statuses(self, statuses):
         all_docs = self.get_all_document()

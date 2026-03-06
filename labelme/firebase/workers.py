@@ -2,11 +2,14 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import logging
 import os
 import time
 import datetime
 
 from qtpy.QtCore import QThread, Signal
+
+logger = logging.getLogger(__name__)
 
 from labelme.firebase.constants import (
     TaskStatus,
@@ -168,12 +171,16 @@ class LoadTaskWorker(FirebaseWorker):
         for attempt in range(self.MAX_VERIFY_RETRIES):
             try:
                 all_docs = self.db.get_all_document()
-            except Exception:
+            except Exception as e:
                 if attempt < self.MAX_VERIFY_RETRIES - 1:
                     time.sleep(self.VERIFY_DELAY)
                     continue
                 # Claim POST succeeded but verify failed
                 # Assume ownership to avoid orphan claim
+                logger.warning(
+                    "Verify failed after %d retries, "
+                    "assuming ownership: %s", attempt + 1, e,
+                )
                 return True
 
             for d in all_docs:
@@ -309,7 +316,6 @@ class SubmitTaskWorker(FirebaseWorker):
                 f"Unknown current status: {self.current_status}"
             )
 
-        assert current_enum is not None
         has_comment = os.path.exists(comment_file)
         # No comment on review → skip modify, go to final review
         if (
@@ -514,10 +520,12 @@ class RestorePostponeWorker(FirebaseWorker):
         for sp, local in downloads.items():
             try:
                 self.downloader.download_single(sp, local)
-            except Exception:
+            except Exception as e:
                 if sp == img_sp:
                     raise  # Image is required
-                pass  # Others are optional
+                logger.warning(
+                    "Optional file download skipped (%s): %s", sp, e,
+                )
 
         # Update status back to processing
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

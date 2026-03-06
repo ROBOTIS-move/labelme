@@ -111,24 +111,24 @@ class EncryptCache():
                 shape_list = self._extract_shape_list(json_data)
                 if shape_list is not None:
                     img_name = json_data.get('imagePath', None)
-                img_data = yaml_contents.get(img_name, None)
-                if img_data is None:
-                    yaml_contents[img_name] = [{
-                        'worker': self.prev_worker_name,
-                        'shapes': shape_list
-                    }]
-                else:
-                    save_flag = False
-                    for working_data in yaml_contents[img_name]:
-                        if working_data['worker'] == self.prev_worker_name:
-                            working_data['shapes'] = shape_list
-                            save_flag = True
-                            break
-                    if not save_flag:
-                        yaml_contents[img_name].append({
+                    img_data = yaml_contents.get(img_name, None)
+                    if img_data is None:
+                        yaml_contents[img_name] = [{
                             'worker': self.prev_worker_name,
                             'shapes': shape_list
-                        })
+                        }]
+                    else:
+                        save_flag = False
+                        for working_data in yaml_contents[img_name]:
+                            if working_data['worker'] == self.prev_worker_name:
+                                working_data['shapes'] = shape_list
+                                save_flag = True
+                                break
+                        if not save_flag:
+                            yaml_contents[img_name].append({
+                                'worker': self.prev_worker_name,
+                                'shapes': shape_list
+                            })
         yaml_contents['prev_worker'] = self.worker_name
         self._write_yaml(yaml_contents)
 
@@ -193,12 +193,3 @@ class EncryptCache():
             return data
         return None
 
-if __name__ == '__main__':
-    encrypt_cache = EncryptCache()
-    dir_name = 'ODAS_285'
-    # dir_name = 'ODAS_242'
-    test_dir = f'/home/hun/GT_manager/GT_ALGO/review/{dir_name}'
-    encrypt_cache.encrypt_path = f'{test_dir}/encrypt.bin'
-    encrypt_cache.cache_path = f'{test_dir}/cache.yaml'
-    encrypt_cache._decrypt_file()
-    # print(encrypt_cache._read_yaml())

@@ -2,11 +2,15 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import logging
 import os
-import requests
+
 import mimetypes
+import requests
 
 from labelme.firebase.utils import ConfigLoader
+
+logger = logging.getLogger(__name__)
 
 
 class ImageManager:
@@ -21,24 +25,17 @@ class ImageManager:
             'bucketName': self.bucket_name,
             'filePath': storage_path,
         }
-        response = requests.delete(url, params=params)
+        response = requests.delete(url, params=params, timeout=30)
         if response.status_code == 200:
-            print(f"Deleted: {storage_path}")
+            logger.info("Deleted: %s", storage_path)
         else:
-            print(
-                f"Failed to delete {storage_path}: "
-                f"{response.status_code}"
+            logger.error(
+                "Failed to delete %s: %s",
+                storage_path, response.status_code,
             )
 
 
 class ImageUpload(ImageManager):
-    # def upload(self, file_path_list, storage_dir='images/'):
-    #     if storage_dir and not storage_dir.endswith('/'):
-    #         storage_dir += '/'
-    #     for file_path in file_path_list:
-    #         file_name = os.path.basename(file_path)
-    #         self.upload_single(file_path, f"{storage_dir}{file_name}")
-
     def upload_single(self, local_path, storage_path):
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"File not found: {local_path}")
@@ -66,7 +63,7 @@ class ImageUpload(ImageManager):
             'contentType': mime_type,
         }
 
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=30)
 
         if response.status_code == 200:
             return response.json()
@@ -82,10 +79,12 @@ class ImageUpload(ImageManager):
         }
 
         with open(local_path, 'rb') as f:
-            response = requests.put(upload_url, data=f, headers=headers)
+            response = requests.put(
+                upload_url, data=f, headers=headers, timeout=120,
+            )
 
             if response.status_code == 200:
-                print(f"Successfully uploaded: {local_path}")
+                logger.info("Successfully uploaded: %s", local_path)
             else:
                 raise RuntimeError(
                     f"Upload failed: {response.status_code}, "
@@ -94,20 +93,6 @@ class ImageUpload(ImageManager):
 
 
 class ImageDownload(ImageManager):
-    # def get_file_list(self):
-    #     url = f"{self.base_url}/files"
-    #     params = {'bucketName': self.bucket_name}
-    #
-    #     response = requests.get(url, params=params)
-    #
-    #     if response.status_code == 200:
-    #         return response.json()
-    #     else:
-    #         raise RuntimeError(
-    #             f"Failed to get file list: {response.status_code}, "
-    #             f"{response.text}"
-    #         )
-
     def download_single(self, storage_path, local_path):
         download_url = self._get_download_url(storage_path)
         if not download_url:
@@ -119,12 +104,12 @@ class ImageDownload(ImageManager):
         if local_dir:
             os.makedirs(local_dir, exist_ok=True)
 
-        response = requests.get(download_url, stream=True)
+        response = requests.get(download_url, stream=True, timeout=120)
         if response.status_code == 200:
             with open(local_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-            print(f"Downloaded: {local_path}")
+            logger.info("Downloaded: %s", local_path)
         else:
             raise RuntimeError(
                 f"Failed to download {storage_path}: "
@@ -136,7 +121,6 @@ class ImageDownload(ImageManager):
             if storage_path:
                 self.download_single(storage_path, local_path)
 
-
     def _get_download_url(self, file_path):
         url = f"{self.base_url}/download-url"
         params = {
@@ -144,7 +128,7 @@ class ImageDownload(ImageManager):
             'filePath': file_path
         }
 
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=30)
 
         if response.status_code == 200:
             return response.json().get('downloadUrl')

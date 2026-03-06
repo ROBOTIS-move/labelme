@@ -2278,7 +2278,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if hasattr(self, 'comment_widget') and self.comment_widget:
                 self.comment_widget.set_image_path(self.filename)
 
-            # Cloud-Native: Start timer (48-hour countdown)
+            # Cloud-Native: Start timer (24-hour countdown)
             self._startDeadlineTimer(self.filename)
 
             # Cloud-Native: Save session info
@@ -2515,7 +2515,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
-        assert not self.image.isNull(), "cannot save empty image"
+        if self.image.isNull():
+            logger.warning("Cannot save: empty image")
+            return False
         if self.labelFile:
             # DL20180323 - overwrite when in directory
             self._saveFile(self.labelFile.filename)
@@ -2524,6 +2526,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.close()
         else:
             self._saveFile(self.saveFileDialog())
+        return True
 
     def saveFileAs(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
@@ -3082,6 +3085,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadTaskAction(self):
         logger.info("Load Task action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
         if self.filename is not None:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Load",
@@ -3112,6 +3120,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadModifyTaskAction(self):
         logger.info("Load Modify action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
         if self.filename is not None:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Load",
@@ -3141,6 +3154,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadPostponeTaskAction(self):
         logger.info("Load Postpone action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
         if self.filename is not None:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Load",
@@ -3161,6 +3179,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def submitTaskAction(self):
         logger.info("Submit Task action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
 
         if self.filename is None:
             QtWidgets.QMessageBox.warning(
@@ -3198,7 +3221,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         # Save file locally first
-        self.saveFile()
+        if not self.saveFile():
+            return
 
         # Delete load time file
         if self.filename:
@@ -3252,6 +3276,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def postponeTaskAction(self):
         logger.info("Postpone Task action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
 
         if not self.current_doc_id:
             QtWidgets.QMessageBox.warning(
@@ -3273,7 +3302,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         # Save current file
-        self.saveFile()
+        if not self.saveFile():
+            return
         basename = os.path.splitext(os.path.basename(self.filename))[0]
 
         self._set_firebase_loading(True, "Postponing task...")
@@ -3291,6 +3321,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def dropTaskAction(self):
         logger.info("Drop Task action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
 
         if not self.current_doc_id:
             QtWidgets.QMessageBox.warning(
@@ -3340,6 +3375,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def discardTaskAction(self):
         logger.info("Discard Task action triggered")
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
 
         if not self.current_doc_id:
             QtWidgets.QMessageBox.warning(
@@ -3367,6 +3407,8 @@ class MainWindow(QtWidgets.QMainWindow):
         worker.start()
 
     def viewWorkHistoryAction(self):
+        if not self.current_user_id:
+            return
         account_data = self.current_user_data.get("account", {})
         dialog = WorkHistoryDialog(
             account_data, self.current_user_id, parent=self
@@ -3540,6 +3582,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._reset_firebase_state()
         self.comment_widget.clear_comments()
         self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
 
     def _on_drop_finished(self, result):
         self._set_firebase_loading(False)
@@ -3684,7 +3730,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 logger.warning(f"Failed to write load time file: {e}")
 
-        # Deadline = Load time + 48 hours
+        # Deadline = Load time + 24 hours
         self.deadline = load_time + datetime.timedelta(hours=24)
 
         # Start timer (Update every 1 second)
@@ -3781,94 +3827,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 logger.info(f"Session info cleared: {session_file}")
             except Exception as e:
                 logger.warning(f"Failed to clear session info: {e}")
-
-    def _move_files_to_postpone(self, image_filename: str):
-        if not image_filename:
-            return
-
-        # Create user-specific postpone directory
-        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
-        os.makedirs(user_postpone_dir, exist_ok=True)
-
-        # Extract basename
-        basename = os.path.splitext(os.path.basename(image_filename))[0]
-
-        # Find all files with same basename in processing directory
-        pattern = os.path.join(self.processing_dir, f"{basename}.*")
-        files_to_move = glob.glob(pattern)
-
-        # Include session file
-        session_file = self._get_session_file_path(image_filename)
-        if os.path.exists(session_file) and session_file not in files_to_move:
-            files_to_move.append(session_file)
-
-        moved_count = 0
-        for file_path in files_to_move:
-            try:
-                filename = os.path.basename(file_path)
-                dest_path = os.path.join(user_postpone_dir, filename)
-
-                # Move file
-                shutil.move(file_path, dest_path)
-                logger.info(f"Moved to postpone/{self.current_user_id}: {filename}")
-                moved_count += 1
-            except Exception as e:
-                logger.warning(f"Failed to move file {file_path}: {e}")
-
-        logger.info(f"Postpone completed: {moved_count} files moved to user directory")
-    def _restore_postponed_files(self, image_filename: str):
-        if not image_filename:
-            return
-
-        # User-specific postpone directory
-        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
-
-        # Extract basename
-        basename = os.path.splitext(image_filename)[0]
-
-        # Find all files with same basename in postpone directory
-        pattern = os.path.join(user_postpone_dir, f"{basename}.*")
-        files_to_restore = glob.glob(pattern)
-
-        if not files_to_restore:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "File Not Found",
-                f"Postponed file not found: {image_filename}"
-            )
-            return
-
-        restored_count = 0
-        restored_image_path = None
-
-        for file_path in files_to_restore:
-            try:
-                filename = os.path.basename(file_path)
-                dest_path = os.path.join(self.processing_dir, filename)
-
-                # Move file (Restore)
-                shutil.move(file_path, dest_path)
-                logger.info(f"Restored from postpone: {filename}")
-                restored_count += 1
-
-                # Save image file path
-                if filename == image_filename:
-                    restored_image_path = dest_path
-
-            except Exception as e:
-                logger.warning(f"Failed to restore file {file_path}: {e}")
-
-        logger.info(f"Restore completed: {restored_count} files restored")
-
-        # Load restored image
-        if restored_image_path and os.path.exists(restored_image_path):
-            self.loadFile(restored_image_path)
-        else:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Load Failed",
-                "Image file not found."
-            )
 
     def _check_drop_count(self) -> int:
         return self.current_user_data.get('dropCount', 0)
