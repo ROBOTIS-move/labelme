@@ -12,8 +12,9 @@ class CommentWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_image_path = None
-        self.current_user_id = None  # Currently logged in user ID
-        self.comments = []  # [{"user": "id", "text": "msg"}, ...]
+        self.current_user_id = None  # Currently logged in user ID (email)
+        self.current_user_name = None  # Currently logged in user name
+        self.comments = []  # [{"user": "name", "text": "msg"}, ...]
         self._init_ui()
 
     def _init_ui(self):
@@ -79,6 +80,9 @@ class CommentWidget(QtWidgets.QWidget):
     def set_user_id(self, user_id: str):
         self.current_user_id = user_id
 
+    def set_user_name(self, user_name: str):
+        self.current_user_name = user_name
+
     def set_image_path(self, image_path: str):
         self.current_image_path = image_path
         self.comments = []
@@ -119,7 +123,7 @@ class CommentWidget(QtWidgets.QWidget):
             item.setData(QtCore.Qt.UserRole, idx)  # Save index
 
             # Style differently for comments written by self
-            if user == self.current_user_id:
+            if user == (self.current_user_name or self.current_user_id):
                 item.setForeground(QtCore.Qt.darkBlue)
 
             self.comments_list.addItem(item)
@@ -139,7 +143,7 @@ class CommentWidget(QtWidgets.QWidget):
         menu = QtWidgets.QMenu(self)
 
         # Only allow deletion of own comments
-        if user == self.current_user_id:
+        if user == (self.current_user_name or self.current_user_id):
             delete_action = menu.addAction("Delete")
             action = menu.exec_(self.comments_list.mapToGlobal(position))
             if action == delete_action:
@@ -179,7 +183,7 @@ class CommentWidget(QtWidgets.QWidget):
 
         # Add comment
         new_comment = {
-            "user": self.current_user_id,
+            "user": self.current_user_name or self.current_user_id,
             "text": comment_text
         }
         self.comments.append(new_comment)

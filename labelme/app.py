@@ -47,6 +47,7 @@ from labelme.widgets import LoginDialog
 from labelme.widgets import ModeSelectionDialog
 from labelme.widgets import CommentWidget
 from labelme.widgets import DiscardDialog
+from labelme.widgets import LoadingDialog
 from labelme.widgets import TaskInfoWidget
 from labelme.widgets import PostponedListDialog
 from labelme.utils.encrypt_cache import EncryptCache
@@ -280,6 +281,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.deadline = None  # datetime object
         self.deadline_timer = QtCore.QTimer(self)
         self.deadline_timer.timeout.connect(self._updateDeadlineTimer)
+
+        # Loading dialog for Firebase operations
+        self._loading_dialog = LoadingDialog(self)
 
         # Comment Dock (Displayed only in Review/Final Review modes)
         self.comment_widget = CommentWidget(self)
@@ -2856,8 +2860,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 if service_area not in self._config['labels_class'][class_type].keys():
                     service_area = 'default'
                 current_label_names = self._config['labels_class'][class_type][service_area]
-                self.labelDialog.update_prev_label_history()
-                self.labelDialog.removeDuplicatedLabelHistory(self._last_label_names)
+                # Clear all existing labels before adding new ones
+                self.labelDialog.labelList.clear()
+                self.labelDialog._prev_labels.clear()
                 for label_name in current_label_names:
                     if self._classType == 'ELButtonShapeSegmentation':
                         self.labelDialog.ELButtonShapeSegmentation_label = current_label_names
@@ -3007,9 +3012,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'task_info_widget') and self.task_info_widget:
             self.task_info_widget.set_mode(self.current_mode)
 
-        # Set User ID in CommentWidget
+        # Set User ID and Name in CommentWidget
         if hasattr(self, 'comment_widget') and self.comment_widget:
             self.comment_widget.set_user_id(self.current_user_id)
+            self.comment_widget.set_user_name(
+                self.current_user_data.get('name', '')
+            )
 
         # Button visibility per mode
         is_worker = (
@@ -3069,7 +3077,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return
 
-        self._set_firebase_loading(True, "Loading task from Firebase...")
+        self._set_firebase_loading(True, "Downloading task...")
         worker = LoadTaskWorker(
             mode=self.current_mode,
             user_id=self.current_user_id,
@@ -3099,7 +3107,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return
 
-        self._set_firebase_loading(True, "Loading modify task...")
+        self._set_firebase_loading(True, "Downloading modify task...")
         worker = LoadTaskWorker(
             mode=self.current_mode,
             user_id=self.current_user_id,
@@ -3213,7 +3221,7 @@ class MainWindow(QtWidgets.QMainWindow):
             prev_time = (self.current_document or {}).get('workingTime', 0)
             working_time += prev_time
 
-        self._set_firebase_loading(True, "Uploading and submitting task...")
+        self._set_firebase_loading(True, "Uploading task...")
         worker = SubmitTaskWorker(
             doc_id=self.current_doc_id,
             current_status=self.current_task_status,
@@ -3565,12 +3573,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtGui.QCursor(Qt.WaitCursor)
             )
             self.statusBar().showMessage(message)
+            self._loading_dialog.show_message(message)
             # Disable load/submit buttons during operation
             self.actions.loadTask.setEnabled(False)
             self.actions.loadModifyTask.setEnabled(False)
             self.actions.loadPostponeTask.setEnabled(False)
             self.actions.submitTask.setEnabled(False)
         else:
+            self._loading_dialog.dismiss()
             QtWidgets.QApplication.restoreOverrideCursor()
             self.statusBar().showMessage("")
             self.actions.loadTask.setEnabled(True)

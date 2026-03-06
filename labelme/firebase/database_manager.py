@@ -99,7 +99,9 @@ class DatabaseManager:
         filtered = [
             d for d in all_docs if d.get('status') in status_vals
         ]
-        filtered.sort(key=lambda d: _created_at_seconds(d))
+        filtered.sort(key=lambda d: (
+            not d.get('isPriority', False), _created_at_seconds(d)
+        ))
         return filtered
 
     def get_candidates_by_statuses_excluding_user(
@@ -116,7 +118,9 @@ class DatabaseManager:
             if d.get('status') in status_vals
             and d.get(exclude_field) != exclude_user_id
         ]
-        filtered.sort(key=lambda d: _created_at_seconds(d))
+        filtered.sort(key=lambda d: (
+            not d.get('isPriority', False), _created_at_seconds(d)
+        ))
         return filtered
 
     def get_documents_by_status_and_user(self, status, field, user_id):
@@ -128,5 +132,7 @@ class DatabaseManager:
             d for d in all_docs
             if d.get('status') == status_val and d.get(field) == user_id
         ]
-        filtered.sort(key=lambda d: _created_at_seconds(d))
+        filtered.sort(key=lambda d: (
+            not d.get('isPriority', False), _created_at_seconds(d)
+        ))
         return filtered
