@@ -2,6 +2,8 @@
 # Copyright 2026 ROBOTIS AI CO., LTD.
 # Authors: Sunghun Jung
 
+import argparse
+import json
 import logging
 
 import requests
@@ -97,3 +99,48 @@ class AuthorityChecker:
                 f"Failed to delete user: {response.status_code}, "
                 f"{response.text}"
             )
+
+
+def main():
+    logging.basicConfig(level=logging.INFO)
+
+    parser = argparse.ArgumentParser(
+        description='AuthorityChecker CLI',
+    )
+    sub = parser.add_subparsers(dest='command', required=True)
+
+    sub.add_parser('get-all', help='Get all users')
+
+    p_create = sub.add_parser('create', help='Create a user')
+    p_create.add_argument('--email', required=True)
+    p_create.add_argument('--name', required=True)
+
+    p_update = sub.add_parser('update', help='Update a user')
+    p_update.add_argument('--email', required=True)
+    p_update.add_argument('--data', required=True, help='JSON string')
+
+    p_grant = sub.add_parser('grant', help='Change authority')
+    p_grant.add_argument('--email', required=True)
+
+    p_delete = sub.add_parser('delete', help='Delete a user')
+    p_delete.add_argument('--email', required=True)
+
+    args = parser.parse_args()
+    checker = AuthorityChecker()
+
+    if args.command == 'get-all':
+        result = checker.get_all_users()
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    elif args.command == 'create':
+        checker.create_user(args.email, args.name)
+    elif args.command == 'update':
+        data = json.loads(args.data)
+        checker.update_user(args.email, data)
+    elif args.command == 'grant':
+        checker.change_authority(args.email)
+    elif args.command == 'delete':
+        checker.delete_user(args.email)
+
+
+if __name__ == '__main__':
+    main()
