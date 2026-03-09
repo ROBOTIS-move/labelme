@@ -30,6 +30,10 @@ class CommentWidget(QtWidgets.QWidget):
         # Comments list (QListWidget for individual item management)
         self.comments_list = QtWidgets.QListWidget(self)
         self.comments_list.setMinimumHeight(150)
+        self.comments_list.setWordWrap(True)
+        self.comments_list.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAlwaysOff
+        )
         self.comments_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.comments_list.customContextMenuRequested.connect(self._show_context_menu)
         self.comments_list.setStyleSheet("""
@@ -50,10 +54,11 @@ class CommentWidget(QtWidgets.QWidget):
         layout.addWidget(self.comments_list)
 
         # Comment input area
-        self.comment_input = QtWidgets.QLineEdit(self)
+        self.comment_input = QtWidgets.QTextEdit(self)
         self.comment_input.setPlaceholderText("Enter your comment...")
         self.comment_input.setMinimumHeight(32)
-        self.comment_input.returnPressed.connect(self._on_confirm)
+        self.comment_input.setMaximumHeight(80)
+        self.comment_input.setLineWrapMode(QtWidgets.QTextEdit.WidgetWidth)
         layout.addWidget(self.comment_input)
 
         # Confirm button
@@ -160,7 +165,7 @@ class CommentWidget(QtWidgets.QWidget):
             self._refresh_comments_display()
 
     def _on_confirm(self):
-        comment_text = self.comment_input.text().strip()
+        comment_text = self.comment_input.toPlainText().strip()
 
         if not comment_text:
             return
