@@ -120,11 +120,24 @@ class LoadTaskWorker(FirebaseWorker):
             )
 
         if self.mode == 'review':
-            candidates = (
-                self.db.get_candidates_by_statuses_excluding_user(
-                    statuses, 'workerId', self.user_id,
+            candidates = []
+            review_statuses = [
+                s for s in statuses
+                if s != TaskStatus.FINISHED_MODIFY
+            ]
+            if review_statuses:
+                candidates.extend(
+                    self.db.get_candidates_by_statuses_excluding_user(
+                        review_statuses, 'workerId', self.user_id,
+                    )
                 )
-            )
+            if TaskStatus.FINISHED_MODIFY in statuses:
+                candidates.extend(
+                    self.db.get_documents_by_status_and_user(
+                        TaskStatus.FINISHED_MODIFY,
+                        'reviewerId', self.user_id,
+                    )
+                )
             return self._filter_by_drop_list(
                 self._filter_by_class_type(candidates)
             )
