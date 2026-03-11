@@ -84,7 +84,7 @@ class ImageUpload(ImageManager):
             )
 
             if response.status_code == 200:
-                logger.info("Successfully uploaded: %s", local_path)
+                logger.info("Uploaded: %s", os.path.basename(local_path))
             else:
                 raise RuntimeError(
                     f"Upload failed: {response.status_code}, "
@@ -109,7 +109,7 @@ class ImageDownload(ImageManager):
             with open(local_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-            logger.info("Downloaded: %s", local_path)
+            logger.info("Downloaded: %s", os.path.basename(local_path))
         else:
             raise RuntimeError(
                 f"Failed to download {storage_path}: "

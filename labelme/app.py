@@ -2966,6 +2966,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 )
                 if os.path.exists(image_path):
                     self.loadFile(image_path)
+                    # Restore label class from JSON
+                    json_path = os.path.splitext(image_path)[0] + '.json'
+                    target_class = self.get_target_class(json_path)
+                    if target_class:
+                        self.choose_labels_class(target_class)
                 else:
                     logger.warning(f"Session image not found: {image_path}")
                     QtWidgets.QMessageBox.warning(

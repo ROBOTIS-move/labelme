@@ -535,11 +535,12 @@ class RestorePostponeWorker(FirebaseWorker):
         for sp, local in downloads.items():
             try:
                 self.downloader.download_single(sp, local)
-            except Exception as e:
+            except Exception:
                 if sp == img_sp:
                     raise  # Image is required
-                logger.warning(
-                    "Optional file download skipped (%s): %s", sp, e,
+                logger.debug(
+                    "Skipped optional: %s",
+                    os.path.basename(sp),
                 )
 
         # Update status back to processing

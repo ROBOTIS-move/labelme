@@ -38,7 +38,7 @@ class ColoredFormatter(logging.Formatter):
                 )
 
             record.levelname2 = colored("{:<7}".format(record.levelname))
-            record.message2 = colored(record.msg)
+            record.message2 = colored(record.getMessage())
 
             asctime2 = datetime.datetime.fromtimestamp(record.created)
             record.asctime2 = termcolor.colored(asctime2, color="green")
@@ -58,14 +58,12 @@ class ColoredLogger(logging.Logger):
     def __init__(self, name):
         logging.Logger.__init__(self, name, logging.INFO)
 
-        color_formatter = ColoredFormatter(self.FORMAT)
-
-        console = logging.StreamHandler()
-        console.setFormatter(color_formatter)
-
-        self.addHandler(console)
-        return
-
 
 logging.setLoggerClass(ColoredLogger)
 logger = logging.getLogger(__appname__)
+
+_formatter = ColoredFormatter(ColoredLogger.FORMAT)
+_console = logging.StreamHandler()
+_console.setFormatter(_formatter)
+logger.addHandler(_console)
+logger.propagate = False
