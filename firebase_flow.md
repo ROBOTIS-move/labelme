@@ -340,6 +340,10 @@ dropImageList가 비어있으면 → 필터 없음
 ```python
 mode == 'review' → workerId ≠ current_user_id 조건
 (Reviewer가 자신이 작업한 태스크 검토 방지)
+
+# REQUEST_REVIEW 상태에서 추가 적용
+reviewerId == '' 조건
+(이미 다른 Reviewer가 Claim한 문서 배제 — Race Condition 방어)
 ```
 
 ---
@@ -456,14 +460,10 @@ _cleanup_processing_files()
 
 ---
 
-## DB 업데이트 Workaround
+## DB 업데이트
 
-PATCH API가 서버에 미배포 상태. 현재 `update_document`는:
-1. `GET /annotations` → 전체 문서 목록 조회
-2. 대상 문서 찾기 → 기존 데이터에 변경 필드 merge
-3. `POST /annotation` → 덮어쓰기 (overwrite)
-
-`existing_doc` 파라미터를 통해 이미 가져온 문서를 재사용하여 불필요한 GET 호출 최소화.
+`update_document`는 `PATCH /annotation` API를 통해 직접 필드를 업데이트한다.
+`update_user`는 `PATCH /user` API를 통해 사용자 데이터를 업데이트한다.
 
 ---
 
@@ -471,9 +471,9 @@ PATCH API가 서버에 미배포 상태. 현재 `update_document`는:
 
 | 항목                 | 상태              | 비고                                                     |
 |----------------------|-------------------|----------------------------------------------------------|
-| PATCH API            | 인터페이스 준비됨 | 서버 배포 대기 중. 현재 GET→merge→POST workaround 사용   |
+| PATCH API            | 배포 완료         | `PATCH /annotation`, `PATCH /user` 정상 사용 중           |
 | 이메일 유효성 검사   | TODO              | `login_dialog._validate_id`: 하드코딩 허용 목록 사용 중  |
-| 레이스 컨디션        | 완화됨            | Claim & Verify (300ms 대기 + 재조회) 적용. 완전한 방지는 아님 |
+| 레이스 컨디션        | 완화됨            | Claim & Verify (300ms 대기 + 재조회) + `reviewerId` 빈 문서만 후보 허용. 완전한 방지는 아님 |
 | 네트워크 장애        | 부분 상태         | 업로드 성공 + 상태 업데이트 실패 → 불일치 발생            |
 | ConfigLoader 경로    | 하드코딩          | 절대 경로 사용 중. 이식성 문제                            |
 | Fernet 키            | 하드코딩          | encrypt_cache.py 내 키 노출. 보안 이슈                   |
