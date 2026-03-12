@@ -64,6 +64,7 @@ class DatabaseManager:
 
     def get_candidates_by_statuses_excluding_user(
         self, statuses, exclude_field, exclude_user_id,
+        required_empty_field=None,
     ):
         all_docs = self.get_all_document()
         if not all_docs:
@@ -75,6 +76,10 @@ class DatabaseManager:
             d for d in all_docs
             if d.get('status') in status_vals
             and d.get(exclude_field) != exclude_user_id
+            and (
+                required_empty_field is None
+                or d.get(required_empty_field, '') == ''
+            )
         ]
         filtered.sort(key=lambda d: (
             not d.get('isPriority', False), _created_at_seconds(d)

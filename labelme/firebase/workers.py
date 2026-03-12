@@ -129,6 +129,7 @@ class LoadTaskWorker(FirebaseWorker):
                 candidates.extend(
                     self.db.get_candidates_by_statuses_excluding_user(
                         review_statuses, 'workerId', self.user_id,
+                        required_empty_field='reviewerId',
                     )
                 )
             if TaskStatus.FINISHED_MODIFY in statuses:
