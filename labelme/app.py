@@ -3329,6 +3329,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def dropTaskAction(self):
         logger.info("Drop Task action triggered")
+        if self.current_mode != ModeSelectionDialog.MODE_LABELING:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Drop",
+                "Drop is only available in Labeling mode.",
+            )
+            return
+
         if self._active_worker and self._active_worker.isRunning():
             QtWidgets.QMessageBox.warning(
                 self, "Busy", "A task is already in progress.",
