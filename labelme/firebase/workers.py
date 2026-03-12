@@ -355,7 +355,15 @@ class SubmitTaskWorker(FirebaseWorker):
         if self.working_time > 0:
             update_data['workingTime'] = round(self.working_time, 2)
         update_data.update(storage_paths)
-        self.db.update_document(self.doc_id, update_data)
+        try:
+            self.db.update_document(self.doc_id, update_data)
+        except Exception as e:
+            uploaded = [v for v in storage_paths.values() if v]
+            raise RuntimeError(
+                f"DB update failed after upload. "
+                f"Uploaded files may remain: {uploaded}. "
+                f"Error: {e}"
+            )
 
         # Cleanup postpone storage only when submitting a restored postpone task
         if self.from_postpone and self.user_id:

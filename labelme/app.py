@@ -2956,6 +2956,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Restore Firebase state
                 self.current_doc_id = session_data.get("doc_id")
                 self.current_task_status = session_data.get("task_status")
+                self._from_postpone = session_data.get(
+                    "from_postpone", False
+                )
 
                 # Apply mode settings
                 self._applyModeSettings()
@@ -3658,6 +3661,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.actions.loadPostponeTask.setEnabled(True)
             if self.filename:
                 self.actions.submitTask.setEnabled(True)
+                self.actions.postponeTask.setEnabled(True)
+                self.actions.dropTask.setEnabled(True)
+                self.actions.discardTask.setEnabled(True)
 
     def _on_firebase_error(self, msg):
         self._set_firebase_loading(False)
@@ -3789,6 +3795,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "user_id": self.current_user_id,
             "doc_id": self.current_doc_id,
             "task_status": self.current_task_status,
+            "from_postpone": self._from_postpone,
         }
 
         try:
@@ -3822,16 +3829,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if image_filename is None:
             image_filename = self.filename
 
-        if not image_filename:
-            return
-
-        session_file = self._get_session_file_path(image_filename)
-        if os.path.exists(session_file):
-            try:
-                os.remove(session_file)
-                logger.info(f"Session info cleared: {session_file}")
-            except Exception as e:
-                logger.warning(f"Failed to clear session info: {e}")
+        if image_filename:
+            session_file = self._get_session_file_path(image_filename)
+            if os.path.exists(session_file):
+                try:
+                    os.remove(session_file)
+                    logger.info(f"Session info cleared: {session_file}")
+                except Exception as e:
+                    logger.warning(f"Failed to clear session: {e}")
+        else:
+            for f in glob.glob(
+                os.path.join(self.processing_dir, "*_session.json")
+            ):
+                try:
+                    os.remove(f)
+                    logger.info(f"Session info cleared: {f}")
+                except Exception as e:
+                    logger.warning(f"Failed to clear session: {e}")
 
     def _check_drop_count(self) -> int:
         return self.current_user_data.get('dropCount', 0)

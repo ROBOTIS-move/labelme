@@ -417,7 +417,7 @@ _cleanup_processing_files()
 
 ## 데드라인 타이머
 
-- 데드라인 = 로드 시각 + **48시간**
+- 데드라인 = 로드 시각 + **24시간**
 - 로드 시각은 `{basename}_load_time.txt`에 영속화
 - 1초 간격 QTimer로 남은 시간 갱신
 - `TaskInfoWidget`에 표시: 초록 → 노랑(6h 이하) → 빨강(2h 이하) → "Expired"
