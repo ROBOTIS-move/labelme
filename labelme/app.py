@@ -2271,6 +2271,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.paintCanvas()
         self.addRecentFile(self.filename)
         self.toggleActions(True)
+        self.setEditMode()
         self.canvas.setFocus()
 
         # Cloud-Native: Pass current image path to CommentWidget (only in cloud-native mode)
