@@ -111,7 +111,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         self.accept()
 
     def _on_review(self):
-        if not self.user_data.get('reviewer', False):
+        if not (self.user_data.get('reviewer', False)
+               or self.user_data.get('supervisor', False)):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Permission Denied",
@@ -123,7 +124,8 @@ class ModeSelectionDialog(QtWidgets.QDialog):
         self.accept()
 
     def _on_final_review(self):
-        if not self.user_data.get('finalReviewer', False):
+        if not (self.user_data.get('finalReviewer', False)
+               or self.user_data.get('supervisor', False)):
             QtWidgets.QMessageBox.warning(
                 self,
                 "Permission Denied",
