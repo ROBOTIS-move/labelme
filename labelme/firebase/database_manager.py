@@ -3,8 +3,12 @@
 # Authors: Sunghun Jung
 
 import logging
+import time
 
 import requests
+from requests.exceptions import ConnectionError as ReqConnectionError
+from requests.exceptions import ChunkedEncodingError
+from requests.exceptions import Timeout as ReqTimeout
 
 from labelme.firebase.utils import ConfigLoader
 
@@ -35,17 +39,71 @@ class DatabaseManager:
                 f"{response.text}"
             )
 
+    MAX_WRITE_RETRIES = 3
+    WRITE_RETRY_DELAY = 1.0
+
     def update_document(self, doc_id, data):
         url = f"{self.common_url}/annotation"
         body = {'id': doc_id, 'data': data}
-        response = requests.patch(url, json=body, timeout=30)
-        if response.status_code in (200, 201):
-            logger.info("Successfully updated document: %s", doc_id)
-        else:
-            raise RuntimeError(
-                f"Failed to update document: {response.status_code}, "
-                f"{response.text}"
-            )
+        last_error = None
+
+        for attempt in range(self.MAX_WRITE_RETRIES):
+            try:
+                response = requests.patch(url, json=body, timeout=30)
+                if response.status_code in (200, 201):
+                    logger.info(
+                        "Successfully updated document: %s", doc_id,
+                    )
+                    return
+                raise RuntimeError(
+                    f"Failed to update document: "
+                    f"{response.status_code}, {response.text}"
+                )
+            except ReqTimeout as e:
+                # Timeout: PATCH may have been applied on server
+                if self._verify_update_applied(doc_id, data):
+                    logger.info(
+                        "Timeout but PATCH verified for %s", doc_id,
+                    )
+                    return
+                last_error = e
+                logger.warning(
+                    "Timeout retry %d/%d for %s: %s",
+                    attempt + 1, self.MAX_WRITE_RETRIES, doc_id, e,
+                )
+                if attempt < self.MAX_WRITE_RETRIES - 1:
+                    time.sleep(self.WRITE_RETRY_DELAY)
+            except (ReqConnectionError, ChunkedEncodingError) as e:
+                last_error = e
+                logger.warning(
+                    "Write retry %d/%d for %s: %s",
+                    attempt + 1, self.MAX_WRITE_RETRIES, doc_id, e,
+                )
+                if attempt < self.MAX_WRITE_RETRIES - 1:
+                    time.sleep(self.WRITE_RETRY_DELAY)
+
+        raise RuntimeError(
+            f"Network error after {self.MAX_WRITE_RETRIES} retries "
+            f"for document '{doc_id}'.\n"
+            f"Please contact the administrator with the following info:\n"
+            f"  Document: {doc_id}\n"
+            f"  Error: {last_error}"
+        )
+
+    def _verify_update_applied(self, doc_id, data):
+        try:
+            all_docs = self.get_all_document()
+        except Exception:
+            return False
+        for d in all_docs:
+            if d.get('imageName') != doc_id:
+                continue
+            # Check if key fields from data match
+            for key, val in data.items():
+                if d.get(key) != val:
+                    return False
+            return True
+        return False
 
     def get_candidates_by_statuses(self, statuses):
         all_docs = self.get_all_document()

@@ -126,12 +126,20 @@ class LoadTaskWorker(FirebaseWorker):
                 if s != TaskStatus.FINISHED_MODIFY
             ]
             if review_statuses:
+                # Unassigned request_review documents
                 candidates.extend(
                     self.db.get_candidates_by_statuses_excluding_user(
                         review_statuses, 'workerId', self.user_id,
                         required_empty_field='reviewerId',
                     )
                 )
+                # Orphan recovery: request_review assigned to self
+                for status in review_statuses:
+                    candidates.extend(
+                        self.db.get_documents_by_status_and_user(
+                            status, 'reviewerId', self.user_id,
+                        )
+                    )
             if TaskStatus.FINISHED_MODIFY in statuses:
                 candidates.extend(
                     self.db.get_documents_by_status_and_user(
@@ -189,13 +197,13 @@ class LoadTaskWorker(FirebaseWorker):
                 if attempt < self.MAX_VERIFY_RETRIES - 1:
                     time.sleep(self.VERIFY_DELAY)
                     continue
-                # Claim POST succeeded but verify failed
-                # Assume ownership to avoid orphan claim
+                # Claim may have been applied but cannot verify
+                # Return False to avoid duplicate assignment
                 logger.warning(
                     "Verify failed after %d retries, "
-                    "assuming ownership: %s", attempt + 1, e,
+                    "giving up claim: %s", attempt + 1, e,
                 )
-                return True
+                return False
 
             for d in all_docs:
                 if d.get('imageName') == doc_id:
@@ -550,10 +558,14 @@ class RestorePostponeWorker(FirebaseWorker):
                     os.path.basename(sp),
                 )
 
-        # Update status back to processing
+        # Restore to MODIFYING if reviewer was assigned, else PROCESSING
+        has_reviewer = self.doc.get('reviewerId', '') != ''
+        next_status = (
+            TaskStatus.MODIFYING if has_reviewer else TaskStatus.PROCESSING
+        )
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.db.update_document(doc_id, {
-            'status': TaskStatus.PROCESSING.value,
+            'status': next_status.value,
             'assignedAt': now_str,
         })
 
@@ -563,6 +575,7 @@ class RestorePostponeWorker(FirebaseWorker):
             'imageName': doc_id,
             'local_image_path': local_img,
             'document': self.doc,
+            'next_status': next_status.value,
         }
 
 

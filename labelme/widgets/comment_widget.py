@@ -49,6 +49,7 @@ class CommentWidget(QtWidgets.QWidget):
             }
             QListWidget::item:selected {
                 background-color: #e3f2fd;
+                color: #333333;
             }
         """)
         layout.addWidget(self.comments_list)
@@ -62,7 +63,7 @@ class CommentWidget(QtWidgets.QWidget):
         layout.addWidget(self.comment_input)
 
         # Confirm button
-        self.confirm_button = QtWidgets.QPushButton("Submit", self)
+        self.confirm_button = QtWidgets.QPushButton("Add Comment", self)
         self.confirm_button.setMinimumHeight(32)
         self.confirm_button.setStyleSheet("""
             QPushButton {

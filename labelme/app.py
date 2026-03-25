@@ -1178,9 +1178,6 @@ class MainWindow(QtWidgets.QMainWindow):
             undo,
             brightnessContrast,
             None,
-            postponeTask,
-            discardTask,
-            None,
             hideAll,
             showAll,
             None,
@@ -1358,6 +1355,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.brightnessContrast.setEnabled(value)
         self.actions.prevBrightnessContrast.setEnabled(value)
         self.actions.edit_label_name.setEnabled(value)
+
+        for a in (
+            self.actions.duplicate, self.actions.copy,
+            self.actions.paste, self.actions.delete,
+            self.actions.undo, self.actions.redo,
+        ):
+            a.setEnabled(value)
 
         # Cloud-Native: Activate Cloud-Native actions when image is loaded
         if hasattr(self.actions, 'submitTask'):
@@ -2331,9 +2335,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.saveWithImageData.setChecked(enabled)
 
     def closeEvent(self, event):
-        # self.canvas.measureWorkingTime.measure_time()
-        # self.canvas.measureWorkingTime.working_count += 1
-        # self.canvas.measureWorkingTime.write_crypt_description(self.imagePath)
+        if self._active_worker and self._active_worker.isRunning():
+            reply = QtWidgets.QMessageBox.warning(
+                self, "Task in Progress",
+                "A Firebase operation is in progress.\n"
+                "Please wait for it to complete before closing.",
+                QtWidgets.QMessageBox.Ok,
+            )
+            event.ignore()
+            return
         if not self.mayContinue():
             event.ignore()
         self.settings.setValue(
@@ -2982,8 +2992,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         "Image Not Found",
                         f"Saved image not found: {image_filename}"
                     )
-                    # Delete session info and proceed to mode selection
+                    # Delete session info, reset state, proceed to mode selection
                     self._clear_session_info()
+                    self._reset_firebase_state()
                     self._selectModeAndApply()
             else:
                 logger.info(f"Session user mismatch: {saved_user_id} != {self.current_user_id}")
@@ -3024,7 +3035,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Final Review Mode: Show Polygon Labels + Comment
             self.shape_dock.setVisible(True)
             self.comment_dock.setVisible(True)
-            self.comment_widget.set_read_only(False)
+            self.comment_widget.set_read_only(True)
             self.setWindowTitle(f"{__appname__} - Final Review")
 
         # Common: Keep unnecessary Docks hidden
@@ -3337,6 +3348,17 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return
 
+        doc = self.current_document or {}
+        has_reviewer = doc.get('reviewerId', '') != ''
+        has_final_reviewer = doc.get('finalReviewerId', '') != ''
+        if has_reviewer or has_final_reviewer:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Drop",
+                "Cannot drop a task that has been reviewed.\n"
+                "Please complete or postpone this task.",
+            )
+            return
+
         if self._active_worker and self._active_worker.isRunning():
             QtWidgets.QMessageBox.warning(
                 self, "Busy", "A task is already in progress.",
@@ -3355,8 +3377,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if drop_count >= 3:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Drop Task",
-                "Drop 횟수(3회)를 초과하여 더 이상 Drop할 수 없습니다.\n"
-                "현재 작업을 계속 진행해주세요."
+                "You have exceeded the drop limit (3 times).\n"
+                "Please continue with the current task."
             )
             return
 
@@ -3547,7 +3569,9 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.current_doc_id = result.get('doc_id')
-        self.current_task_status = TaskStatus.PROCESSING.value
+        self.current_task_status = result.get(
+            'next_status', TaskStatus.PROCESSING.value
+        )
         self.current_document = result.get('document')
         self._from_postpone = True
 
@@ -3676,10 +3700,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_firebase_error(self, msg):
         self._set_firebase_loading(False)
         logger.error(f"Firebase error: {msg}")
-        QtWidgets.QMessageBox.critical(
-            self, "Firebase Error",
-            f"An error occurred:\n{msg}\n\nPlease try again."
-        )
+
+        mode = getattr(self, 'current_mode', 'unknown')
+        doc_id = getattr(self, 'current_doc_id', 'unknown')
+        if 'contact the administrator' in msg:
+            QtWidgets.QMessageBox.critical(
+                self, "Firebase Error",
+                f"{msg}\n"
+                f"  Mode: {mode}\n"
+                f"  Image: {doc_id}"
+            )
+        else:
+            QtWidgets.QMessageBox.critical(
+                self, "Firebase Error",
+                f"An error occurred:\n{msg}\n\nPlease try again."
+            )
 
     def _reset_firebase_state(self):
         self.current_doc_id = None
