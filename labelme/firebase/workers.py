@@ -211,8 +211,6 @@ class LoadTaskWorker(FirebaseWorker):
             # Document disappeared
             return False
 
-        return True
-
     def _download_task(self, doc, next_status):
         doc_id = doc.get('imageName', '')
         basename = os.path.splitext(doc_id)[0]

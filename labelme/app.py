@@ -2346,6 +2346,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if not self.mayContinue():
             event.ignore()
+            return
         self.settings.setValue(
             "filename", self.filename if self.filename else ""
         )
