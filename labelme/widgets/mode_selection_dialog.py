@@ -5,6 +5,7 @@ import logging
 from qtpy import QtWidgets
 from qtpy import QtCore
 
+from labelme.firebase.constants import TaskStatus
 from labelme.firebase.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
@@ -204,18 +205,18 @@ class ModeSelectionDialog(QtWidgets.QDialog):
                     continue
 
             status = doc.get('status', '')
-            if status == 'ready':
+            if status == TaskStatus.READY.value:
                 counts['ready'] += 1
-            elif status == 'modify':
+            elif status == TaskStatus.MODIFY.value:
                 if doc.get('workerId') == self.user_id:
                     counts['my_modify'] += 1
-            elif status == 'request_review':
+            elif status == TaskStatus.REQUEST_REVIEW.value:
                 if doc.get('reviewerId', '') == '':
                     counts['review_waiting'] += 1
-            elif status == 'finished_modify':
+            elif status == TaskStatus.FINISHED_MODIFY.value:
                 if doc.get('reviewerId') == self.user_id:
                     counts['my_rereview'] += 1
-            elif status == 'request_final_review':
+            elif status == TaskStatus.REQUEST_FINAL_REVIEW.value:
                 counts['final_review'] += 1
 
         self._update_count_labels(counts)

@@ -2336,7 +2336,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         if self._active_worker and self._active_worker.isRunning():
-            reply = QtWidgets.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self, "Task in Progress",
                 "A Firebase operation is in progress.\n"
                 "Please wait for it to complete before closing.",
@@ -3592,41 +3592,32 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             self._reset_firebase_state()
 
+    def _finalize_task(self):
+        self._clear_session_info()
+        self._cleanup_processing_files()
+        self._reset_firebase_state()
+        self.comment_widget.clear_comments()
+        self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
+
     def _on_submit_finished(self, result):
         self._set_firebase_loading(False)
-
         QtWidgets.QMessageBox.information(
             self, "Submitted",
             f"Task submitted successfully.\n"
             f"Status: {result.get('next_status', 'unknown')}"
         )
-
-        self._clear_session_info()
-        self._cleanup_processing_files()
-        self._reset_firebase_state()
-        self.comment_widget.clear_comments()
-        self.resetState()
-        self.setClean()
-        self.toggleActions(False)
-        self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
+        self._finalize_task()
 
     def _on_postpone_finished(self, result):
         self._set_firebase_loading(False)
-
         QtWidgets.QMessageBox.information(
             self, "Postponed", "Task postponed successfully."
         )
-
-        self._clear_session_info()
-        self._cleanup_processing_files()
-        self._reset_firebase_state()
-        self.comment_widget.clear_comments()
-        self.resetState()
-        self.setClean()
-        self.toggleActions(False)
-        self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
+        self._finalize_task()
 
     def _on_drop_finished(self, result):
         self._set_firebase_loading(False)
@@ -3638,16 +3629,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 result['dropImageList']
             )
 
-        self._clear_session_info()
-        self._cleanup_processing_files()
-        self._reset_firebase_state()
-        self.comment_widget.clear_comments()
-        self.resetState()
-        self.setClean()
-        self.toggleActions(False)
-        self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
-
+        self._finalize_task()
         QtWidgets.QMessageBox.information(
             self, "Dropped",
             "Task dropped and returned to task pool."
@@ -3655,17 +3637,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _on_discard_finished(self, result):
         self._set_firebase_loading(False)
-
-        self._clear_session_info()
-        self._cleanup_processing_files()
-        self._reset_firebase_state()
-        self.comment_widget.clear_comments()
-        self.resetState()
-        self.setClean()
-        self.toggleActions(False)
-        self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
-
+        self._finalize_task()
         QtWidgets.QMessageBox.information(
             self, "Discarded",
             "Task discarded successfully."
@@ -3702,8 +3674,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._set_firebase_loading(False)
         logger.error(f"Firebase error: {msg}")
 
-        mode = getattr(self, 'current_mode', 'unknown')
-        doc_id = getattr(self, 'current_doc_id', 'unknown')
+        mode = getattr(self, 'current_mode', None) or 'unknown'
+        doc_id = getattr(self, 'current_doc_id', None) or 'unknown'
         if 'contact the administrator' in msg:
             QtWidgets.QMessageBox.critical(
                 self, "Firebase Error",
