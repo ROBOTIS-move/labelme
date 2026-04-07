@@ -57,7 +57,7 @@ labelme/                          # 루트 패키지
 │   ├── mode_selection_dialog.py  # 라벨링/리뷰/최종리뷰 선택기
 │   ├── loading_dialog.py         # 애니메이션 로딩 인디케이터
 │   ├── discard_dialog.py         # 사유 기재 태스크 반려
-│   ├── postponed_list_dialog.py  # 보류 태스크 복원
+│   ├── postponed_list_dialog.py  # 보류 태스크 복원 (이중 모드: 디렉토리 스캔 / 리스트 기반)
 │   ├── work_history_dialog.py    # 라운드/모드별 작업 분석
 │   └── ...                       # 기타 표준 Labelme 위젯
 │
@@ -119,6 +119,13 @@ labelme/                          # 루트 패키지
 > |---|---|---|
 > | `widgets/login_dialog.py` | `firebase.authority_checker` import, UI 스레드에서 동기 HTTP 호출 | `QThread` worker로 위임해야 함 |
 > | `widgets/mode_selection_dialog.py` | `firebase.constants`, `firebase.database_manager` import, 동기 DB 호출 | `QThread` worker로 위임해야 함 |
+>
+> **해결된 기술 부채:**
+>
+> | 날짜 | 파일 | 해결 내용 |
+> |---|---|---|
+> | 2026-04-07 | `app.py` → `submitTaskAction` | `EncryptCache.run_single()`을 메인 GUI 스레드에서 `SubmitTaskWorker.execute()`로 이동 (HC-01 준수). 워커가 자체 `EncryptCache` 인스턴스를 생성하여 스레드 간 공유 가변 상태 방지. |
+> | 2026-04-07 | `app.py` → `_on_load_postpone_list_finished` | 25줄 인라인 `QDialog`를 `PostponedListDialog` 위젯으로 교체. 다이얼로그가 이중 모드 지원: 디렉토리 스캔(`postpone_dir` + `user_id`) 및 리스트 기반(`image_names` Firebase 파라미터). |
 
 ### 3.2 애플리케이션 아키텍처 패턴
 
@@ -207,6 +214,20 @@ result = model.predict(image)  # 메인 스레드에서
 1. 적절한 모듈에 `QThread` 서브클래스 생성 (네트워크는 `firebase/workers.py`, 연산은 대상 모듈의 새 `workers.py`)
 2. `Signal`을 통해 결과 emit
 3. 연결된 `Slot`(메인 스레드)에서만 UI 업데이트
+
+**공유 객체의 스레드 안전성:**
+유틸리티 객체(예: `EncryptCache`)를 `QThread` 워커에 전달할 때, 스레드 간 가변 인스턴스를 **절대** 공유하지 마십시오. 대신 `execute()` 내부에서 lazy import를 사용하여 새 인스턴스를 생성하여 상태 오염을 방지하십시오:
+```python
+# 올바름 — 워커별 격리된 인스턴스
+def execute(self):
+    from labelme.utils.encrypt_cache import EncryptCache
+    encrypt = EncryptCache()
+    encrypt.run_single(path, json_path, worker_name=self.user_id)
+
+# 잘못됨 — 공유 가변 인스턴스, 경쟁 조건 위험
+def execute(self):
+    self.shared_encrypt.run_single(...)  # 메인 스레드도 이것을 사용할 수 있음
+```
 
 ---
 
@@ -502,7 +523,7 @@ self.worker.result_ready.connect(self._update_canvas_with_result)
 | 새 기능 유형 | 참조 구현체 |
 |---|---|
 | 새 QThread Worker | `firebase/workers.py` → `LoadTaskWorker` |
-| 새 Dialog 위젯 | `widgets/mode_selection_dialog.py` 또는 `widgets/discard_dialog.py` |
+| 새 Dialog 위젯 | `widgets/mode_selection_dialog.py`, `widgets/discard_dialog.py`, 또는 `widgets/postponed_list_dialog.py` (이중 모드 패턴) |
 | 새 Dock 위젯 | `widgets/comment_widget.py` 또는 `widgets/task_info_widget.py` |
 | 새 Canvas 도구/모드 | `widgets/canvas.py` → `createMode` / `editMode` 패턴 |
 | 새 Firebase API 호출 | `firebase/database_manager.py` → 기존 메서드 |

@@ -57,7 +57,7 @@ labelme/                          # Root package
 │   ├── mode_selection_dialog.py  # Labeling/Review/Final Review selector
 │   ├── loading_dialog.py         # Animated loading indicator
 │   ├── discard_dialog.py         # Task rejection with reason
-│   ├── postponed_list_dialog.py  # Postponed task restoration
+│   ├── postponed_list_dialog.py  # Postponed task restoration (dual mode: dir-scan / list-based)
 │   ├── work_history_dialog.py    # Work analytics by round/mode
 │   └── ...                       # Other standard Labelme widgets
 │
@@ -119,6 +119,13 @@ labelme/                          # Root package
 > |---|---|---|
 > | `widgets/login_dialog.py` | Imports `firebase.authority_checker`, makes sync HTTP call in UI thread | Should delegate to a `QThread` worker |
 > | `widgets/mode_selection_dialog.py` | Imports `firebase.constants`, `firebase.database_manager`, makes sync DB call | Should delegate to a `QThread` worker |
+>
+> **Resolved Technical Debt:**
+>
+> | Date | File | Resolution |
+> |---|---|---|
+> | 2026-04-07 | `app.py` → `submitTaskAction` | Moved `EncryptCache.run_single()` from main GUI thread to `SubmitTaskWorker.execute()` (HC-01 compliance). Worker creates its own `EncryptCache` instance to avoid shared mutable state across threads. |
+> | 2026-04-07 | `app.py` → `_on_load_postpone_list_finished` | Replaced 25-line inline `QDialog` with `PostponedListDialog` widget. Dialog now supports dual mode: directory-scan (`postpone_dir` + `user_id`) and list-based (`image_names` param from Firebase). |
 
 ### 3.2 Application Architecture Pattern
 
@@ -207,6 +214,20 @@ result = model.predict(image)  # IN MAIN THREAD
 1. Create a `QThread` subclass in the appropriate module (`firebase/workers.py` for network, new `workers.py` in target module for computation)
 2. Emit results via `Signal`
 3. Update UI only in the connected `Slot` (main thread)
+
+**Thread-Safety for Shared Objects:**
+When passing utility objects (e.g., `EncryptCache`) to a `QThread` worker, **NEVER** share a mutable instance across threads. Instead, create a new instance inside `execute()` using lazy import to avoid state corruption:
+```python
+# CORRECT — isolated instance per worker
+def execute(self):
+    from labelme.utils.encrypt_cache import EncryptCache
+    encrypt = EncryptCache()
+    encrypt.run_single(path, json_path, worker_name=self.user_id)
+
+# WRONG — shared mutable instance, race condition risk
+def execute(self):
+    self.shared_encrypt.run_single(...)  # main thread may also use this
+```
 
 ---
 
@@ -502,7 +523,7 @@ If risk is **MEDIUM** or **HIGH**, the change MUST be presented as a plan first 
 | New Feature Type | Reference Implementation |
 |---|---|
 | New QThread Worker | `firebase/workers.py` → `LoadTaskWorker` |
-| New Dialog Widget | `widgets/mode_selection_dialog.py` or `widgets/discard_dialog.py` |
+| New Dialog Widget | `widgets/mode_selection_dialog.py`, `widgets/discard_dialog.py`, or `widgets/postponed_list_dialog.py` (dual-mode pattern) |
 | New Dock Widget | `widgets/comment_widget.py` or `widgets/task_info_widget.py` |
 | New Canvas Tool/Mode | `widgets/canvas.py` → `createMode` / `editMode` patterns |
 | New Firebase API call | `firebase/database_manager.py` → existing methods |
