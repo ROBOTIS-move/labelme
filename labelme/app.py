@@ -3256,19 +3256,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         basename = os.path.splitext(os.path.basename(self.filename))[0]
 
-        # Update encrypt cache before upload
-        encrypt_path = os.path.join(
-            self.processing_dir, f"{basename}_encrypt.bin"
-        )
-        json_path = os.path.join(
-            self.processing_dir, f"{basename}.json"
-        )
-        if os.path.exists(json_path):
-            self.encrypt.run_single(
-                encrypt_path, json_path,
-                worker_name=self.current_user_id,
-            )
-
         # Capture working time (labeling mode only)
         working_time = 0
         if self.current_mode == ModeSelectionDialog.MODE_LABELING:
@@ -3288,6 +3275,7 @@ class MainWindow(QtWidgets.QMainWindow):
             user_id=self.current_user_id or '',
             from_postpone=self._from_postpone,
             working_time=working_time,
+            encrypt_enabled=True,
             parent=self,
         )
         worker.finished.connect(self._on_submit_finished)
@@ -3502,39 +3490,16 @@ class MainWindow(QtWidgets.QMainWindow):
         documents = result.get('documents', [])
         image_names = [d.get('imageName', '') for d in documents]
 
-        # Show selection dialog with QListWidget
-        dialog = QtWidgets.QDialog(self)
-        dialog.setWindowTitle("Select Postponed Task")
-        dialog.setMinimumWidth(400)
-        dialog.setMinimumHeight(300)
-        layout = QtWidgets.QVBoxLayout(dialog)
-
-        label = QtWidgets.QLabel("Select a task to restore:")
-        layout.addWidget(label)
-
-        list_widget = QtWidgets.QListWidget()
-        for name in image_names:
-            list_widget.addItem(name)
-        list_widget.setCurrentRow(0)
-        list_widget.itemDoubleClicked.connect(dialog.accept)
-        layout.addWidget(list_widget)
-
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addStretch()
-        ok_btn = QtWidgets.QPushButton("Load")
-        ok_btn.clicked.connect(dialog.accept)
-        btn_layout.addWidget(ok_btn)
-        cancel_btn = QtWidgets.QPushButton("Cancel")
-        cancel_btn.clicked.connect(dialog.reject)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
-
+        dialog = PostponedListDialog(
+            image_names=image_names,
+            user_id=self.current_user_id,
+            parent=self,
+        )
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
             return
-        current = list_widget.currentItem()
-        if not current:
+        item = dialog.get_selected_image()
+        if not item:
             return
-        item = current.text()
 
         # Find matching document
         selected_doc = None

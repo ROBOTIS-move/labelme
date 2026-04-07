@@ -261,7 +261,8 @@ class SubmitTaskWorker(FirebaseWorker):
     def __init__(
         self, doc_id, current_status, processing_dir,
         basename, mode, user_id='',
-        from_postpone=False, working_time=0, parent=None,
+        from_postpone=False, working_time=0,
+        encrypt_enabled=False, parent=None,
     ):
         super().__init__(parent)
         self.doc_id = doc_id
@@ -272,10 +273,27 @@ class SubmitTaskWorker(FirebaseWorker):
         self.user_id = user_id
         self.from_postpone = from_postpone
         self.working_time = working_time
+        self.encrypt_enabled = encrypt_enabled
         self.db = DatabaseManager()
         self.uploader = ImageUpload()
 
     def execute(self):
+        # Run encrypt cache in background thread
+        if self.encrypt_enabled:
+            from labelme.utils.encrypt_cache import EncryptCache
+            encrypt = EncryptCache()
+            encrypt_path = os.path.join(
+                self.processing_dir, f"{self.basename}_encrypt.bin"
+            )
+            json_path = os.path.join(
+                self.processing_dir, f"{self.basename}.json"
+            )
+            if os.path.exists(json_path):
+                encrypt.run_single(
+                    encrypt_path, json_path,
+                    worker_name=self.user_id,
+                )
+
         # Upload files from processing_dir
         storage_paths = {}
 
