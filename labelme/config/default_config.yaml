@@ -120,7 +120,7 @@ labels_class:
           'unknown',
           'open',
           'close',
-          'unknown',
+          'no_text',
         ]
   ELStateDetection:
     default:
@@ -425,6 +425,10 @@ label_colors:
   fence: [190, 153, 153]
   sky: [70, 130, 180]
   forbidden-area: [255, 0, 0]
+  tag: [0, 255, 0]
+  door: [0, 0, 255]
+  finger: [255, 255, 0]
+  no_text: [178, 61, 255]
 
 shape:
   # drawing
