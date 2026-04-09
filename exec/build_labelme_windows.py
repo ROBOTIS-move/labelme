@@ -278,6 +278,21 @@ class LabelmeWindowsBuilder:
             "--hidden-import", "requests",
             "--hidden-import", "cv2",
 
+            # Firebase modules
+            "--hidden-import", "labelme.firebase",
+            "--hidden-import", "labelme.firebase.constants",
+            "--hidden-import", "labelme.firebase.utils",
+            "--hidden-import", "labelme.firebase.workers",
+            "--hidden-import", "labelme.firebase.authority_checker",
+            "--hidden-import", "labelme.firebase.database_manager",
+            "--hidden-import", "labelme.firebase.image_manager",
+
+            # Encryption (used by encrypt_cache, measure_working_time)
+            "--hidden-import", "cryptography",
+            "--hidden-import", "cryptography.fernet",
+            "--hidden-import", "cryptography.hazmat.backends",
+            "--hidden-import", "cryptography.hazmat.backends.openssl",
+
             # Exclude modules
             "--exclude-module", "PySide6",
             "--exclude-module", "PySide2",
@@ -292,6 +307,7 @@ class LabelmeWindowsBuilder:
             "--add-data", f"{self.root_dir}/version.xml;.",
             "--add-data", f"{self.root_dir}/package.xml;.",
             "--add-data", f"{self.app_dir}/config;labelme/config",
+            "--add-data", f"{self.app_dir}/firebase/config;labelme/firebase/config",
             "--add-data", f"{self.app_dir}/icons;labelme/icons",
             "--add-data", f"{self.app_dir}/translate;labelme/translate",
             "--add-data", f"{self.app_dir}/cli;labelme/cli",
@@ -306,6 +322,10 @@ class LabelmeWindowsBuilder:
             # Collect all of PyQt5
             "--collect-all", "PyQt5",
             "--collect-all", "qtpy",
+
+            # Collect all submodules
+            "--collect-submodules", "labelme",
+            "--collect-submodules", "cryptography",
 
             # Runtime hooks
             "--runtime-hook", str(self.script_dir / "pyi_rth_console_fix.py"),

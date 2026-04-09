@@ -12,8 +12,9 @@ class CommentWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_image_path = None
-        self.current_user_id = None  # Currently logged in user ID
-        self.comments = []  # [{"user": "id", "text": "msg"}, ...]
+        self.current_user_id = None  # Currently logged in user ID (email)
+        self.current_user_name = None  # Currently logged in user name
+        self.comments = []  # [{"user": "name", "text": "msg"}, ...]
         self._init_ui()
 
     def _init_ui(self):
@@ -29,6 +30,10 @@ class CommentWidget(QtWidgets.QWidget):
         # Comments list (QListWidget for individual item management)
         self.comments_list = QtWidgets.QListWidget(self)
         self.comments_list.setMinimumHeight(150)
+        self.comments_list.setWordWrap(True)
+        self.comments_list.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAlwaysOff
+        )
         self.comments_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.comments_list.customContextMenuRequested.connect(self._show_context_menu)
         self.comments_list.setStyleSheet("""
@@ -44,19 +49,21 @@ class CommentWidget(QtWidgets.QWidget):
             }
             QListWidget::item:selected {
                 background-color: #e3f2fd;
+                color: #333333;
             }
         """)
         layout.addWidget(self.comments_list)
 
         # Comment input area
-        self.comment_input = QtWidgets.QLineEdit(self)
+        self.comment_input = QtWidgets.QTextEdit(self)
         self.comment_input.setPlaceholderText("Enter your comment...")
         self.comment_input.setMinimumHeight(32)
-        self.comment_input.returnPressed.connect(self._on_confirm)
+        self.comment_input.setMaximumHeight(80)
+        self.comment_input.setLineWrapMode(QtWidgets.QTextEdit.WidgetWidth)
         layout.addWidget(self.comment_input)
 
         # Confirm button
-        self.confirm_button = QtWidgets.QPushButton("Submit", self)
+        self.confirm_button = QtWidgets.QPushButton("Add Comment", self)
         self.confirm_button.setMinimumHeight(32)
         self.confirm_button.setStyleSheet("""
             QPushButton {
@@ -72,8 +79,15 @@ class CommentWidget(QtWidgets.QWidget):
         self.confirm_button.clicked.connect(self._on_confirm)
         layout.addWidget(self.confirm_button)
 
+    def set_read_only(self, read_only: bool):
+        self.comment_input.setVisible(not read_only)
+        self.confirm_button.setVisible(not read_only)
+
     def set_user_id(self, user_id: str):
         self.current_user_id = user_id
+
+    def set_user_name(self, user_name: str):
+        self.current_user_name = user_name
 
     def set_image_path(self, image_path: str):
         self.current_image_path = image_path
@@ -115,7 +129,7 @@ class CommentWidget(QtWidgets.QWidget):
             item.setData(QtCore.Qt.UserRole, idx)  # Save index
 
             # Style differently for comments written by self
-            if user == self.current_user_id:
+            if user == (self.current_user_name or self.current_user_id):
                 item.setForeground(QtCore.Qt.darkBlue)
 
             self.comments_list.addItem(item)
@@ -135,7 +149,7 @@ class CommentWidget(QtWidgets.QWidget):
         menu = QtWidgets.QMenu(self)
 
         # Only allow deletion of own comments
-        if user == self.current_user_id:
+        if user == (self.current_user_name or self.current_user_id):
             delete_action = menu.addAction("Delete")
             action = menu.exec_(self.comments_list.mapToGlobal(position))
             if action == delete_action:
@@ -152,7 +166,7 @@ class CommentWidget(QtWidgets.QWidget):
             self._refresh_comments_display()
 
     def _on_confirm(self):
-        comment_text = self.comment_input.text().strip()
+        comment_text = self.comment_input.toPlainText().strip()
 
         if not comment_text:
             return
@@ -175,7 +189,7 @@ class CommentWidget(QtWidgets.QWidget):
 
         # Add comment
         new_comment = {
-            "user": self.current_user_id,
+            "user": self.current_user_name or self.current_user_id,
             "text": comment_text
         }
         self.comments.append(new_comment)

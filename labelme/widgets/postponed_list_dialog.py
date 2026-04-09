@@ -6,10 +6,14 @@ from qtpy import QtGui
 
 class PostponedListDialog(QtWidgets.QDialog):
 
-    def __init__(self, postpone_dir, user_id, parent=None):
+    def __init__(
+        self, postpone_dir=None, user_id=None,
+        image_names=None, parent=None,
+    ):
         super(PostponedListDialog, self).__init__(parent)
         self.postpone_dir = postpone_dir
         self.user_id = user_id
+        self.image_names = image_names
         self.selected_image = None
 
         self.setWindowTitle("Load Postponed Task")
@@ -17,16 +21,21 @@ class PostponedListDialog(QtWidgets.QDialog):
         self.setMinimumHeight(400)
 
         self._init_ui()
-        self._load_postponed_list()
+        if self.image_names is not None:
+            self._load_from_list(self.image_names)
+        else:
+            self._load_postponed_list()
 
     def _init_ui(self):
         layout = QtWidgets.QVBoxLayout()
 
         # Info label
-        info_label = QtWidgets.QLabel(
-            f"Postponed tasks for user '{self.user_id}':"
-        )
-        info_label.setToolTip(f"postponed task list for user {self.user_id}")
+        if self.user_id:
+            label_text = f"Postponed tasks for user '{self.user_id}':"
+        else:
+            label_text = "Select a task to restore:"
+        info_label = QtWidgets.QLabel(label_text)
+        info_label.setToolTip(label_text)
         layout.addWidget(info_label)
 
         # List widget
@@ -76,6 +85,14 @@ class PostponedListDialog(QtWidgets.QDialog):
         # Add to list
         for image_file in sorted(image_files):
             self.list_widget.addItem(image_file)
+
+    def _load_from_list(self, image_names):
+        if not image_names:
+            self.list_widget.addItem("(No postponed tasks)")
+            return
+        for name in sorted(image_names):
+            self.list_widget.addItem(name)
+        self.list_widget.setCurrentRow(0)
 
     def accept(self):
         current_item = self.list_widget.currentItem()

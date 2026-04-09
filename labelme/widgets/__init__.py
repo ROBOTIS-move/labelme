@@ -31,5 +31,7 @@ from .login_dialog import LoginDialog
 from .mode_selection_dialog import ModeSelectionDialog
 from .comment_widget import CommentWidget
 from .discard_dialog import DiscardDialog
+from .loading_dialog import LoadingDialog
 from .task_info_widget import TaskInfoWidget
 from .postponed_list_dialog import PostponedListDialog
+from .work_history_dialog import WorkHistoryDialog

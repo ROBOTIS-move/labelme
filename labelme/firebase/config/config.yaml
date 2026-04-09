@@ -1,0 +1,6 @@
+common:
+  base_url: 'https://gaemi-storage-manager-675180880514.asia-northeast3.run.app'
+  bucket_name: 'label-0001'
+
+user:
+  url: 'https://gaemi-storage-manager-675180880514.asia-northeast3.run.app'
