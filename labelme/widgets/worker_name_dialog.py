@@ -16,9 +16,9 @@ class WorkerNameWindow(QDialog):
 
         layout = QVBoxLayout()
 
-        label = QLabel('작업자의 이름을 입력해주세요:')
+        label = QLabel('Please enter worker name:')
         self.text_input = QLineEdit(self)
-        confirm_button = QPushButton('확인', self)
+        confirm_button = QPushButton('OK', self)
         confirm_button.clicked.connect(self.onConfirm)
 
         layout.addWidget(label)

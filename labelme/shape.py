@@ -300,7 +300,7 @@ class Shape(object):
                 painter.fillPath(line_path, color)
 
     def calculate_polygon_center(self, qt_points):
-        # Polygon 데이터의 center를계산
+        # Calculate center of Polygon data
         points = [(point.x(), point.y()) for point in qt_points]
         n = len(points)
         area = 0.0001
@@ -369,7 +369,7 @@ class Shape(object):
         return self.makePath().contains(point)
 
     def getCircleRectFromLine(self, line):
-        """Computes parameters to draw with `QPainterPath::addEllipse`"""
+
         if len(line) != 2:
             return None
         (c, point) = line
@@ -425,24 +425,16 @@ class Shape(object):
             self.points[i] = self.points[i] + offset
 
     def highlightVertex(self, i, action):
-        """Highlight a vertex appropriately based on the current action
-
-        Args:
-            i (int): The vertex index
-            action (int): The action
-            (see Shape.NEAR_VERTEX and Shape.MOVE_VERTEX)
-        """
         self._highlightIndex = i
         self._highlightMode = action
 
     def highlightClear(self):
-        """Clear the highlighted point"""
+
         self._highlightIndex = None
 
     def copy(self):
         return copy.deepcopy(self)
 
-    def __len__(self):
         return len(self.points)
 
     def __getitem__(self, key):

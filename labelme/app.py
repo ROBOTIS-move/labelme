@@ -7,6 +7,9 @@ import os
 import os.path as osp
 import re
 import webbrowser
+import datetime
+import glob
+import shutil
 
 import imgviz
 import natsort
@@ -40,6 +43,12 @@ from labelme.widgets import UniqueLabelQListWidget
 from labelme.widgets import ZoomWidget
 from labelme.widgets import WorkerNameWindow
 from labelme.widgets import InvalidVersionWindow
+from labelme.widgets import LoginDialog
+from labelme.widgets import ModeSelectionDialog
+from labelme.widgets import CommentWidget
+from labelme.widgets import DiscardDialog
+from labelme.widgets import TaskInfoWidget
+from labelme.widgets import PostponedListDialog
 from labelme.utils.encrypt_cache import EncryptCache
 
 # FIXME
@@ -219,6 +228,44 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setCentralWidget(scrollArea)
 
+        # Cloud-Native Mode: Flags and User Info
+        self.is_cloud_native_mode = False  # Changed to True upon successful login
+        self.current_user_id = None
+        self.current_mode = None  # 'labeling', 'review', 'final_review'
+
+        # Cloud-Native: Work directory setup (Improved to be configurable)
+        # TODO: Improve to allow user to configure path via QSettings
+        default_work_dir = os.path.join(os.path.expanduser("~"), ".labelme", "cloud_tasks")
+        self.work_base_dir = os.environ.get("LABELME_WORK_DIR", default_work_dir)
+        self.processing_dir = os.path.join(self.work_base_dir, "processing")
+        self.postpone_dir = os.path.join(self.work_base_dir, "postpone")
+
+        # Create directories (Warn on failure)
+        try:
+            os.makedirs(self.processing_dir, exist_ok=True)
+            os.makedirs(self.postpone_dir, exist_ok=True)
+        except Exception as e:
+            logger.error(f"Failed to create work directories: {e}")
+
+
+        # Cloud-Native: Timer related variables
+        self.deadline = None  # datetime object
+        self.deadline_timer = QtCore.QTimer(self)
+        self.deadline_timer.timeout.connect(self._updateDeadlineTimer)
+
+        # Comment Dock (Displayed only in Review/Final Review modes)
+        self.comment_widget = CommentWidget(self)
+        self.comment_dock = QtWidgets.QDockWidget(self.tr("Comments"), self)
+        self.comment_dock.setObjectName("Comments")
+        self.comment_dock.setWidget(self.comment_widget)
+
+        # Task Info Dock (Mode badge + Timer, Fixed at top)
+        self.task_info_widget = TaskInfoWidget(self)
+        self.task_info_dock = QtWidgets.QDockWidget(self.tr("Task Info"), self)
+        self.task_info_dock.setObjectName("TaskInfo")
+        self.task_info_dock.setWidget(self.task_info_widget)
+        self.task_info_dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ["flag_dock", "label_dock", "shape_dock", "file_dock"]:
             if self._config[dock]["closable"]:
@@ -231,10 +278,21 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._config[dock]["show"] is False:
                 getattr(self, dock).setVisible(False)
 
+        # Dock Layout: TaskInfo at the very top, other Docks below
+        self.addDockWidget(Qt.RightDockWidgetArea, self.task_info_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.comment_dock)
+
+        # Cloud-Native Mode: Hide unnecessary Docks by default (Flags, Label List, File List)
+        # Display only shape_dock (Polygon Labels) and comment_dock, task_info_dock is always displayed
+        self.flag_dock.setVisible(False)
+        self.label_dock.setVisible(False)
+        self.file_dock.setVisible(False)
+        self.comment_dock.setVisible(False)  # Initially hidden, displayed depending on mode
+        self.task_info_dock.setVisible(True)  # Always displayed
 
         # Encrypt Cache
         self.encrypt = EncryptCache()
@@ -625,6 +683,62 @@ class MainWindow(QtWidgets.QMainWindow):
             enabled=True,
         )
 
+        # ============ Cloud-Native Actions ============
+        loadTask = action(
+            self.tr("Load Task"),
+            self.loadTaskAction,
+            None,
+            "open",
+            self.tr("Load a task from cloud"),
+            enabled=True,
+        )
+
+        loadPostponeTask = action(
+            self.tr("Load Postpone"),
+            self.loadPostponeTaskAction,
+            None,
+            "undo",
+            self.tr("Load a postponed task"),
+            enabled=True,
+        )
+
+        submitTask = action(
+            self.tr("Submit"),
+            self.submitTaskAction,
+            None,
+            "save",
+            self.tr("Submit current task"),
+            enabled=False,
+        )
+
+        postponeTask = action(
+            self.tr("Postpone"),
+            self.postponeTaskAction,
+            None,
+            None,
+            self.tr("Postpone current task"),
+            enabled=False,
+        )
+
+        dropTask = action(
+            self.tr("Drop Task"),
+            self.dropTaskAction,
+            None,
+            None,
+            self.tr("Drop current task and return to pool"),
+            enabled=False,
+        )
+
+        discardTask = action(
+            self.tr("Discard Task"),
+            self.discardTaskAction,
+            None,
+            "cancel",
+            self.tr("Discard current task with reason"),
+            enabled=False,
+        )
+        # ============ End Cloud-Native Actions ============
+
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
         self.zoomWidget.setWhatsThis(
@@ -807,6 +921,13 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg=openNextImg,
             openPrevImg=openPrevImg,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            # Cloud-Native Actions
+            loadTask=loadTask,
+            loadPostponeTask=loadPostponeTask,
+            submitTask=submitTask,
+            postponeTask=postponeTask,
+            dropTask=dropTask,
+            discardTask=discardTask,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
             editMenu=(
@@ -882,6 +1003,7 @@ class MainWindow(QtWidgets.QMainWindow):
             view=self.menu(self.tr("&View")),
             help=self.menu(self.tr("&Help")),
             administrator=self.menu(self.tr("&Administrator")),
+            mode=self.menu(self.tr("&Mode")),  # Cloud-Native: Add Mode menu
             recentFiles=QtWidgets.QMenu(self.tr("Open &Recent")),
             labelList=labelMenu,
         )
@@ -889,11 +1011,20 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(
             self.menus.file,
             (
-                open_,
-                openNextImg,
-                openPrevImg,
-                opendir,
-                self.menus.recentFiles,
+                # Cloud-Native Actions (Main Menu)
+                loadTask,
+                loadPostponeTask,
+                submitTask,
+                postponeTask,
+                dropTask,
+                discardTask,
+                None,
+                # Existing actions (Hidden but kept for shortcuts)
+                # open_,
+                # openNextImg,
+                # openPrevImg,
+                # opendir,
+                # self.menus.recentFiles,
                 save,
                 saveAs,
                 saveAuto,
@@ -918,6 +1049,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 measure_cursor,
             )
         )
+
+        # Cloud-Native: Add Change action to Mode menu
+        changeModeAction = action(
+            self.tr("&Change Mode"),
+            self.changeModeAction,
+            None,
+            None,
+            self.tr("Change work mode (only when no image is loaded)"),
+            enabled=True,
+        )
+        utils.addActions(self.menus.mode, (changeModeAction,))
         utils.addActions(
             self.menus.view,
             (
@@ -925,6 +1067,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
+                self.comment_dock.toggleViewAction(),
                 self.display_label_option,
                 self.display_probability_option,
                 None,
@@ -962,14 +1105,11 @@ class MainWindow(QtWidgets.QMainWindow):
         )
 
         self.tools = self.toolbar("Tools")
-        # Menu buttons on Left
+        # Menu buttons on Left (Cloud-Native version)
         self.actions.tool = (
-            open_,
-            opendir,
-            openNextImg,
-            openPrevImg,
-            save,
-            deleteFile,
+            loadTask,
+            loadPostponeTask,
+            submitTask,
             None,
             createMode,
             createRectangleMode,
@@ -982,12 +1122,17 @@ class MainWindow(QtWidgets.QMainWindow):
             undo,
             brightnessContrast,
             None,
+            postponeTask,
+            discardTask,
+            None,
             hideAll,
             showAll,
             None,
             zoom,
             fitWidth,
         )
+
+        # Removed status bar timer label - Replaced by TaskInfoWidget
 
         self.statusBar().showMessage(str(self.tr("%s started.")) % __appname__)
         self.statusBar().show()
@@ -1050,6 +1195,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.populateModeActions()
 
+        # ============ Cloud-Native Startup Logic ============
+        # Run login and mode selection dialog at app startup
+        # Must be run before self.show()
+        QtCore.QTimer.singleShot(100, self._showStartupDialogs)
+
         # self.firstStart = True
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
@@ -1109,7 +1259,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.save.setEnabled(True)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}*".format(title, self.filename)
+            title = "{} - {}*".format(title, os.path.basename(self.filename))
         self.setWindowTitle(title)
 
     def setClean(self):
@@ -1132,7 +1282,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.createLineStripMode.setEnabled(False)
         title = __appname__
         if self.filename is not None:
-            title = "{} - {}".format(title, self.filename)
+            title = "{} - {}".format(title, os.path.basename(self.filename))
         self.setWindowTitle(title)
 
         # if self.hasLabelFile():
@@ -1142,7 +1292,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.deleteFile.setEnabled(False)
 
     def toggleActions(self, value=True):
-        """Enable/Disable widgets which depend on an opened image."""
+
         for z in self.actions.zoomActions:
             z.setEnabled(value)
 
@@ -1152,6 +1302,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.brightnessContrast.setEnabled(value)
         self.actions.prevBrightnessContrast.setEnabled(value)
         self.actions.edit_label_name.setEnabled(value)
+
+        # Cloud-Native: Activate Cloud-Native actions when image is loaded
+        if hasattr(self.actions, 'submitTask'):
+            self.actions.submitTask.setEnabled(value)
+        if hasattr(self.actions, 'postponeTask'):
+            self.actions.postponeTask.setEnabled(value)
+        if hasattr(self.actions, 'dropTask'):
+            self.actions.dropTask.setEnabled(value)
+        if hasattr(self.actions, 'discardTask'):
+            self.actions.discardTask.setEnabled(value)
 
         if self._classType is None:
             for action in self.actions.onLoadActive:
@@ -1177,6 +1337,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
+
+        # Cloud-Native: Stop and reset timer
+        self._stopDeadlineTimer()
 
     def currentItem(self):
         items = self.labelList.selectedItems()
@@ -1270,10 +1433,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return pixmap
 
     def toggleDrawingSensitive(self, drawing=True):
-        """Toggle drawing sensitive.
 
-        In the middle of drawing, toggling between modes should be disabled.
-        """
         self.actions.editMode.setEnabled(not drawing)
         self.actions.undoLastPoint.setEnabled(drawing)
         self.actions.undo.setEnabled(not drawing)
@@ -1710,10 +1870,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # Callback functions:
 
     def newShape(self):
-        """Pop-up and give focus to the label editor.
 
-        position MUST be in global coordinates.
-        """
         items = self.uniqLabelList.selectedItems()
         text = None
         if items:
@@ -1887,7 +2044,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.setCheckState(Qt.Unchecked if hide_flag else Qt.Checked)
 
     def loadFile(self, filename=None):
-        """Load the specified file, or the last opened file if None."""
+
         # changing fileListWidget loads file
         if filename in self.imageList and (
             self.fileListWidget.currentRow() != self.imageList.index(filename)
@@ -2038,6 +2195,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addRecentFile(self.filename)
         self.toggleActions(True)
         self.canvas.setFocus()
+
+        # Cloud-Native: Pass current image path to CommentWidget (only in cloud-native mode)
+        if self.is_cloud_native_mode:
+            if hasattr(self, 'comment_widget') and self.comment_widget:
+                self.comment_widget.set_image_path(self.filename)
+
+            # Cloud-Native: Start timer (48-hour countdown)
+            self._startDeadlineTimer(self.filename)
+
+            # Cloud-Native: Save session info
+            self._save_session_info(self.filename)
+
         self.status(str(self.tr("Loaded %s")) % osp.basename(str(filename)))
         return True
 
@@ -2063,7 +2232,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoom_values[self.filename] = (self.zoomMode, value)
 
     def scaleFitWindow(self):
-        """Figure out the size of the pixmap to fit the main widget."""
+
         e = 2.0  # So that no scrollbars are generated.
         w1 = self.centralWidget().width() - e
         h1 = self.centralWidget().height() - e
@@ -2662,3 +2831,542 @@ class MainWindow(QtWidgets.QMainWindow):
     def resetCursorFlag(self):
         self.measure_cursor_flag = False
         self.setCursor(Qt.ArrowCursor)
+
+    # ============ Cloud-Native Methods ============
+
+    def _showStartupDialogs(self):
+        # Login dialog
+        login_dialog = LoginDialog(self)
+        if login_dialog.exec_() != QtWidgets.QDialog.Accepted:
+            # Exit app if login cancelled
+            self.close()
+            return
+
+        self.current_user_id = login_dialog.get_user_id()
+        self.is_cloud_native_mode = True  # Enable Cloud-native mode
+        logger.info(f"User logged in: {self.current_user_id}, Cloud-native mode enabled")
+
+        # Check session restoration
+        session_data = self._load_session_info()
+
+        if session_data:
+            # If there is an image in progress
+            image_filename = session_data.get("image_filename")
+            saved_mode = session_data.get("mode")
+            saved_user_id = session_data.get("user_id")
+
+            # Check User ID (Ignore if session belongs to another user)
+            if saved_user_id == self.current_user_id:
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Restore Task",
+                    f"Work in progress found.\nImage: {image_filename}\nMode: {saved_mode}"
+                )
+
+                # Set to saved mode
+                self.current_mode = saved_mode
+                logger.info(f"Session restored: mode={saved_mode}, image={image_filename}")
+
+                # Apply mode settings
+                self._applyModeSettings()
+
+                # Find and load image from processing directory
+                image_path = os.path.join(self.processing_dir, image_filename)
+                if os.path.exists(image_path):
+                    self.loadFile(image_path)
+                else:
+                    logger.warning(f"Session image not found: {image_path}")
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        "Image Not Found",
+                        f"Saved image not found: {image_filename}"
+                    )
+                    # Delete session info and proceed to mode selection
+                    self._clear_session_info()
+                    self._selectModeAndApply()
+            else:
+                logger.info(f"Session user mismatch: {saved_user_id} != {self.current_user_id}")
+                self._selectModeAndApply()
+        else:
+            # Select mode if no session info
+            self._selectModeAndApply()
+
+    def _selectModeAndApply(self):
+        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        if mode_dialog.exec_() != QtWidgets.QDialog.Accepted:
+            # Exit app if mode selection cancelled
+            self.close()
+            return
+
+        self.current_mode = mode_dialog.get_selected_mode()
+        logger.info(f"Mode selected: {self.current_mode}")
+
+        # Apply UI settings based on mode
+        self._applyModeSettings()
+
+    def _applyModeSettings(self):
+        if self.current_mode == ModeSelectionDialog.MODE_LABELING:
+            # Labeling Mode: Show only Polygon Labels, hide Comment
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(False)
+            self.setWindowTitle(f"{__appname__} - Labeling")
+
+        elif self.current_mode == ModeSelectionDialog.MODE_REVIEW:
+            # Review Mode: Show Polygon Labels + Comment
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(True)
+            self.setWindowTitle(f"{__appname__} - Review")
+
+        elif self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW:
+            # Final Review Mode: Show Polygon Labels + Comment
+            self.shape_dock.setVisible(True)
+            self.comment_dock.setVisible(True)
+            self.setWindowTitle(f"{__appname__} - Final Review")
+
+        # Common: Keep unnecessary Docks hidden
+        self.flag_dock.setVisible(False)
+        self.label_dock.setVisible(False)
+        self.file_dock.setVisible(False)
+
+        # Set TaskInfoWidget mode
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.set_mode(self.current_mode)
+
+        # Set User ID in CommentWidget
+        if hasattr(self, 'comment_widget') and self.comment_widget:
+            self.comment_widget.set_user_id(self.current_user_id)
+
+    def changeModeAction(self):
+        # Check if an image is currently loaded
+        if self.filename is not None:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Cannot Change Mode",
+                "You have an image currently loaded.\n"
+                "Please complete or submit the current task before changing modes."
+            )
+            return
+
+        logger.info("Change Mode action triggered")
+
+        # Show mode selection dialog
+        mode_dialog = ModeSelectionDialog(self.current_user_id, self)
+        if mode_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            new_mode = mode_dialog.get_selected_mode()
+            if new_mode != self.current_mode:
+                self.current_mode = new_mode
+                logger.info(f"Mode changed to: {self.current_mode}")
+                self._applyModeSettings()
+
+    def loadTaskAction(self):
+        logger.info("Load Task action triggered")
+        # TODO: Implement actual task load logic upon Firebase integration
+        # Limit to processing_dir until Firebase integration to maintain consistency with session restoration
+        self.openDirDialog(dirpath=self.processing_dir)
+
+    def loadPostponeTaskAction(self):
+        logger.info("Load Postpone action triggered")
+
+        # Show PostponedListDialog
+        dialog = PostponedListDialog(
+            self.postpone_dir,
+            self.current_user_id,
+            self
+        )
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        selected_image = dialog.get_selected_image()
+        if not selected_image:
+            return
+
+        # Restore files from user-specific postpone directory
+        self._restore_postponed_files(selected_image)
+
+    def submitTaskAction(self):
+        logger.info("Submit Task action triggered")
+
+        # Check if image is loaded
+        if self.filename is None:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Cannot Submit",
+                "No image loaded."
+            )
+            return
+
+        # Conditional popup: Show different message based on data existence
+        if not len(self.labelList):
+            # Case 1: Empty data
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "Confirm Submission",
+                "No annotations have been made on this image.\nDo you still want to submit?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+        else:
+            # Case 2: Work data exists
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "Confirm Submission",
+                "Do you want to submit this task?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+
+
+        if reply == QtWidgets.QMessageBox.No:
+            return
+
+        # Save current file (Used temporarily until Firebase integration)
+        self.saveFile()
+
+        # Delete load time file
+        if self.filename:
+            load_time_file = self._get_load_time_file_path(self.filename)
+            if os.path.exists(load_time_file):
+                try:
+                    os.remove(load_time_file)
+                except Exception as e:
+                    logger.warning(f"Failed to delete load time file: {e}")
+
+        # TODO: Replace with actual upload logic upon Firebase integration
+        QtWidgets.QMessageBox.information(
+            self,
+            "Submitted",
+            "Task submitted successfully.\n(Will be uploaded to cloud after Firebase integration)"
+        )
+
+        # Delete session info
+        self._clear_session_info()
+
+        # Reset state (unload image) + UI cleanup
+        self.resetState()
+        self.setClean()
+        self.toggleActions(False)
+        self.canvas.setEnabled(False)
+        self.actions.saveAs.setEnabled(False)
+
+    def postponeTaskAction(self):
+        logger.info("Postpone Task action triggered")
+
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Postpone Task",
+            "Do you want to postpone this task?\nYou can resume it later.",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            # Save current file
+            self.saveFile()
+
+            # Move files with same basename to postpone directory
+            if self.filename:
+                self._move_files_to_postpone(self.filename)
+
+            # TODO: Change status to 'postponed' upon Firebase integration
+
+            self._clear_session_info()
+            self.resetState()
+
+            QtWidgets.QMessageBox.information(
+                self,
+                "Postponed",
+                "Task postponed.\n(Status will be updated after Firebase integration)"
+            )
+
+    def dropTaskAction(self):
+        logger.info("Drop Task action triggered")
+
+        # Check Drop count limit
+        drop_count = self._check_drop_count()
+        if drop_count >= 3:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Cannot Drop Task",
+                "You have exceeded the daily drop limit."
+            )
+            return
+
+        reply = QtWidgets.QMessageBox.warning(
+            self,
+            "Drop Task",
+            "Do you want to drop this task?\nYour work will not be saved and the task will be returned to the pool.",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No
+        )
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            # TODO: Revert status to 'ready' and increment drop_count upon Firebase integration
+            self._clear_session_info()
+            
+            # Reset state (unload image) + UI cleanup
+            self.resetState()
+            self.setClean()
+            self.toggleActions(False)
+            self.canvas.setEnabled(False)
+            self.actions.saveAs.setEnabled(False)
+            
+            QtWidgets.QMessageBox.information(
+                self,
+                "Dropped",
+                "Task dropped.\n(Will be returned to task pool after Firebase integration)"
+            )
+
+
+    def discardTaskAction(self):
+        logger.info("Discard Task action triggered")
+
+        discard_dialog = DiscardDialog(self)
+        if discard_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            reason = discard_dialog.get_discard_reason()
+            logger.info(f"Discard reason: {reason}")
+
+            # TODO: Change status to 'discarded' and save reason upon Firebase integration
+            self._clear_session_info()
+            
+            # Reset state (unload image) + UI cleanup
+            self.resetState()
+            self.setClean()
+            self.toggleActions(False)
+            self.canvas.setEnabled(False)
+            self.actions.saveAs.setEnabled(False)
+            QtWidgets.QMessageBox.information(
+                self,
+                "Discarded",
+                "Task discarded.\n(Discard reason will be recorded after Firebase integration)"
+            )
+
+    # ============ Timer Methods ============
+
+    def _get_load_time_file_path(self, image_path: str) -> str:
+        if not image_path:
+            return ""
+        base_path = os.path.splitext(image_path)[0]
+        return base_path + "_load_time.txt"
+
+    def _startDeadlineTimer(self, image_path: str):
+
+        load_time_file = self._get_load_time_file_path(image_path)
+
+        # Read existing load time file if exists (Persist after restart)
+        if os.path.exists(load_time_file):
+            try:
+                with open(load_time_file, "r", encoding="utf-8") as f:
+                    load_time_str = f.read().strip()
+                    load_time = datetime.datetime.fromisoformat(load_time_str)
+                    logger.info(f"Loaded existing load time: {load_time}")
+            except Exception as e:
+                logger.warning(f"Failed to read load time file: {e}")
+                load_time = datetime.datetime.now()
+        else:
+            # Record current time in file if newly loaded
+            load_time = datetime.datetime.now()
+            try:
+                with open(load_time_file, "w", encoding="utf-8") as f:
+                    f.write(load_time.isoformat())
+                logger.info(f"Saved load time: {load_time}")
+            except Exception as e:
+                logger.warning(f"Failed to write load time file: {e}")
+
+        # Deadline = Load time + 48 hours
+        self.deadline = load_time + datetime.timedelta(hours=48)
+
+        # Start timer (Update every 1 second)
+        self.deadline_timer.start(1000)
+        self._updateDeadlineTimer()  # Update immediately once
+
+    def _updateDeadlineTimer(self):
+        if not self.deadline:
+            return
+
+        remaining = self.deadline - datetime.datetime.now()
+        remaining_seconds = int(remaining.total_seconds())
+
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.set_remaining_time(remaining_seconds)
+
+    def _stopDeadlineTimer(self):
+        self.deadline_timer.stop()
+        self.deadline = None
+
+        # Reset only timer in TaskInfoWidget (Keep mode badge)
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            # Reset timer to "--:--:--"
+            self.task_info_widget.timer_label.setText("--:--:--")
+            self.task_info_widget.timer_label.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #4CAF50;
+                    padding: 4px 8px;
+                }
+            """)
+
+    # ============ Session Management Methods ============
+
+    def _get_session_file_path(self, image_filename: str) -> str:
+        if not image_filename:
+            return ""
+        basename = os.path.splitext(os.path.basename(image_filename))[0]
+        return os.path.join(self.processing_dir, f"{basename}_session.json")
+
+    def _save_session_info(self, image_filename: str):
+        session_file = self._get_session_file_path(image_filename)
+        if not session_file:
+            return
+
+        session_data = {
+            "image_filename": os.path.basename(image_filename),  # Save only filename
+            "load_time": datetime.datetime.now().isoformat(),
+            "mode": self.current_mode,
+            "user_id": self.current_user_id
+        }
+
+        try:
+            with open(session_file, "w", encoding="utf-8") as f:
+                json.dump(session_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"Session info saved: {session_data}")
+        except Exception as e:
+            logger.warning(f"Failed to save session info: {e}")
+
+    def _load_session_info(self):
+        # Find all *_session.json files in processing directory
+        session_pattern = os.path.join(self.processing_dir, "*_session.json")
+        session_files = glob.glob(session_pattern)
+
+        if not session_files:
+            return None
+
+        # Select latest session file (Based on modification time)
+        latest_session_file = max(session_files, key=os.path.getmtime)
+
+        try:
+            with open(latest_session_file, "r", encoding="utf-8") as f:
+                session_data = json.load(f)
+            logger.info(f"Session info loaded from {latest_session_file}: {session_data}")
+            return session_data
+        except Exception as e:
+            logger.warning(f"Failed to load session info: {e}")
+            return None
+
+    def _clear_session_info(self, image_filename=None):
+        if image_filename is None:
+            image_filename = self.filename
+
+        if not image_filename:
+            return
+
+        session_file = self._get_session_file_path(image_filename)
+        if os.path.exists(session_file):
+            try:
+                os.remove(session_file)
+                logger.info(f"Session info cleared: {session_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clear session info: {e}")
+
+    def _move_files_to_postpone(self, image_filename: str):
+        if not image_filename:
+            return
+
+        # Create user-specific postpone directory
+        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
+        os.makedirs(user_postpone_dir, exist_ok=True)
+
+        # Extract basename
+        basename = os.path.splitext(os.path.basename(image_filename))[0]
+
+        # Find all files with same basename in processing directory
+        pattern = os.path.join(self.processing_dir, f"{basename}.*")
+        files_to_move = glob.glob(pattern)
+
+        # Include session file
+        session_file = self._get_session_file_path(image_filename)
+        if os.path.exists(session_file) and session_file not in files_to_move:
+            files_to_move.append(session_file)
+
+        moved_count = 0
+        for file_path in files_to_move:
+            try:
+                filename = os.path.basename(file_path)
+                dest_path = os.path.join(user_postpone_dir, filename)
+
+                # Move file
+                shutil.move(file_path, dest_path)
+                logger.info(f"Moved to postpone/{self.current_user_id}: {filename}")
+                moved_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to move file {file_path}: {e}")
+
+        logger.info(f"Postpone completed: {moved_count} files moved to user directory")
+    def _restore_postponed_files(self, image_filename: str):
+        if not image_filename:
+            return
+
+        # User-specific postpone directory
+        user_postpone_dir = os.path.join(self.postpone_dir, self.current_user_id)
+
+        # Extract basename
+        basename = os.path.splitext(image_filename)[0]
+
+        # Find all files with same basename in postpone directory
+        pattern = os.path.join(user_postpone_dir, f"{basename}.*")
+        files_to_restore = glob.glob(pattern)
+
+        if not files_to_restore:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "File Not Found",
+                f"Postponed file not found: {image_filename}"
+            )
+            return
+
+        restored_count = 0
+        restored_image_path = None
+
+        for file_path in files_to_restore:
+            try:
+                filename = os.path.basename(file_path)
+                dest_path = os.path.join(self.processing_dir, filename)
+
+                # Move file (Restore)
+                shutil.move(file_path, dest_path)
+                logger.info(f"Restored from postpone: {filename}")
+                restored_count += 1
+
+                # Save image file path
+                if filename == image_filename:
+                    restored_image_path = dest_path
+
+            except Exception as e:
+                logger.warning(f"Failed to restore file {file_path}: {e}")
+
+        logger.info(f"Restore completed: {restored_count} files restored")
+
+        # Load restored image
+        if restored_image_path and os.path.exists(restored_image_path):
+            self.loadFile(restored_image_path)
+        else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Load Failed",
+                "Image file not found."
+            )
+
+    def _check_drop_count(self) -> int:
+        # Mock implementation: Always return 0 (Can be changed for testing)
+        # TODO: Replace with code below after Firebase integration
+        # from firebase_admin import firestore
+        # db = firestore.client()
+        # user_ref = db.collection('users').document(self.current_user_id)
+        # user_doc = user_ref.get()
+        # if user_doc.exists:
+        #     return user_doc.to_dict().get('drop_count', 0)
+        # return 0
+        
+        logger.info(f"Checking drop count for user: {self.current_user_id}")
+        return 0  # Mock: Return 0 until actual Firebase integration

@@ -229,7 +229,7 @@ class Canvas(QtWidgets.QWidget):
         return self.hEdge is not None
 
     def mouseMoveEvent(self, ev):
-        """Update line with last point and current coordinates."""
+
         try:
             if QT5:
                 pos = self.transformPos(ev.localPos())
@@ -546,7 +546,7 @@ class Canvas(QtWidgets.QWidget):
         self.update()
 
     def selectShapePoint(self, point, multiple_selection_mode):
-        """Select the first shape created which contains this point."""
+
         if self.selectedVertex():  # A vertex is marked for selection.
             index, shape = self.hVertex, self.hShape
             shape.highlightVertex(index, shape.MOVE_VERTEX)
@@ -762,7 +762,7 @@ class Canvas(QtWidgets.QWidget):
         p.end()
 
     def transformPos(self, point):
-        """Convert from widget-logical coordinates to painter-logical ones."""
+
         return point / self.scale - self.offsetToCenter()
 
     def offsetToCenter(self):

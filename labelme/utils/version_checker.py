@@ -9,12 +9,12 @@ class VersionChecker:
         self.url = 'https://raw.githubusercontent.com/ROBOTIS-move/labelme/develop/version.xml'
         self.current_path = os.path.dirname(os.path.abspath(__file__))
         
-        # PyInstaller 환경에서 실행 중인지 확인
+        # Check if running in PyInstaller environment
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-            # PyInstaller 환경에서는 _MEIPASS에서 version.xml 찾기
+            # Find version.xml in _MEIPASS in PyInstaller environment
             self.local_path = os.path.join(sys._MEIPASS, 'version.xml')
         else:
-            # 일반 환경에서는 기존 방식 사용
+            # Use existing method in normal environment
             self.local_path = self.current_path + '/../../version.xml'
 
     def fetch_file(self, mode):
