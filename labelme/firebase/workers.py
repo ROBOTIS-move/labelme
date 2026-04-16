@@ -646,3 +646,254 @@ class DiscardTaskWorker(FirebaseWorker):
             'updatedAt': now_str,
         })
         return {'doc_id': self.doc_id}
+
+
+class CountCandidatesWorker(FirebaseWorker):
+    def __init__(
+        self, mode, user_id,
+        is_5_generation=False, is_supervisor=False,
+        drop_image_list=None, parent=None,
+    ):
+        super().__init__(parent)
+        self.mode = mode
+        self.user_id = user_id
+        self.is_5_generation = is_5_generation
+        self.is_supervisor = is_supervisor
+        self.drop_image_list = drop_image_list or []
+        self.db = DatabaseManager()
+
+    def execute(self):
+        statuses = LOAD_SOURCE_STATUSES.get(self.mode, [])
+        candidates = self.db.get_candidates_by_statuses(statuses)
+        # Apply same filters as LoadTaskWorker
+        if not self.is_supervisor:
+            if self.is_5_generation:
+                candidates = [
+                    c for c in candidates
+                    if c.get('classType') == 'FrontViewSegmentation'
+                ]
+            else:
+                candidates = [
+                    c for c in candidates
+                    if c.get('classType') != 'FrontViewSegmentation'
+                ]
+        if self.drop_image_list:
+            candidates = [
+                c for c in candidates
+                if c.get('imageName', '') not in self.drop_image_list
+            ]
+        return {'count': len(candidates)}
+
+
+class BatchLoadTaskWorker(LoadTaskWorker):
+    progress = Signal(int, int)
+
+    def __init__(
+        self, mode, user_id, processing_dir, count,
+        is_5_generation=False, is_supervisor=False,
+        drop_image_list=None, parent=None,
+    ):
+        super().__init__(
+            mode=mode,
+            user_id=user_id,
+            processing_dir=processing_dir,
+            is_5_generation=is_5_generation,
+            is_supervisor=is_supervisor,
+            drop_image_list=drop_image_list,
+            parent=parent,
+        )
+        self.count = count
+
+    def execute(self):
+        os.makedirs(self.processing_dir, exist_ok=True)
+
+        statuses = LOAD_SOURCE_STATUSES.get(self.mode, [])
+        candidates = self._get_candidates(statuses)
+        if not candidates:
+            return {'found': False, 'tasks': []}
+
+        user_field = USER_FIELD_MAP.get(self.mode, 'workerId')
+        next_status_map = LOAD_NEXT_STATUS.get(self.mode, {})
+
+        tasks = []
+        claimed_docs = []
+        candidate_idx = 0
+
+        try:
+            while len(tasks) < self.count and candidate_idx < len(candidates):
+                doc = candidates[candidate_idx]
+                candidate_idx += 1
+
+                source_status_val = doc.get('status', '')
+                source_status = None
+                for s in TaskStatus:
+                    if s.value == source_status_val:
+                        source_status = s
+                        break
+                if source_status is None:
+                    continue
+
+                next_status = next_status_map.get(source_status)
+                if next_status is None:
+                    continue
+
+                claimed = self._try_claim_and_verify(
+                    doc, user_field, next_status,
+                )
+                if not claimed:
+                    continue
+
+                claimed_docs.append((doc, user_field, source_status))
+                task_result = self._download_task(doc, next_status)
+                task_result['submitted'] = False
+                tasks.append(task_result)
+
+                self.progress.emit(len(tasks), self.count)
+        except Exception:
+            # Rollback already-claimed-but-not-downloaded tasks
+            self._rollback_claims(claimed_docs, tasks)
+            raise
+
+        if not tasks:
+            return {'found': False, 'tasks': [], 'requested': self.count}
+
+        return {
+            'found': True,
+            'tasks': tasks,
+            'requested': self.count,
+        }
+
+    def _rollback_claims(self, claimed_docs, downloaded_tasks):
+        downloaded_ids = {t['doc_id'] for t in downloaded_tasks}
+        for doc, user_field, source_status in claimed_docs:
+            doc_id = doc.get('imageName', '')
+            if doc_id in downloaded_ids:
+                continue
+            try:
+                self.db.update_document(doc_id, {
+                    'status': source_status.value,
+                    user_field: '',
+                    'assignedAt': '',
+                })
+            except Exception as e:
+                logger.warning(
+                    "Failed to rollback claim for %s: %s",
+                    doc_id, e,
+                )
+
+
+class BatchSubmitWorker(FirebaseWorker):
+    progress = Signal(int, int)
+
+    def __init__(
+        self, tasks, processing_dir, mode,
+        user_id='', encrypt_enabled=False, parent=None,
+    ):
+        super().__init__(parent)
+        self.tasks = tasks
+        self.processing_dir = processing_dir
+        self.mode = mode
+        self.user_id = user_id
+        self.encrypt_enabled = encrypt_enabled
+        self.db = DatabaseManager()
+        self.uploader = ImageUpload()
+
+    def execute(self):
+        results = []
+        errors = []
+
+        for i, task in enumerate(self.tasks):
+            doc_id = task['doc_id']
+            basename = os.path.splitext(doc_id)[0]
+
+            try:
+                self._submit_single(doc_id, basename)
+                results.append({
+                    'doc_id': doc_id,
+                    'next_status': TaskStatus.READY_GT.value,
+                })
+            except Exception as e:
+                logger.error("Batch submit failed for %s: %s", doc_id, e)
+                errors.append({'doc_id': doc_id, 'error': str(e)})
+
+            self.progress.emit(i + 1, len(self.tasks))
+
+        return {
+            'submitted': results,
+            'errors': errors,
+            'total': len(self.tasks),
+        }
+
+    def _submit_single(self, doc_id, basename):
+        # Encrypt cache
+        if self.encrypt_enabled:
+            from labelme.utils.encrypt_cache import EncryptCache
+            encrypt = EncryptCache()
+            encrypt_path = os.path.join(
+                self.processing_dir, f"{basename}_encrypt.bin"
+            )
+            json_path = os.path.join(
+                self.processing_dir, f"{basename}.json"
+            )
+            if os.path.exists(json_path):
+                encrypt.run_single(
+                    encrypt_path, json_path,
+                    worker_name=self.user_id,
+                )
+
+        # Upload files
+        storage_paths = {}
+
+        image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff']
+        for ext in image_exts:
+            img_file = os.path.join(
+                self.processing_dir, f"{basename}{ext}"
+            )
+            if os.path.exists(img_file):
+                sp = f"{StoragePath.IMAGE}/{basename}{ext}"
+                self.uploader.upload_single(img_file, sp)
+                storage_paths['storageImagePath'] = sp
+                break
+
+        json_file = os.path.join(
+            self.processing_dir, f"{basename}.json"
+        )
+        if os.path.exists(json_file):
+            sp = f"{StoragePath.JSON}/{basename}.json"
+            self.uploader.upload_single(json_file, sp)
+            storage_paths['storageJsonPath'] = sp
+
+        encrypt_file = os.path.join(
+            self.processing_dir, f"{basename}_encrypt.bin"
+        )
+        if os.path.exists(encrypt_file):
+            sp = f"{StoragePath.ENCRYPT}/{basename}_encrypt.bin"
+            self.uploader.upload_single(encrypt_file, sp)
+            storage_paths['storageEncryptPath'] = sp
+
+        comment_file = os.path.join(
+            self.processing_dir, f"{basename}_comments.json"
+        )
+        if os.path.exists(comment_file):
+            sp = f"{StoragePath.COMMENT}/{basename}_comments.json"
+            self.uploader.upload_single(comment_file, sp)
+            storage_paths['storageCommentPath'] = sp
+        else:
+            storage_paths['storageCommentPath'] = ''
+
+        # Update status: FINAL_REVIEWING → READY_GT
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        update_data = {
+            'status': TaskStatus.READY_GT.value,
+            'updatedAt': now_str,
+        }
+        update_data.update(storage_paths)
+        try:
+            self.db.update_document(doc_id, update_data)
+        except Exception as e:
+            uploaded = [v for v in storage_paths.values() if v]
+            raise RuntimeError(
+                f"DB update failed after upload for {doc_id}. "
+                f"Uploaded files may remain: {uploaded}. "
+                f"Error: {e}"
+            )

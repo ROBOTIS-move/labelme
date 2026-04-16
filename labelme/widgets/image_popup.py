@@ -51,8 +51,8 @@ class ImagePopup(QtWidgets.QLabel):
                     self.masked_widget.setWindowTitle('masked image: ' + data_name + 'png')
                     mask, (mask_width, mask_height) = self.load_image(masked_image)
                     mask = QtGui.QImage.fromData(mask)
-                    self.masked_widget.setMinimumHeight(mask_height)
-                    self.masked_widget.setMinimumWidth(mask_width)
+                    self.masked_widget.setMinimumHeight(800)
+                    self.masked_widget.setMinimumWidth(1000)
                     self.masked_widget.setPixmap(QtGui.QPixmap.fromImage(mask))
                     self.masked_widget.show()
 
@@ -65,8 +65,8 @@ class ImagePopup(QtWidgets.QLabel):
                     self.overlayed_widget.setWindowTitle('overlayed image: ' + data_name + 'jpg')
                     overlay, (overlay_width, overlay_height) = self.load_image(overlayed_image)
                     overlay = QtGui.QImage.fromData(overlay)
-                    self.overlayed_widget.setMinimumHeight(overlay_height)
-                    self.overlayed_widget.setMinimumWidth(overlay_width)
+                    self.overlayed_widget.setMinimumHeight(800)
+                    self.overlayed_widget.setMinimumWidth(1000)
                     self.overlayed_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
                     self.overlayed_widget.show()
 
@@ -78,8 +78,8 @@ class ImagePopup(QtWidgets.QLabel):
                 if os.path.isfile(object_image):
                     overlay, (overlay_width, overlay_height) = self.load_image(object_image)
                     overlay = QtGui.QImage.fromData(overlay)
-                    self.object_widget.setMinimumHeight(overlay_height)
-                    self.object_widget.setMinimumWidth(overlay_width)
+                    self.object_widget.setMinimumHeight(800)
+                    self.object_widget.setMinimumWidth(1000)
                     self.object_widget.setPixmap(QtGui.QPixmap.fromImage(overlay))
                     self.object_widget.show()
 

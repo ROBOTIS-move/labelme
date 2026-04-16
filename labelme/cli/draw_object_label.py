@@ -31,7 +31,12 @@ class Convertor:
         _, self.folder_name = os.path.split(input_dir)
         self.output_dir = self.create_folder(input_dir + '/obj')
 
-        json_list = glob.glob(os.path.join(input_dir, '*.json'))
+        # Exclude non-label JSON files (session, comments, etc.)
+        _skip_suffixes = ('_session.json', '_comments.json')
+        json_list = [
+            f for f in glob.glob(os.path.join(input_dir, '*.json'))
+            if not f.endswith(_skip_suffixes)
+        ]
 
         # Check PyInstaller frozen state for multiprocessing safety
         is_frozen = getattr(sys, 'frozen', False)
@@ -67,18 +72,16 @@ class Convertor:
                     popup.set_progress(int((i + 1) / len(json_list) * 100))
         else:
             # Multiprocessing mode - faster for large file counts
-            process_num, process_remainder = divmod(len(json_list), num_core)
             pool = multiprocessing.Pool(processes=num_core)
             try:
-                if len(json_list) <= num_core:
-                    pool.map(self.convert_bounding_box, json_list)
-                else:
-                    for i in range(process_num):
-                        pool.map(
-                            self.convert_bounding_box,
-                            json_list[i * num_core:(i+1) * num_core])
-                        if popup is not None:
-                            popup.set_progress(int(i / process_num * 100))
+                total = len(json_list)
+                for start in range(0, total, num_core):
+                    chunk = json_list[start:start + num_core]
+                    pool.map(self.convert_bounding_box, chunk)
+                    if popup is not None:
+                        popup.set_progress(
+                            int((start + len(chunk)) / total * 100)
+                        )
             finally:
                 pool.close()
                 pool.join()
@@ -100,9 +103,24 @@ class Convertor:
         out_image_file = os.path.join(self.output_dir, base + '.png')
 
         class_names = self.CONFIG[data['classType']]
-        new_path = data['imagePath']
-        _, new_path = os.path.split(new_path)
-        image_file = os.path.join(os.path.dirname(json_file), new_path)
+        image_path_val = data.get('imagePath', '')
+        if image_path_val:
+            _, new_path = os.path.split(image_path_val)
+            image_file = os.path.join(os.path.dirname(json_file), new_path)
+        else:
+            # Fallback: find image file with same basename
+            image_file = ''
+            for ext in ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'):
+                candidate = os.path.join(
+                    os.path.dirname(json_file), base + ext,
+                )
+                if os.path.exists(candidate):
+                    image_file = candidate
+                    break
+            if not image_file:
+                raise FileNotFoundError(
+                    f"No image found for {json_file}"
+                )
         image = np.asarray(PIL.Image.open(image_file))
         result_image = labelme.utils.draw_instances(
             image, [], [], captions=''

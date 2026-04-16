@@ -28,7 +28,12 @@ class Convertor:
         self.origin_image_dir, self.masked_image_dir, self.overlayed_image_dir = \
             self.created_output_dir(input_dir)
 
-        json_list = glob.glob(os.path.join(input_dir, '*.json'))
+        # Exclude non-label JSON files (session, comments, etc.)
+        _skip_suffixes = ('_session.json', '_comments.json')
+        json_list = [
+            f for f in glob.glob(os.path.join(input_dir, '*.json'))
+            if not f.endswith(_skip_suffixes)
+        ]
 
         # Caution: Use single process mode for safety or decide based on file count
         if len(json_list) < 50:
@@ -69,18 +74,17 @@ class Convertor:
                     popup.set_progress(int((i + 1) / len(json_list) * 100))
         else:
             # Multiprocessing mode - faster for large file counts
-            process_num, process_remainder = divmod(len(json_list), num_core)
             pool = multiprocessing.Pool(processes=num_core)
             try:
-                if len(json_list) <= num_core:
-                    pool.map(self.multi_convert_json_to_mask, json_list)
-                else:
-                    for i in range(process_num):
-                        pool.map(
-                            self.multi_convert_json_to_mask,
-                            json_list[i * num_core: (i+1) * num_core])
-                        if popup is not None:
-                            popup.set_progress(int(i / process_num * 100))
+                total = len(json_list)
+                # Process in chunks of num_core
+                for start in range(0, total, num_core):
+                    chunk = json_list[start:start + num_core]
+                    pool.map(self.multi_convert_json_to_mask, chunk)
+                    if popup is not None:
+                        popup.set_progress(
+                            int((start + len(chunk)) / total * 100)
+                        )
             finally:
                 pool.close()
                 pool.join()
@@ -140,7 +144,24 @@ class Convertor:
         if json_data.get('imageData'):
             imageData = json_data['imageData']
         else:
-            imagePath = os.path.join(os.path.dirname(json_file), json_data['imagePath'])
+            image_path_val = json_data.get('imagePath', '')
+            if image_path_val:
+                imagePath = os.path.join(
+                    os.path.dirname(json_file), image_path_val,
+                )
+            else:
+                # Fallback: find image file with same basename
+                base = os.path.splitext(json_file)[0]
+                imagePath = ''
+                for ext in ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'):
+                    candidate = base + ext
+                    if os.path.exists(candidate):
+                        imagePath = candidate
+                        break
+                if not imagePath:
+                    raise FileNotFoundError(
+                        f"No image found for {json_file}"
+                    )
             with open(imagePath, 'rb') as f:
                 imageData = f.read()
                 imageData = base64.b64encode(imageData).decode('utf-8')
@@ -190,8 +211,9 @@ class Convertor:
                 image_name))
 
         except Exception as e:
-            print('Unexpected error: {0}'.format(e))
-            pass
+            print('Unexpected error [{}]: {}'.format(
+                os.path.basename(json_file), e,
+            ))
 
 
 def convert_segments(input_dir, popup=None):

@@ -44,6 +44,20 @@ class TaskInfoWidget(QtWidgets.QWidget):
         """)
         layout.addWidget(self.mode_label)
 
+        # Batch Position Label (hidden by default)
+        self.batch_label = QtWidgets.QLabel("")
+        self.batch_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.batch_label.setStyleSheet("""
+            QLabel {
+                font-size: 13px;
+                font-weight: bold;
+                color: #FF9800;
+                padding: 4px 8px;
+            }
+        """)
+        self.batch_label.setVisible(False)
+        layout.addWidget(self.batch_label)
+
         # Timer Label
         self.timer_label = QtWidgets.QLabel("--:--:--")
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -104,9 +118,18 @@ class TaskInfoWidget(QtWidgets.QWidget):
             }}
         """)
 
+    def set_batch_position(self, text):
+        self.batch_label.setText(text)
+        self.batch_label.setVisible(True)
+
+    def clear_batch_position(self):
+        self.batch_label.setText("")
+        self.batch_label.setVisible(False)
+
     def reset(self):
         self.current_mode = None
         self.remaining_seconds = None
+        self.clear_batch_position()
         self.mode_label.setText("--")
         self.mode_label.setStyleSheet("""
             QLabel {

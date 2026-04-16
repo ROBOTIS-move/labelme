@@ -51,6 +51,7 @@ from labelme.widgets import LoadingDialog
 from labelme.widgets import TaskInfoWidget
 from labelme.widgets import PostponedListDialog
 from labelme.widgets import WorkHistoryDialog
+from labelme.widgets import BatchLoadDialog
 from labelme.utils.encrypt_cache import EncryptCache
 from labelme.firebase.constants import (
     TaskStatus,
@@ -68,6 +69,9 @@ from labelme.firebase.workers import (
     RestorePostponeWorker,
     DropTaskWorker,
     DiscardTaskWorker,
+    CountCandidatesWorker,
+    BatchLoadTaskWorker,
+    BatchSubmitWorker,
 )
 
 # FIXME
@@ -262,6 +266,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_document = None
         self._active_worker = None
         self._from_postpone = False
+
+        # Batch Final Review state
+        self._batch_tasks = []
+        self._batch_index = 0
+        self._is_batch_mode = False
 
         # Cloud-Native: Work directory setup (Improved to be configurable)
         # TODO: Improve to allow user to configure path via QSettings
@@ -779,6 +788,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tr("Discard current task with reason"),
             enabled=False,
         )
+        submitAllTask = action(
+            self.tr("Submit All"),
+            self.submitAllAction,
+            None,
+            "save",
+            self.tr("Submit all remaining batch tasks"),
+            enabled=False,
+        )
         viewWorkHistory = action(
             self.tr("Work History"),
             self.viewWorkHistoryAction,
@@ -979,6 +996,7 @@ class MainWindow(QtWidgets.QMainWindow):
             postponeTask=postponeTask,
             dropTask=dropTask,
             discardTask=discardTask,
+            submitAllTask=submitAllTask,
             viewWorkHistory=viewWorkHistory,
             tool=(),
             # XXX: need to add some actions here to activate the shortcut
@@ -1068,6 +1086,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 loadModifyTask,
                 loadPostponeTask,
                 submitTask,
+                submitAllTask,
                 postponeTask,
                 dropTask,
                 discardTask,
@@ -1102,6 +1121,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 measure_cursor,
             )
         )
+
+        # Register shortcut-only actions on MainWindow
+        # (not visible in menus but shortcuts still work)
+        self.addAction(openNextImg)
+        self.addAction(openPrevImg)
 
         # Cloud-Native: Add Change action to Mode menu
         changeModeAction = action(
@@ -1166,6 +1190,7 @@ class MainWindow(QtWidgets.QMainWindow):
             loadModifyTask,
             loadPostponeTask,
             submitTask,
+            submitAllTask,
             None,
             createMode,
             createRectangleMode,
@@ -2383,6 +2408,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def openPrevImg(self, _value=False):
+        if self._is_batch_mode:
+            self._navigate_batch(-1)
+            return
         if self.canvas.drawing() and self.canvas.current:
             return
         self.resetHideFlags()
@@ -2415,6 +2443,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._config["keep_prev"] = keep_prev
 
     def openNextImg(self, _value=False, load=True):
+        if self._is_batch_mode:
+            self._navigate_batch(+1)
+            return
         if self.canvas.drawing() and self.canvas.current:
             return
         self.resetHideFlags()
@@ -2975,6 +3006,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Apply mode settings
                 self._applyModeSettings()
 
+                # Restore batch mode if applicable
+                if session_data.get("batch_mode"):
+                    batch_tasks = session_data.get("batch_tasks", [])
+                    batch_index = session_data.get("batch_index", 0)
+                    if batch_tasks:
+                        self._batch_tasks = batch_tasks
+                        self._batch_index = batch_index
+                        self._is_batch_mode = True
+                        self.actions.openNextImg.setEnabled(True)
+                        self.actions.openPrevImg.setEnabled(True)
+                        if hasattr(self.actions, 'submitAllTask'):
+                            self.actions.submitAllTask.setVisible(True)
+                            self.actions.submitAllTask.setEnabled(True)
+                        self._load_batch_task_at_index(batch_index)
+                        return
+
                 # Find and load image from processing directory
                 image_path = os.path.join(
                     self.processing_dir, image_filename
@@ -3081,6 +3128,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.dropTask.setVisible(is_worker)
         # Discard: all modes
         self.actions.discardTask.setVisible(True)
+        # Submit All: hidden initially, shown when batch mode enters
+        self.actions.submitAllTask.setVisible(False)
 
     def changeModeAction(self):
         # Check if an image is currently loaded
@@ -3111,11 +3160,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 self, "Busy", "A task is already in progress.",
             )
             return
+        if self._is_batch_mode:
+            QtWidgets.QMessageBox.warning(
+                self, "Cannot Load",
+                "A batch review is in progress.\n"
+                "Submit or discard remaining tasks first.",
+            )
+            return
         if self.filename is not None:
             QtWidgets.QMessageBox.warning(
                 self, "Cannot Load",
                 "An image is already loaded. Submit or drop first."
             )
+            return
+
+        # Batch mode for final review
+        if self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW:
+            self._loadBatchFinalReviewAction()
             return
 
         self._set_firebase_loading(True, "Downloading task...")
@@ -3197,6 +3258,245 @@ class MainWindow(QtWidgets.QMainWindow):
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
+
+    # ============ Batch Final Review ============
+
+    def _loadBatchFinalReviewAction(self):
+        self._set_firebase_loading(True, "Checking available tasks...")
+        worker = CountCandidatesWorker(
+            mode=self.current_mode,
+            user_id=self.current_user_id,
+            is_5_generation=self.current_user_data.get(
+                '5-generation', False
+            ),
+            is_supervisor=self.current_user_data.get(
+                'supervisor', False
+            ),
+            drop_image_list=self.current_user_data.get(
+                'dropImageList', []
+            ),
+            parent=self,
+        )
+        worker.finished.connect(self._on_count_candidates_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    def _on_count_candidates_finished(self, result):
+        self._set_firebase_loading(False)
+        count = result.get('count', 0)
+
+        dialog = BatchLoadDialog(count, parent=self)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        requested = dialog.get_requested_count()
+        if requested <= 0:
+            return
+
+        self._set_firebase_loading(True, "Downloading task 1/%d..." % requested)
+        worker = BatchLoadTaskWorker(
+            mode=self.current_mode,
+            user_id=self.current_user_id,
+            processing_dir=self.processing_dir,
+            count=requested,
+            is_5_generation=self.current_user_data.get(
+                '5-generation', False
+            ),
+            is_supervisor=self.current_user_data.get(
+                'supervisor', False
+            ),
+            drop_image_list=self.current_user_data.get(
+                'dropImageList', []
+            ),
+            parent=self,
+        )
+        worker.progress.connect(self._on_batch_load_progress)
+        worker.finished.connect(self._on_batch_load_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    def _on_batch_load_progress(self, current, total):
+        self._loading_dialog.show_message(
+            "Downloading task %d/%d..." % (current, total)
+        )
+
+    def _on_batch_load_finished(self, result):
+        self._set_firebase_loading(False)
+
+        if not result.get('found'):
+            QtWidgets.QMessageBox.information(
+                self, "No Task Available",
+                "No tasks available for final review.",
+            )
+            return
+
+        tasks = result.get('tasks', [])
+        if not tasks:
+            QtWidgets.QMessageBox.information(
+                self, "No Task Available",
+                "Failed to claim any tasks.",
+            )
+            return
+
+        self._batch_tasks = tasks
+        self._batch_index = 0
+        self._is_batch_mode = True
+
+        # Enable A/D navigation and Submit All for batch mode
+        self.actions.openNextImg.setEnabled(True)
+        self.actions.openPrevImg.setEnabled(True)
+        if hasattr(self.actions, 'submitAllTask'):
+            self.actions.submitAllTask.setVisible(True)
+            self.actions.submitAllTask.setEnabled(True)
+
+        if len(tasks) < result.get('requested', len(tasks)):
+            self.statusBar().showMessage(
+                "Loaded %d of %d requested tasks" % (
+                    len(tasks), result.get('requested', len(tasks))
+                ), 5000,
+            )
+
+        self._load_batch_task_at_index(0)
+
+    def _load_batch_task_at_index(self, index):
+        if index < 0 or index >= len(self._batch_tasks):
+            return
+
+        # Auto-save current annotation if dirty and file still exists
+        if (
+            self.filename
+            and self.dirty
+            and os.path.exists(self.filename)
+        ):
+            self.saveFile()
+
+        task = self._batch_tasks[index]
+        self._batch_index = index
+
+        # Set single-task state for compatibility
+        self.current_doc_id = task['doc_id']
+        self.current_task_status = task['next_status']
+        self.current_document = task['document']
+
+        local_image_path = task.get('local_image_path', '')
+        if local_image_path and os.path.exists(local_image_path):
+            self.loadFile(local_image_path)
+            json_path = os.path.splitext(local_image_path)[0] + '.json'
+            target_class = self.get_target_class(json_path)
+            if target_class:
+                self.choose_labels_class(target_class)
+            # Update ImagePopup (masked/overlayed/object windows)
+            if hasattr(self, 'ImagePopup') and self.ImagePopup:
+                self.ImagePopup.popUp(self.filename)
+            logger.info(
+                "Batch task loaded: [%d/%d] doc_id=%s",
+                index + 1, len(self._batch_tasks), task['doc_id'],
+            )
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Load Failed",
+                "Downloaded image file not found: %s" % local_image_path,
+            )
+
+        self._update_batch_position()
+
+    def _update_batch_position(self):
+        if not self._is_batch_mode:
+            return
+        remaining = len(
+            [t for t in self._batch_tasks if not t.get('submitted')]
+        )
+        total = len(self._batch_tasks)
+        text = "%d / %d  (%d remaining)" % (
+            self._batch_index + 1, total, remaining,
+        )
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.set_batch_position(text)
+
+    def _navigate_batch(self, delta):
+        if self.canvas.drawing() and self.canvas.current:
+            return
+
+        new_index = self._batch_index + delta
+
+        # Skip submitted tasks in the given direction
+        while 0 <= new_index < len(self._batch_tasks):
+            if not self._batch_tasks[new_index].get('submitted'):
+                break
+            new_index += delta
+
+        if new_index < 0 or new_index >= len(self._batch_tasks):
+            return
+
+        self._load_batch_task_at_index(new_index)
+
+    def _navigate_to_next_unsubmitted(self):
+        # Try forward from current position
+        for i in range(self._batch_index + 1, len(self._batch_tasks)):
+            if not self._batch_tasks[i].get('submitted'):
+                self._load_batch_task_at_index(i)
+                return
+        # Try from beginning
+        for i in range(0, self._batch_index):
+            if not self._batch_tasks[i].get('submitted'):
+                self._load_batch_task_at_index(i)
+                return
+
+    def _handle_batch_task_done(self):
+        self._batch_tasks[self._batch_index]['submitted'] = True
+        self._cleanup_processing_files()
+        self._clear_session_info()
+        # Prevent _load_batch_task_at_index from trying to saveFile
+        # after files have been cleaned up
+        self.setClean()
+
+        remaining = [
+            t for t in self._batch_tasks if not t.get('submitted')
+        ]
+
+        if not remaining:
+            QtWidgets.QMessageBox.information(
+                self, "All Done",
+                "All %d batch tasks completed!" % len(self._batch_tasks),
+            )
+            self._finalize_batch()
+            return
+
+        submitted_count = len(self._batch_tasks) - len(remaining)
+        self.statusBar().showMessage(
+            "Completed %d/%d" % (submitted_count, len(self._batch_tasks)),
+            3000,
+        )
+        self._navigate_to_next_unsubmitted()
+
+    def _cleanup_all_batch_files(self):
+        for task in self._batch_tasks:
+            doc_id = task.get('doc_id', '')
+            if not doc_id:
+                continue
+            basename = os.path.splitext(doc_id)[0]
+            pattern = os.path.join(self.processing_dir, f"{basename}*")
+            for f in glob.glob(pattern):
+                try:
+                    os.remove(f)
+                    logger.info("Batch cleanup: %s", f)
+                except Exception as e:
+                    logger.warning("Failed to cleanup %s: %s", f, e)
+
+    def _finalize_batch(self):
+        self._batch_tasks = []
+        self._batch_index = 0
+        self._is_batch_mode = False
+        # Disable batch-only actions
+        self.actions.openNextImg.setEnabled(False)
+        self.actions.openPrevImg.setEnabled(False)
+        if hasattr(self, 'task_info_widget') and self.task_info_widget:
+            self.task_info_widget.clear_batch_position()
+        if hasattr(self.actions, 'submitAllTask'):
+            self.actions.submitAllTask.setVisible(False)
+        self._finalize_task()
 
     def submitTaskAction(self):
         logger.info("Submit Task action triggered")
@@ -3282,6 +3582,95 @@ class MainWindow(QtWidgets.QMainWindow):
         worker.error.connect(self._on_firebase_error)
         self._active_worker = worker
         worker.start()
+
+    def submitAllAction(self):
+        logger.info("Submit All action triggered")
+        if not self._is_batch_mode:
+            return
+        if self._active_worker and self._active_worker.isRunning():
+            QtWidgets.QMessageBox.warning(
+                self, "Busy", "A task is already in progress.",
+            )
+            return
+
+        remaining = [
+            t for t in self._batch_tasks if not t.get('submitted')
+        ]
+        if not remaining:
+            QtWidgets.QMessageBox.information(
+                self, "No Tasks", "All tasks already submitted.",
+            )
+            return
+
+        # Auto-save current annotation
+        if self.filename and self.dirty:
+            self.saveFile()
+
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Submit All",
+            "Submit all %d remaining tasks?" % len(remaining),
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No,
+        )
+        if reply != QtWidgets.QMessageBox.Yes:
+            return
+
+        self._set_firebase_loading(
+            True, "Submitting 1/%d..." % len(remaining),
+        )
+        worker = BatchSubmitWorker(
+            tasks=remaining,
+            processing_dir=self.processing_dir,
+            mode=self.current_mode,
+            user_id=self.current_user_id or '',
+            encrypt_enabled=True,
+            parent=self,
+        )
+        worker.progress.connect(self._on_batch_submit_progress)
+        worker.finished.connect(self._on_batch_submit_finished)
+        worker.error.connect(self._on_firebase_error)
+        self._active_worker = worker
+        worker.start()
+
+    def _on_batch_submit_progress(self, current, total):
+        self._loading_dialog.show_message(
+            "Submitting %d/%d..." % (current, total),
+        )
+
+    def _on_batch_submit_finished(self, result):
+        self._set_firebase_loading(False)
+        submitted = result.get('submitted', [])
+        errors = result.get('errors', [])
+
+        # Mark all submitted tasks
+        submitted_ids = {r['doc_id'] for r in submitted}
+        for task in self._batch_tasks:
+            if task['doc_id'] in submitted_ids:
+                task['submitted'] = True
+
+        remaining = [
+            t for t in self._batch_tasks if not t.get('submitted')
+        ]
+
+        if not remaining:
+            # Clean up all submitted task files
+            self._cleanup_all_batch_files()
+            QtWidgets.QMessageBox.information(
+                self, "All Done",
+                "All %d tasks submitted!" % len(submitted),
+            )
+            self._finalize_batch()
+        else:
+            QtWidgets.QMessageBox.warning(
+                self, "Partial Submit",
+                "Submitted %d, %d failed.\n"
+                "Please check and retry." % (
+                    len(submitted), len(errors),
+                ),
+            )
+            self._navigate_to_next_unsubmitted()
+            self._update_batch_position()
 
     def postponeTaskAction(self):
         logger.info("Postpone Task action triggered")
@@ -3570,6 +3959,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _on_submit_finished(self, result):
         self._set_firebase_loading(False)
+
+        if self._is_batch_mode:
+            self._handle_batch_task_done()
+            return
+
         QtWidgets.QMessageBox.information(
             self, "Submitted",
             f"Task submitted successfully.\n"
@@ -3602,6 +3996,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _on_discard_finished(self, result):
         self._set_firebase_loading(False)
+
+        if self._is_batch_mode:
+            self._handle_batch_task_done()
+            return
+
         self._finalize_task()
         QtWidgets.QMessageBox.information(
             self, "Discarded",
@@ -3778,6 +4177,12 @@ class MainWindow(QtWidgets.QMainWindow):
             "task_status": self.current_task_status,
             "from_postpone": self._from_postpone,
         }
+
+        # Batch mode session persistence
+        if self._is_batch_mode:
+            session_data["batch_mode"] = True
+            session_data["batch_tasks"] = self._batch_tasks
+            session_data["batch_index"] = self._batch_index
 
         try:
             with open(session_file, "w", encoding="utf-8") as f:
