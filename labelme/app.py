@@ -3174,9 +3174,12 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             return
 
-        # Batch mode for final review
-        if self.current_mode == ModeSelectionDialog.MODE_FINAL_REVIEW:
-            self._loadBatchFinalReviewAction()
+        # Batch mode for review and final review
+        if self.current_mode in (
+            ModeSelectionDialog.MODE_REVIEW,
+            ModeSelectionDialog.MODE_FINAL_REVIEW,
+        ):
+            self._loadBatchReviewAction()
             return
 
         self._set_firebase_loading(True, "Downloading task...")
@@ -3259,9 +3262,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._active_worker = worker
         worker.start()
 
-    # ============ Batch Final Review ============
+    # ============ Batch Review / Final Review ============
 
-    def _loadBatchFinalReviewAction(self):
+    def _loadBatchReviewAction(self):
         self._set_firebase_loading(True, "Checking available tasks...")
         worker = CountCandidatesWorker(
             mode=self.current_mode,
@@ -3328,7 +3331,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not result.get('found'):
             QtWidgets.QMessageBox.information(
                 self, "No Task Available",
-                "No tasks available for final review.",
+                "No tasks available for your current mode.",
             )
             return
 
